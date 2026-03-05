@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import confetti from "canvas-confetti";
 import { WheelCanvas } from "../components/WheelCanvas";
 
 type Participant = { id: string; name: string; isRegular: boolean };
@@ -38,6 +39,10 @@ export function WheelPage() {
   const [guestQuery, setGuestQuery] = useState("");
   const [guestSuggestions, setGuestSuggestions] = useState<Participant[]>([]);
   const [guestLoading, setGuestLoading] = useState(false);
+
+  // --- NYE STATES FOR Å FRYSE HJULET ---
+  const [freezeWheel, setFreezeWheel] = useState(false);
+  const [wheelNames, setWheelNames] = useState<string[]>([]);
 
   // Hent KUN faste
   async function loadRegulars() {
@@ -99,18 +104,24 @@ export function WheelPage() {
   }, [guestQuery, regulars, selectedGuests]);
 
   // Kandidater = faste + selectedGuests som er huket av
-  const visiblePeople = useMemo(() => {
-    return [...regulars, ...selectedGuests];
-  }, [regulars, selectedGuests]);
+  const visiblePeople = useMemo(() => [...regulars, ...selectedGuests], [regulars, selectedGuests]);
 
   const candidateList = useMemo(() => {
-    return visiblePeople.filter(p => present[p.id]).map(p => ({ id: p.id, name: p.name }));
+    return visiblePeople.filter(p => !!present[p.id]);
   }, [visiblePeople, present]);
 
-  const candidateNames = useMemo(() => candidateList.map(x => x.name), [candidateList]);
-  const candidateIds = useMemo(() => candidateList.map(x => x.id), [candidateList]);
+  const candidateNames = useMemo(() => candidateList.map(p => p.name), [candidateList]);
+  const candidateIds = useMemo(() => candidateList.map(p => p.id), [candidateList]);
+
+  // Oppdater hjulnavnene kun når hjulet IKKE er frosset
+  useEffect(() => {
+    if (!freezeWheel) {
+      setWheelNames(candidateNames);
+    }
+  }, [candidateNames, freezeWheel]);
 
   function togglePresent(p: Participant, checked: boolean) {
+    setFreezeWheel(false); // Tin opp hjulet ved manuell interaksjon
     if (checked) {
       setPresent(prev => ({ ...prev, [p.id]: true }));
       return;
@@ -123,6 +134,8 @@ export function WheelPage() {
   }
 
   async function confirmExclude() {
+    setFreezeWheel(false); // Tin opp hjulet
+
     const p = absence.participant!;
     setPresent(prev => ({ ...prev, [p.id]: false }));
 
@@ -145,91 +158,137 @@ export function WheelPage() {
     setAbsence({ open: false });
   }
 
-  async function spin() {
-    if (!candidateIds.length || spinning) return;
-    setSpinning(true);
-    setWinner("");
+  function fireConfetti() {
+    // to "cannons" fra sidene
+    const duration = 900;
+    const end = Date.now() + duration;
 
-    const res = await fetch(`/api/wheel/spin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ participantIds: candidateIds })
-    });
+    const shoot = (originX: number) => {
+      confetti({
+        particleCount: 70,
+        startVelocity: 42,
+        spread: 62,
+        ticks: 200,
+        origin: { x: originX, y: 0.55 }
+      });
+    };
 
-    const json = await res.json();
-    const winnerId: string | undefined = json?.winner?.id;
-    const winnerName: string = json?.winner?.name ?? "Ukjent";
-    if (!winnerId) {
-      setSpinning(false);
-      alert("Spin feilet: mangler winnerId");
-      return;
-    }
+    // burst nå
+    shoot(0.05);
+    shoot(0.95);
 
-    const idx = candidateList.findIndex(x => x.id === winnerId);
-    const n = Math.max(candidateList.length, 1);
-    const step = (Math.PI * 2) / n;
+    // liten ekstra burst etter 250ms
+    setTimeout(() => {
+      shoot(0.08);
+      shoot(0.92);
+    }, 250);
 
-    const targetMid = idx * step + step / 2;
-    const pointerAngle = 0; // picker på høyre
-    const targetAngle = pointerAngle - targetMid;
-
-    const extraTurns = 6 * Math.PI * 2;
-    const start = angle;
-    const end = targetAngle + extraTurns;
-
-    const duration = 2400;
-    const t0 = performance.now();
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
-
-    function anim(now: number) {
-      const t = Math.min(1, (now - t0) / duration);
-      setAngle(start + (end - start) * easeOutCubic(t));
-      if (t < 1) return requestAnimationFrame(anim);
-
-      setAngle(((end % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2));
-      setWinner(winnerName);
-
-      // fjern vinner fra neste runde
-      setPresent(prev => ({ ...prev, [winnerId]: false }));
-
-      setSpinning(false);
-    }
-
-    requestAnimationFrame(anim);
+    // micro-bursts i en kort periode for litt “cascade”
+    (function frame() {
+      if (Date.now() > end) return;
+      confetti({
+        particleCount: 6,
+        startVelocity: 20,
+        spread: 80,
+        ticks: 120,
+        origin: { x: Math.random() < 0.5 ? 0.1 : 0.9, y: 0.55 }
+      });
+      requestAnimationFrame(frame);
+    })();
   }
 
-  async function addGuestByName(name: string) {
-    const n = name.trim();
-    if (!n) return;
+    async function spin() {
+      if (!candidateIds.length || spinning) return;
 
-    // Opprett hvis ikke finnes (eller returner eksisterende)
-    const res = await fetch("/api/participants/guest-upsert", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: n })
-    });
+      // 1. Lås navnene i en lokal variabel FØR vi spinner.
+      const currentNames = [...candidateNames];
+      setWheelNames(currentNames);
+      setFreezeWheel(true);
+      
+      setSpinning(true);
+      setWinner("");
 
-    const p: Participant = await res.json();
+      // 2. Hent vinner fra API
+      const res = await fetch(`/api/wheel/spin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participantIds: candidateIds })
+      });
+      const json = await res.json();
 
-    // Hvis det var en fast (burde sjelden skje), bare huk den av
-    if (p.isRegular) {
-      setPresent(prev => ({ ...prev, [p.id]: true }));
-      setGuestQuery("");
-      setGuestSuggestions([]);
-      return;
+      const winnerId: string | undefined = json?.winner?.id;
+      const winnerName: string = json?.winner?.name ?? "Ukjent";
+      
+      if (!winnerId) {
+        setSpinning(false);
+        alert("Spin feilet: mangler winnerId");
+        return;
+      }
+
+      // 3. Finn indeksen i den FROSNE listen
+      const idx = currentNames.findIndex(name => name === winnerName);
+      if (idx === -1) {
+        setSpinning(false);
+        alert("Spin feilet: vinneren finnes ikke i hjulet");
+        return;
+      }
+
+      // 4. Matte for vinkelen (uten gjetting!)
+      const n = currentNames.length;
+      const step = (Math.PI * 2) / n;
+
+      // Finn lokal vinkel for midten av vinnerens kakestykke.
+      const randomOffset = (Math.random() - 0.5) * (step * 0.7); 
+      const targetLocalAngle = (idx * step) + (step / 2) + randomOffset;
+
+      // Utregning som treffer nøyaktig når pekeren står kl. 3 (0 radianer)
+      const baseAngle = (Math.PI * 2) - targetLocalAngle;
+
+      // 5. Finn ut hvor mye hjulet skal snurre
+      let nextAngle = baseAngle + Math.floor(angle / (Math.PI * 2)) * Math.PI * 2;
+      if (nextAngle < angle) {
+        nextAngle += Math.PI * 2;
+      }
+
+      // Legg til *nøyaktig* antall hele runder (8, 9 eller 10)
+      const fullTurns = Math.floor(8 + Math.random() * 3);
+      const extraSpins = fullTurns * Math.PI * 2;
+      
+      const endAngle = nextAngle + extraSpins;
+      const startAngle = angle;
+
+      const duration = 4600 + Math.random() * 800;
+      const t0 = performance.now();
+
+      const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
+
+      function anim(now: number) {
+        const t = Math.min(1, (now - t0) / duration);
+        const eased = easeOutQuint(t);
+
+        const wobble = t > 0.85 ? Math.sin((t - 0.85) * 45) * (1 - t) * 0.18 : 0;
+        setAngle(startAngle + (endAngle - startAngle) * eased + wobble);
+
+        if (t < 1) {
+          requestAnimationFrame(anim);
+          return;
+        }
+
+        setAngle(endAngle % (Math.PI * 2)); 
+        setWinner(winnerName);
+        
+        setPresent(prev => ({ ...prev, [winnerId]: false }));
+
+        fireConfetti();
+        setSpinning(false);
+      }
+
+      requestAnimationFrame(anim);
     }
-
-    // Legg til nederst hvis den ikke allerede er lagt til i dag
-    setSelectedGuests(prev => (prev.some(x => x.id === p.id) ? prev : [...prev, p]));
-
-    // Huk den av (default)
-    setPresent(prev => ({ ...prev, [p.id]: true }));
-
-    setGuestQuery("");
-    setGuestSuggestions([]);
-  }
 
   function removeSelectedGuest(id: string) {
+    setFreezeWheel(false); // Tin opp hjulet
+
     setSelectedGuests(prev => prev.filter(x => x.id !== id));
     setPresent(prev => {
       const next = { ...prev };
@@ -336,15 +395,11 @@ export function WheelPage() {
         <div className="col card">
           <h2>Spinn</h2>
           <div style={{ display: "grid", placeItems: "center", gap: 14 }}>
-            <WheelCanvas names={candidateNames.length ? candidateNames : ["Ingen"]} angle={angle} winnerName={winner} />
+            {/* HER BRUKER VI DEN FROSNE LISTEN */}
+            <WheelCanvas names={wheelNames.length ? wheelNames : ["Ingen"]} angle={angle} winnerName={winner} />
             <button className="btn" onClick={spin} disabled={spinning || candidateIds.length === 0}>
               {spinning ? "Spinner..." : "SPINN!"}
             </button>
-            {winner && (
-              <div style={{ fontSize: 18 }}>
-                Først ut: <b>{winner}</b>
-              </div>
-            )}
           </div>
         </div>
       </div>
