@@ -109,7 +109,6 @@ export function WheelCanvas({ names, angle, size = 360, winnerName }: Props) {
       ctx.fillStyle = "rgba(233,237,255,0.92)";
       ctx.font = "700 14px system-ui";
       ctx.textAlign = "center";
-      ctx.fillText(`Først ut: ${winnerName}`, cx, size - 16);
     }
   }, [segments, angle, size, winnerName]);
 

@@ -336,7 +336,6 @@ export function ChugListPage() {
               Total
             </button>
           </div>
-        <button className="btn" onClick={load}>Oppdater</button>
         <button className="btn" onClick={() => setNewDayOpen(true)}>+ Ny dag</button>
           </div>
 

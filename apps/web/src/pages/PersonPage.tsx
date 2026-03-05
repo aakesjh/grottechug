@@ -24,7 +24,7 @@ function fmtDDMMYYYY(iso: string) {
 
 export function PersonPage() {
   const { id } = useParams();
-  const [semester, setSemester] = useState<Semester>("all");
+  const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<Resp | null>(null);
   
   const [participants, setParticipants] = useState<{id: string, name: string}[]>([]);

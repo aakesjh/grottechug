@@ -1,20 +1,16 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import { WheelCanvas } from "../components/WheelCanvas";
 
-type Participant = { id: string; name: string; isRegular: boolean };
+// La til imageUrl i typen!
+type Participant = { id: string; name: string; isRegular: boolean; imageUrl?: string | null };
 
-type AbsenceModal = {
-  open: boolean;
-  participant?: Participant;
-};
-
-type ExcludeMode = "ABSENCE" | "EXCUSED";
-
-function todayISO() {
-  const d = new Date();
-  d.setHours(12, 0, 0, 0);
-  return d.toISOString();
+// Hjelpefunksjon for å hente initialer hvis bilde mangler
+function getInitials(name: string) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 export function WheelPage() {
@@ -28,11 +24,7 @@ export function WheelPage() {
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string>("");
-
-  const [absence, setAbsence] = useState<AbsenceModal>({ open: false });
-  const [excludeMode, setExcludeMode] = useState<ExcludeMode>("ABSENCE");
-  const [absenceCode, setAbsenceCode] = useState("ABSENCE");
-  const [absenceReason, setAbsenceReason] = useState("");
+  const [winnerImage, setWinnerImage] = useState<string | null>(null);
 
   // --- Add guest UI
   const [guestTabOpen, setGuestTabOpen] = useState(true);
@@ -40,7 +32,7 @@ export function WheelPage() {
   const [guestSuggestions, setGuestSuggestions] = useState<Participant[]>([]);
   const [guestLoading, setGuestLoading] = useState(false);
 
-  // --- NYE STATES FOR Å FRYSE HJULET ---
+  // --- States for å fryse hjulet ---
   const [freezeWheel, setFreezeWheel] = useState(false);
   const [wheelNames, setWheelNames] = useState<string[]>([]);
 
@@ -84,12 +76,6 @@ export function WheelPage() {
         if (!alive) return;
 
         // Vi viser forslag, men vi vil ikke liste opp alle gjester i UI ellers.
-        // Fjern duplikater som allerede er i dagens liste (regulars + selectedGuests)
-        const already = new Set<string>([
-          ...regulars.map(x => x.id),
-          ...selectedGuests.map(x => x.id)
-        ]);
-
         setGuestSuggestions(data.slice(0, 8));
       } finally {
         if (!alive) return;
@@ -101,7 +87,7 @@ export function WheelPage() {
       alive = false;
       clearTimeout(t);
     };
-  }, [guestQuery, regulars, selectedGuests]);
+  }, [guestQuery]);
 
   // Kandidater = faste + selectedGuests som er huket av
   const visiblePeople = useMemo(() => [...regulars, ...selectedGuests], [regulars, selectedGuests]);
@@ -120,42 +106,10 @@ export function WheelPage() {
     }
   }, [candidateNames, freezeWheel]);
 
+  // Enkel av/på for tilstedeværelse
   function togglePresent(p: Participant, checked: boolean) {
     setFreezeWheel(false); // Tin opp hjulet ved manuell interaksjon
-    if (checked) {
-      setPresent(prev => ({ ...prev, [p.id]: true }));
-      return;
-    }
-    // åpne modal ved uncheck
-    setAbsence({ open: true, participant: p });
-    setExcludeMode("ABSENCE");
-    setAbsenceCode("ABSENCE");
-    setAbsenceReason("");
-  }
-
-  async function confirmExclude() {
-    setFreezeWheel(false); // Tin opp hjulet
-
-    const p = absence.participant!;
-    setPresent(prev => ({ ...prev, [p.id]: false }));
-
-    if (excludeMode === "EXCUSED") {
-      setAbsence({ open: false });
-      return;
-    }
-
-    await fetch(`/api/violations/absence`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        participantId: p.id,
-        sessionDateISO: todayISO(),
-        reason: absenceReason || "Ikke til stede",
-        ruleCode: absenceCode
-      })
-    });
-
-    setAbsence({ open: false });
+    setPresent(prev => ({ ...prev, [p.id]: checked }));
   }
 
   function fireConfetti() {
@@ -197,94 +151,106 @@ export function WheelPage() {
     })();
   }
 
-    async function spin() {
-      if (!candidateIds.length || spinning) return;
+  async function spin() {
+    if (spinning) return;
 
-      // 1. Lås navnene i en lokal variabel FØR vi spinner.
-      const currentNames = [...candidateNames];
-      setWheelNames(currentNames);
-      setFreezeWheel(true);
-      
-      setSpinning(true);
-      setWinner("");
+    // Fjern gammel vinner og bilde umiddelbart
+    setWinner("");
+    setWinnerImage(null);
 
-      // 2. Hent vinner fra API
-      const res = await fetch(`/api/wheel/spin`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participantIds: candidateIds })
-      });
-      const json = await res.json();
+    // Hvis ingen er valgt, stopper vi her (da fungerer klikket kun som en "lukk bilde"-knapp)
+    if (!candidateIds.length) return;
 
-      const winnerId: string | undefined = json?.winner?.id;
-      const winnerName: string = json?.winner?.name ?? "Ukjent";
-      
-      if (!winnerId) {
-        setSpinning(false);
-        alert("Spin feilet: mangler winnerId");
-        return;
-      }
+    // 1. Lås navnene i en lokal variabel FØR vi spinner.
+    const currentNames = [...candidateNames];
+    setWheelNames(currentNames);
+    setFreezeWheel(true);
+    
+    setSpinning(true);
 
-      // 3. Finn indeksen i den FROSNE listen
-      const idx = currentNames.findIndex(name => name === winnerName);
-      if (idx === -1) {
-        setSpinning(false);
-        alert("Spin feilet: vinneren finnes ikke i hjulet");
-        return;
-      }
+    // 2. Hent vinner fra API
+    const res = await fetch(`/api/wheel/spin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ participantIds: candidateIds })
+    });
+    const json = await res.json();
 
-      // 4. Matte for vinkelen (uten gjetting!)
-      const n = currentNames.length;
-      const step = (Math.PI * 2) / n;
-
-      // Finn lokal vinkel for midten av vinnerens kakestykke.
-      const randomOffset = (Math.random() - 0.5) * (step * 0.7); 
-      const targetLocalAngle = (idx * step) + (step / 2) + randomOffset;
-
-      // Utregning som treffer nøyaktig når pekeren står kl. 3 (0 radianer)
-      const baseAngle = (Math.PI * 2) - targetLocalAngle;
-
-      // 5. Finn ut hvor mye hjulet skal snurre
-      let nextAngle = baseAngle + Math.floor(angle / (Math.PI * 2)) * Math.PI * 2;
-      if (nextAngle < angle) {
-        nextAngle += Math.PI * 2;
-      }
-
-      // Legg til *nøyaktig* antall hele runder (8, 9 eller 10)
-      const fullTurns = Math.floor(8 + Math.random() * 3);
-      const extraSpins = fullTurns * Math.PI * 2;
-      
-      const endAngle = nextAngle + extraSpins;
-      const startAngle = angle;
-
-      const duration = 4600 + Math.random() * 800;
-      const t0 = performance.now();
-
-      const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
-
-      function anim(now: number) {
-        const t = Math.min(1, (now - t0) / duration);
-        const eased = easeOutQuint(t);
-
-        const wobble = t > 0.85 ? Math.sin((t - 0.85) * 45) * (1 - t) * 0.18 : 0;
-        setAngle(startAngle + (endAngle - startAngle) * eased + wobble);
-
-        if (t < 1) {
-          requestAnimationFrame(anim);
-          return;
-        }
-
-        setAngle(endAngle % (Math.PI * 2)); 
-        setWinner(winnerName);
-        
-        setPresent(prev => ({ ...prev, [winnerId]: false }));
-
-        fireConfetti();
-        setSpinning(false);
-      }
-
-      requestAnimationFrame(anim);
+    const winnerId: string | undefined = json?.winner?.id;
+    const winnerName: string = json?.winner?.name ?? "Ukjent";
+    
+    if (!winnerId) {
+      setSpinning(false);
+      alert("Spin feilet: mangler winnerId");
+      return;
     }
+
+    // Hent ut bildet til vinneren mens vi først vet hvem det er
+    const winnerObj = candidateList.find(p => p.id === winnerId);
+    const wImage = winnerObj?.imageUrl || null;
+
+    // 3. Finn indeksen i den FROSNE listen
+    const idx = currentNames.findIndex(name => name === winnerName);
+    if (idx === -1) {
+      setSpinning(false);
+      alert("Spin feilet: vinneren finnes ikke i hjulet");
+      return;
+    }
+
+    // 4. Matte for vinkelen
+    const n = currentNames.length;
+    const step = (Math.PI * 2) / n;
+
+    // Finn lokal vinkel for midten av vinnerens kakestykke.
+    const randomOffset = (Math.random() - 0.5) * (step * 0.7); 
+    const targetLocalAngle = (idx * step) + (step / 2) + randomOffset;
+
+    // Utregning som treffer nøyaktig når pekeren står kl. 3 (0 radianer)
+    const baseAngle = (Math.PI * 2) - targetLocalAngle;
+
+    // 5. Finn ut hvor mye hjulet skal snurre
+    let nextAngle = baseAngle + Math.floor(angle / (Math.PI * 2)) * Math.PI * 2;
+    if (nextAngle < angle) {
+      nextAngle += Math.PI * 2;
+    }
+
+    // Legg til *nøyaktig* antall hele runder (8, 9 eller 10)
+    const fullTurns = Math.floor(8 + Math.random() * 3);
+    const extraSpins = fullTurns * Math.PI * 2;
+    
+    const endAngle = nextAngle + extraSpins;
+    const startAngle = angle;
+
+    const duration = 4600 + Math.random() * 800;
+    const t0 = performance.now();
+
+    const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
+
+    function anim(now: number) {
+      const t = Math.min(1, (now - t0) / duration);
+      const eased = easeOutQuint(t);
+
+      const wobble = t > 0.85 ? Math.sin((t - 0.85) * 45) * (1 - t) * 0.18 : 0;
+      setAngle(startAngle + (endAngle - startAngle) * eased + wobble);
+
+      if (t < 1) {
+        requestAnimationFrame(anim);
+        return;
+      }
+
+      setAngle(endAngle % (Math.PI * 2)); 
+      setWinner(winnerName);
+      setWinnerImage(wImage); // Sett bildet
+      
+      // Fjern vinneren fra neste spinn
+      setPresent(prev => ({ ...prev, [winnerId]: false }));
+
+      fireConfetti();
+      setSpinning(false);
+    }
+
+    requestAnimationFrame(anim);
+  }
 
   async function addGuestByName(name: string) {
     setFreezeWheel(false); // Tin opp hjulet
@@ -426,90 +392,76 @@ export function WheelPage() {
         </div>
 
         <div className="col card">
-          <h2>Spinn</h2>
           <div style={{ display: "grid", placeItems: "center", gap: 14 }}>
-            {/* HER BRUKER VI DEN FROSNE LISTEN */}
-            <WheelCanvas names={wheelNames.length ? wheelNames : ["Ingen"]} angle={angle} winnerName={winner} />
-            <button className="btn" onClick={spin} disabled={spinning || candidateIds.length === 0}>
-              {spinning ? "Spinner..." : "SPINN!"}
-            </button>
+            
+            {/* Vinner-banneret øverst */}
+            <div style={{ minHeight: 60, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+              {winner && !spinning ? (
+                <div style={{ fontSize: "2.8rem", fontWeight: 900, color: "var(--accent)" }}>
+                  🎉 {winner} 🎉
+                </div>
+              ) : (
+                <div style={{ color: "var(--muted)", fontSize: "1.2rem", fontWeight: 600 }}>
+                  {spinning 
+                    ? "Spinner..." 
+                    : candidateIds.length > 0 
+                      ? "Trykk på hjulet for å spinne!" 
+                      : "Legg til deltakere for å spinne"}
+                </div>
+              )}
+            </div>
+
+            {/* Klikkbart hjul med overlay for bilde */}
+            <div 
+              onClick={() => {
+                // Vi snurrer på nytt (eller lukker bildet) hvis vi ikke allerede spinner
+                if (!spinning && (candidateIds.length > 0 || winner)) spin();
+              }}
+              style={{
+                cursor: spinning ? "default" : "pointer",
+                borderRadius: "50%",
+                transition: "transform 0.2s ease-in-out",
+                transform: (!spinning && (candidateIds.length > 0 || winner)) ? "scale(1.02)" : "scale(1)",
+                position: "relative",
+                display: "inline-block" // Sørger for at wrapperen smyger seg rundt hjulet
+              }}
+              title={winner ? "Spinn på ny!" : "Spinn hjulet!"}
+            >
+              
+              {/* Vinner-bildet som legger seg over hele hjulet */}
+              {winner && !spinning && (
+                <div style={{
+                  position: "absolute",
+                  inset: 0, // Dekker 100% av mor-diven (altså oppå WheelCanvas)
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  background: "var(--bg)", 
+                  display: "grid",
+                  placeItems: "center",
+                  boxShadow: "0 0 0 6px var(--accent)", // Fin accent-ramme rundt vinneren
+                  zIndex: 10
+                }}>
+                  {winnerImage ? (
+                    <img 
+                      src={winnerImage} 
+                      alt={winner} 
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                    />
+                  ) : (
+                    <div style={{ fontSize: "6rem", fontWeight: 900, color: "var(--muted)" }}>
+                      {getInitials(winner)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Selve hjulet */}
+              <WheelCanvas names={wheelNames.length ? wheelNames : ["Ingen"]} angle={angle} winnerName={winner} />
+            </div>
+
           </div>
         </div>
       </div>
-
-      {/* Modal for å krysse ut */}
-      {absence.open && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.55)",
-            display: "grid",
-            placeItems: "center",
-            zIndex: 100
-          }}
-        >
-          <div className="card" style={{ width: 460 }}>
-            <h2>Krysse ut: {absence.participant?.name}</h2>
-            <p style={{ marginTop: 0 }}>
-              Velg om dette skal gi fravær/kryss eller bare ekskludere i dag.
-            </p>
-
-            <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
-              <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input
-                  type="radio"
-                  name="excludeMode"
-                  checked={excludeMode === "ABSENCE"}
-                  onChange={() => setExcludeMode("ABSENCE")}
-                />
-                <span>Ikke til stede (gir fravær/kryss)</span>
-              </label>
-
-              <label style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <input
-                  type="radio"
-                  name="excludeMode"
-                  checked={excludeMode === "EXCUSED"}
-                  onChange={() => setExcludeMode("EXCUSED")}
-                />
-                <span>Ekskluder i dag (ingen kryss)</span>
-              </label>
-            </div>
-
-            {excludeMode === "ABSENCE" && (
-              <>
-                <div style={{ height: 10 }} />
-                <label>Type</label>
-                <select value={absenceCode} onChange={e => setAbsenceCode(e.target.value)}>
-                  <option value="ABSENCE">Fravær</option>
-                  <option value="REMOTE">Remote (teller som fravær)</option>
-                  <option value="VIDEO">Video (teller som fravær)</option>
-                </select>
-
-                <div style={{ height: 10 }} />
-                <label>Begrunnelse</label>
-                <input
-                  className="input"
-                  value={absenceReason}
-                  onChange={e => setAbsenceReason(e.target.value)}
-                  placeholder="F.eks. sykdom / ikke i byen / jobb"
-                />
-              </>
-            )}
-
-            <div style={{ height: 14 }} />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button className="btn" onClick={() => setAbsence({ open: false })}>
-                Avbryt
-              </button>
-              <button className="btn" onClick={confirmExclude}>
-                {excludeMode === "EXCUSED" ? "Ekskluder uten fravær" : "Lagre (legg i kryssliste)"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

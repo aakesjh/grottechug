@@ -33,6 +33,7 @@ function Podium({
   showAvatar: boolean;
 }) {
   const nav = useNavigate();
+  // Tar kun topp 3, men vi mapper [1, 0, 2] for å vise 2.plass til venstre, 1. i midten, 3. til høyre
   const top3 = rows.slice(0, 3);
 
   return (
@@ -48,7 +49,6 @@ function Podium({
           {[1, 0, 2].map(pos => {
             const r = top3[pos];
             const rank = pos === 0 ? 1 : pos === 1 ? 2 : 3;
-            // Erstatter "🥇 1." med kun en stor medalje
             const label = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
             const height = pos === 0 ? 170 : pos === 1 ? 140 : 120;
 
@@ -63,6 +63,14 @@ function Podium({
                   background: "rgba(0,0,0,0.18)" 
                 };
 
+            // Farger for rammene (Gull, Sølv, Bronse)
+            const frameColors = {
+              1: { border: "#FFD700", glow: "rgba(255, 215, 0, 0.3)" },
+              2: { border: "#C0C0C0", glow: "rgba(192, 192, 192, 0.3)" },
+              3: { border: "#CD7F32", glow: "rgba(205, 127, 50, 0.3)" }
+            };
+            const theme = frameColors[rank as keyof typeof frameColors];
+
             return (
               <button
                 key={pos}
@@ -75,58 +83,70 @@ function Podium({
                   padding: 0,
                   cursor: r ? "pointer" : "default",
                   textAlign: "center",
-                  minWidth: 0
+                  minWidth: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center" // Sentrerer alt innhold i knappen
                 }}
               >
-                {/* Økt fontstørrelsen på medaljene over podiumet */}
+                {/* Medalje over podiumet */}
                 <div style={{ fontSize: "1.6rem", marginBottom: 6, lineHeight: 1 }}>{label}</div>
 
+                {/* Selve podium-blokken (bildet/fargen) */}
                 <div
                   style={{
                     height,
+                    width: "100%", // Fyller knappens bredde
                     borderRadius: 18,
-                    border: "1px solid rgba(255,255,255,0.14)",
+                    // Ramme og glød basert på rangering
+                    border: r ? `3px solid ${theme.border}` : "2px dashed rgba(255,255,255,0.14)",
+                    boxShadow: r ? `0 4px 15px ${theme.glow}` : "none",
                     ...bgStyle,
                     display: "flex",
-                    flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
-                    padding: "8px 4px",
                     overflow: "hidden",
-                    position: "relative"
+                    position: "relative",
                   }}
                 >
-                  {r ? (
-                    <div style={{ 
-                      display: "flex", 
-                      flexDirection: "column", 
-                      gap: 6, 
-                      alignItems: "center", 
-                      width: "100%", 
-                      overflow: "hidden",
-                      color: "#ffffff",
-                      textShadow: "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.8)"
-                    }}>
-                      
-                      {showAvatar && !hasBgImage && <Avatar name={r.name} size={42} />}
-                      
-                      <div style={{ 
-                        fontWeight: 900, 
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        width: "100%", 
-                        textAlign: "center",
-                        fontSize: "0.85rem",
-                        zIndex: 1
-                      }}>
-                        {r.name} &bull; {r.bestClean.toFixed(2)}s
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ color: "var(--muted)" }}>—</div>
-                  )}
+                  {/* Vis kun Avatar inne i boksen hvis det ikke er bakgrunnsbilde */}
+                  {r && showAvatar && !hasBgImage && <Avatar name={r.name} size={height * 0.4} />}
+                  {!r && <div style={{ color: "var(--muted)" }}>—</div>}
                 </div>
+
+                {/* NYTT: Tekstinfo UNDER podium-blokken */}
+                {r ? (
+                  <div style={{ 
+                    marginTop: 8, 
+                    width: "100%", 
+                    textAlign: "center",
+                    color: "var(--text)", // Standard tekstfarge
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2
+                  }}>
+                    <div style={{ 
+                      fontWeight: 700, // Litt mindre ekstremt enn 900 når det står på lys bakgrunn
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      width: "100%", 
+                      fontSize: "0.85rem",
+                    }}>
+                      {r.name}
+                    </div>
+                    <div style={{ 
+                      fontSize: "0.8rem", 
+                      fontWeight: 500,
+                      color: "var(--text)" 
+                    }}>
+                      {r.bestClean.toFixed(2)}s
+                    </div>
+                  </div>
+                ) : (
+                  // Tom plassholder for tekst så høyden forblir lik
+                  <div style={{ marginTop: 8, fontSize: "0.85rem", color: "transparent" }}>&nbsp;</div>
+                )}
               </button>
             );
           })}
@@ -136,14 +156,16 @@ function Podium({
   );
 }
 
+// -- LeaderboardPage forblir uendret --
 export function LeaderboardPage() {
   const nav = useNavigate();
-  const [semester, setSemester] = useState<Semester>("all");
+  const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<Resp | null>(null);
   const [showGuests, setShowGuests] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
+      // Merk: I et ekte prosjekt må du håndtere proxy/absolutt URL for fetch
       const res = await fetch(`/api/leaderboard?semester=${semester}`);
       const json: Resp = await res.json();
       setData(json);
@@ -203,7 +225,6 @@ export function LeaderboardPage() {
             <table style={{ width: "100%", minWidth: 0, textAlign: "left", borderCollapse: "collapse", tableLayout: "fixed" }}>
               <thead>
                 <tr>
-                  {/* Sentrert overskrift for rangering */}
                   <th style={{ padding: 8, width: "50px", textAlign: "center" }}>#</th>
                   <th style={{ padding: 8 }}>Navn</th>
                   <th style={{ padding: 8, width: "80px" }}>Tid</th>
@@ -216,7 +237,6 @@ export function LeaderboardPage() {
                   
                   return (
                     <tr key={`${r.participantId}-${r.dateISO}-${i}`}>
-                      {/* Sentrert celleinnhold for medaljene/tallene */}
                       <td style={{ padding: 8, fontWeight: 900, textAlign: "center", verticalAlign: "middle" }}>
                         {rank === 1 ? <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>🥇</span> :
                          rank === 2 ? <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>🥈</span> :
