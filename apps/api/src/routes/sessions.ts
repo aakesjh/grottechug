@@ -32,7 +32,6 @@ sessionsRouter.patch("/:id", async (req, res) => {
   res.json({ ...updated, dateISO: updated.date.toISOString() });
 });
 
-
 sessionsRouter.post("/", async (req, res) => {
   try {
     const { dateISO, semester } = req.body as { dateISO: string; semester: string };
@@ -50,5 +49,23 @@ sessionsRouter.post("/", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send(String(err));
+  }
+});
+
+// NY: DELETE for å slette en hel dag
+sessionsRouter.delete("/:id", async (req, res) => {
+  try {
+    const id = String(req.params.id);
+
+    // Husk at du MÅ ha onDelete: Cascade på relationen fra Attempt til Session i schema.prisma 
+    // for at dette skal fungere hvis det finnes chugs registrert denne dagen!
+    await prisma.session.delete({
+      where: { id }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Kunne ikke slette session. Har du onDelete: Cascade i schema.prisma?");
   }
 });

@@ -45,26 +45,17 @@ function fmtDDMMYYYYFromYYYYMMDD(yyyyMmDd: string) {
 }
 
 function inferSemesterFromYYYYMMDD(yyyyMmDd: string): "2026V" | "2025H" {
-  // For nå: hard-mapper til de to dere bruker
-  // Jan–Jun => V, Jul–Dec => H, basert på år i datoen
   const [yStr, mStr] = yyyyMmDd.split("-");
   const y = Number(yStr);
-  const m = Number(mStr); // 1..12
+  const m = Number(mStr);
 
-  // fallback
   if (!Number.isFinite(y) || !Number.isFinite(m)) return "2026V";
 
   const isSpring = m >= 1 && m <= 6;
 
-  if (y === 2026) return isSpring ? "2026V" : "2025H"; // hvis noen velger høst 2026 har dere ikke ark ennå
+  if (y === 2026) return isSpring ? "2026V" : "2025H"; 
   if (y === 2025) return isSpring ? "2025H" : "2025H";
-  // default
   return isSpring ? "2026V" : "2025H";
-}
-
-function toISOFromDateInput(yyyyMmDd: string) {
-  // Stabil dato midt på dagen UTC
-  return new Date(`${yyyyMmDd}T12:00:00.000Z`).toISOString();
 }
 
 function parseSeconds(s: string) {
@@ -84,10 +75,8 @@ export function ChugListPage() {
   const [sortKey, setSortKey] = useState<SortKey>({ kind: "none" });
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  // Sheet editor state
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
 
-  // Draft for seconds and note per cell (only for the currently edited session)
   const [draftSeconds, setDraftSeconds] = useState<Record<string, string>>({});
   const [draftNote, setDraftNote] = useState<Record<string, string>>({});
 
@@ -97,18 +86,16 @@ export function ChugListPage() {
   const [newDaySemester, setNewDaySemester] = useState<"2026V" | "2025H">("2026V");
 
   useEffect(() => {
-  setNewDaySemester(inferSemesterFromYYYYMMDD(newDayDate));
-}, [newDayDate]);
+    setNewDaySemester(inferSemesterFromYYYYMMDD(newDayDate));
+  }, [newDayDate]);
 
   function toISOFromDateInput(yyyyMmDd: string) {
     return new Date(`${yyyyMmDd}T12:00:00.000Z`).toISOString();
   }
 
-  // Dirty tracking (what changed)
   const [dirtyCells, setDirtyCells] = useState<Set<string>>(new Set());
   const [dirtySessionNote, setDirtySessionNote] = useState(false);
 
-  // Session note (for the day)
   const [sessionNote, setSessionNote] = useState("");
 
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -119,7 +106,6 @@ export function ChugListPage() {
     const json: TableResponse = await res.json();
     setData(json);
 
-    // hvis valgt editSession ikke finnes, null
     setEditSessionId(prev => (prev && json.columns.some(c => c.sessionId === prev) ? prev : null));
   }
 
@@ -179,18 +165,14 @@ export function ChugListPage() {
     return data.columns.find(c => c.sessionId === editSessionId) ?? null;
   }, [data, editSessionId]);
 
-  // --- Open editor for a session
   async function openEditor(sessionId: string) {
     if (!data) return;
 
-    // hvis du har unsaved changes: enkel bekreftelse (ikke spør – bare auto)
-    // her velger vi å "kaste" endringer hvis du bytter dato
     setDirtyCells(new Set());
     setDirtySessionNote(false);
 
     setEditSessionId(sessionId);
 
-    // Prefill drafts from table
     const nextSec: Record<string, string> = {};
     const nextNote: Record<string, string> = {};
 
@@ -202,14 +184,11 @@ export function ChugListPage() {
     setDraftSeconds(nextSec);
     setDraftNote(nextNote);
 
-    // Fetch session note from /api/sessions (lightweight) OR keep it in stats if you later add it there.
-    // Her henter vi den via /api/sessions:
     const sRes = await fetch(`/api/sessions?semester=${semester}`);
     const sessions = await sRes.json() as Array<{ id: string; note?: string|null }>;
     const found = sessions.find(s => s.id === sessionId);
     setSessionNote(found?.note ?? "");
 
-    // focus first regular
     const first = data.rows.find(x => x.isRegular) ?? data.rows[0];
     if (first) setTimeout(() => inputRefs.current[first.participantId]?.focus(), 0);
   }
@@ -223,7 +202,6 @@ export function ChugListPage() {
     });
   }
 
-  // Spreadsheet navigation
   function focusByIndex(idx: number) {
     if (!data) return;
     const r = data.rows[idx];
@@ -235,8 +213,6 @@ export function ChugListPage() {
     if (!data || !editSessionId) return;
 
     const sid = editSessionId;
-
-    // 1) Save dirty cells (batch via multiple requests)
     const dirty = Array.from(dirtyCells);
 
     for (const k of dirty) {
@@ -263,7 +239,6 @@ export function ChugListPage() {
       });
     }
 
-    // 2) Save session note if changed
     if (dirtySessionNote) {
       await fetch(`/api/sessions/${sid}`, {
         method: "PATCH",
@@ -272,10 +247,8 @@ export function ChugListPage() {
       });
     }
 
-    // Refresh once
     await load();
 
-    // Clear dirty
     setDirtyCells(new Set());
     setDirtySessionNote(false);
   }
@@ -293,18 +266,16 @@ export function ChugListPage() {
       });
 
       if (!res.ok) {
-        const txt = await res.text(); // viser prisma/express-feil hvis du returnerer den
+        const txt = await res.text(); 
         alert(`Kunne ikke opprette ny dag (${res.status}).\n\n${txt}`);
         return;
       }
 
-      const created = await res.json(); // forventer id
+      const created = await res.json(); 
       setNewDayOpen(false);
 
-      // bytt semester så den nye dagen dukker opp
       setSemester(newDaySemester);
 
-      // reload og åpne editor på ny dag
       setTimeout(async () => {
         await load();
         if (created?.id) {
@@ -316,6 +287,34 @@ export function ChugListPage() {
 
     } catch (e) {
       alert(`Kunne ikke opprette ny dag (nettverksfeil).\n\n${String(e)}`);
+    }
+  }
+
+  // NY: Funksjon for å slette hele dagen
+  async function deleteSession(sessionId: string, dateISO: string) {
+    const confirmMessage = `Er du helt sikker på at du vil SLETTE hele listen for ${fmtDDMMYYYY(dateISO)}?\n\nAlle tider og anmerkninger for denne dagen vil bli slettet for alltid. Dette kan ikke angres!`;
+    
+    if (window.confirm(confirmMessage)) {
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}`, {
+          method: "DELETE"
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          alert(`Feil ved sletting: ${txt}`);
+          return;
+        }
+
+        // Lukk editoren og last inn data på nytt
+        setEditSessionId(null);
+        setDirtyCells(new Set());
+        setDirtySessionNote(false);
+        await load();
+
+      } catch (e) {
+        alert("Nettverksfeil ved sletting.");
+      }
     }
   }
 
@@ -337,7 +336,7 @@ export function ChugListPage() {
             </button>
           </div>
         <button className="btn" onClick={() => setNewDayOpen(true)}>+ Ny dag</button>
-          </div>
+        </div>
 
         <div style={{ flex: 1 }} />
 
@@ -349,7 +348,6 @@ export function ChugListPage() {
             <button
               className="btn"
               onClick={() => {
-                // discard drafts
                 setEditSessionId(null);
                 setDirtyCells(new Set());
                 setDirtySessionNote(false);
@@ -364,50 +362,58 @@ export function ChugListPage() {
       </div>
 
       {newDayOpen && (
-    <div className="modalOverlay">
-      <div className="card modalCard">
-        <h2>Legg til ny dag</h2>
+        <div className="modalOverlay">
+          <div className="card modalCard">
+            <h2>Legg til ny dag</h2>
 
-        <label>Dato (dd/mm/yyyy)</label>
-        <input
-          className="input"
-          type="text"
-          placeholder="dd/mm/yyyy"
-          value={textDate}
-          onChange={e => {
-            const val = e.target.value;
-            setTextDate(val); // Oppdater hva brukeren ser i feltet
-            
-            // Hvis brukeren har skrevet inn en full dato (f.eks 05/03/2026), 
-            // oversetter vi den tilbake til yyyy-mm-dd i bakgrunnen
-            if (val.length === 10 && val.includes("/")) {
-              const [d, m, y] = val.split("/");
-              if (d && m && y && y.length === 4) {
-                setNewDayDate(`${y}-${m}-${d}`);
-              }
-            }
-          }}
-        />
+            <label>Dato (dd/mm/yyyy)</label>
+            <input
+              className="input"
+              type="text"
+              placeholder="dd/mm/yyyy"
+              value={textDate}
+              onChange={e => {
+                const val = e.target.value;
+                setTextDate(val); 
+                
+                if (val.length === 10 && val.includes("/")) {
+                  const [d, m, y] = val.split("/");
+                  if (d && m && y && y.length === 4) {
+                    setNewDayDate(`${y}-${m}-${d}`);
+                  }
+                }
+              }}
+            />
 
-        <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>
-          Semester settes automatisk: <b style={{ color: "var(--text)" }}>{newDaySemester}</b>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>
+              Semester settes automatisk: <b style={{ color: "var(--text)" }}>{newDaySemester}</b>
+            </div>
+
+            <div style={{ height: 10 }} />
+
+            <div style={{ height: 14 }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button className="btn" onClick={() => setNewDayOpen(false)}>Avbryt</button>
+              <button className="btn" onClick={createNewDay}>Opprett</button>
+            </div>
+          </div>
         </div>
-
-        <div style={{ height: 10 }} />
-
-        <div style={{ height: 14 }} />
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button className="btn" onClick={() => setNewDayOpen(false)}>Avbryt</button>
-          <button className="btn" onClick={createNewDay}>Opprett</button>
-        </div>
-      </div>
-    </div>
-  )}
+      )}
 
       {/* Editor panel */}
       {editSession && data && (
         <div className="card" style={{ marginTop: 14 }}>
-          <h2 style={{ marginTop: 0 }}>Spreadsheet – {fmtDDMMYYYY(editSession.dateISO)}</h2>
+          {/* NYTT: Lagt til flex container her for å putte Slett-knappen på linje med tittelen */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h2 style={{ margin: 0 }}>Spreadsheet – {fmtDDMMYYYY(editSession.dateISO)}</h2>
+            <button 
+              className="btn" 
+              style={{ background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", borderColor: "rgba(239, 68, 68, 0.4)" }} 
+              onClick={() => deleteSession(editSession.sessionId, editSession.dateISO)}
+            >
+              Slett hele dagen
+            </button>
+          </div>
 
           <label>Dagsnotat</label>
           <input
@@ -449,7 +455,6 @@ export function ChugListPage() {
                       return;
                     }
 
-                    // spreadsheet nav
                     if (e.key === "Enter") {
                       e.preventDefault();
                       if (e.shiftKey) focusByIndex(idx - 1);

@@ -134,7 +134,6 @@ export function PersonPage() {
     if (pts.length >= 2) {
       changeSinceStart = pts[0].seconds - pts[pts.length - 1].seconds; 
       
-      // Beregn formel for trendlinjen (samme matte som i grafen) for å finne prosjisert neste tid
       const n = pts.length;
       const sumX = pts.map((_, i) => i).reduce((a, b) => a + b, 0);
       const sumY = pts.reduce((a, pt) => a + pt.seconds, 0);
@@ -144,8 +143,7 @@ export function PersonPage() {
       const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
       const b = (sumY - m * sumX) / n;
       
-      // x = n er indeks for *neste* forsøk
-      projectedNext = Math.max(0, m * n + b); // Hindrer negative tider
+      projectedNext = Math.max(0, m * n + b); 
     }
 
     const last3 = pts.slice(-3);
@@ -170,7 +168,6 @@ export function PersonPage() {
       else if (diff > 0) headToHeadBest = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
     }
 
-    // Regn ut hvem som er mest stabil (lavest gap mellom beste og dårligste tid)
     if (data.points.length >= 2 && compareData.points.length >= 2) {
       const getGap = (pts: Point[]) => Math.max(...pts.map(p => p.seconds)) - Math.min(...pts.map(p => p.seconds));
       const myGap = getGap(data.points);
@@ -184,10 +181,10 @@ export function PersonPage() {
 
   return (
     <div>
-      <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
+      <div className="row" style={{ marginTop: 14, flexWrap: "wrap", alignItems: "stretch" }}>
         
         {/* PROFILKORT */}
-        <div className="col card" style={{ flex: "1 1 250px", maxWidth: "100%", alignSelf: "stretch", display: "flex", flexDirection: "column" }}>
+        <div className="col card" style={{ flex: "1 1 250px", maxWidth: "100%", display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
             <h1 style={{ margin: 0 }}>{p.name}</h1>
             <span className="badge">{p.isRegular ? "fast" : "gjest"}</span>
@@ -199,9 +196,11 @@ export function PersonPage() {
               overflow: "hidden",
               border: "1px solid rgba(255,255,255,0.12)",
               background: "rgba(255,255,255,0.05)",
-              aspectRatio: "4 / 5", // Endret til 4:5 format
-              maxWidth: 220, // Tvinger bildet til å ikke bli for stort
-              margin: "0 auto", // Sentrerer bildet
+              aspectRatio: "4 / 5",
+              maxWidth: 200, // Redusert max-width
+              flex: "0 1 auto",
+              maxHeight: 260, // Redusert max-høyde
+              margin: "0 auto", 
               display: "grid",
               placeItems: "center",
               marginBottom: 14,
@@ -219,32 +218,33 @@ export function PersonPage() {
             )}
           </div>
 
-          <div style={{ flex: 1 }}></div>
+          <div className="hr" style={{ marginTop: 8, marginBottom: 12 }} />
 
-          <div className="hr" />
-
-          <h2 style={{ marginTop: 0 }}>Statistikk</h2>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: "var(--muted)" }}>Antall forsøk:</span> 
-            <b>{data.stats.attempts}</b>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: "var(--muted)" }}>Beste tid:</span> 
-            <b>{data.stats.best == null ? "-" : `${data.stats.best.toFixed(2)}s`}</b>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: "var(--muted)" }}>Gjennomsnitt:</span> 
-            <b>{data.stats.avg == null ? "-" : `${data.stats.avg.toFixed(2)}s`}</b>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: "var(--muted)" }}>Beste (uten anmerkning):</span> 
-            <b style={{ color: "var(--text)" }}>{bestClean == null ? "-" : `${bestClean.toFixed(2)}s`}</b>
+          {/* Statistikk-området dyttes ned slik at det flusher med bunnen av høyre kort */}
+          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+            <h2 style={{ margin: 0 }}>Statistikk</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
+              <span style={{ color: "var(--muted)" }}>Antall forsøk:</span> 
+              <b>{data.stats.attempts}</b>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
+              <span style={{ color: "var(--muted)" }}>Beste tid:</span> 
+              <b>{data.stats.best == null ? "-" : `${data.stats.best.toFixed(2)}s`}</b>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
+              <span style={{ color: "var(--muted)" }}>Gjennomsnitt:</span> 
+              <b>{data.stats.avg == null ? "-" : `${data.stats.avg.toFixed(2)}s`}</b>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
+              <span style={{ color: "var(--muted)" }}>Beste (uten anm):</span> 
+              <b style={{ color: "var(--accent)" }}>{bestClean == null ? "-" : `${bestClean.toFixed(2)}s`}</b>
+            </div>
           </div>
         </div>
 
         {/* GRAF OG INNSIKT */}
         <div className="col card" style={{ flex: "2 1 500px", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
             <h2 style={{ margin: 0 }}>Utvikling</h2>
             
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -252,7 +252,7 @@ export function PersonPage() {
                 className="input" 
                 style={{ 
                   width: "auto", 
-                  padding: "8px 12px", 
+                  padding: "6px 10px", 
                   background: "rgba(0,0,0,0.25)", 
                   color: "var(--text)", 
                   cursor: "pointer",
@@ -275,7 +275,7 @@ export function PersonPage() {
             </div>
           </div>
 
-          <div style={{ width: "100%", height: 320 }}>
+          <div style={{ width: "100%", height: 240, minHeight: 240, flex: 1 }}>
             <ResponsiveContainer>
               <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -325,16 +325,15 @@ export function PersonPage() {
             </ResponsiveContainer>
           </div>
 
-          <div style={{ flex: 1 }}></div>
-
-          {/* INNSIKT-BOKSEN (Oppdatert med Grid for bedre plassutnyttelse) */}
-          <div className="hr" style={{ marginTop: 16, marginBottom: 16 }} />
+          {/* INNSIKT-BOKSEN */}
+          <div className="hr" style={{ marginTop: 12, marginBottom: 12 }} />
           <div style={{ 
             display: "grid", 
             gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", 
             gap: 16, 
             textAlign: "center", 
-            paddingBottom: 8 
+            paddingBottom: 4,
+            marginTop: "auto"
           }}>
             
             {!compareData ? (

@@ -34,6 +34,9 @@ export function WheelCanvas({ names, angle, size = 360, winnerName }: Props) {
     const ctx = c.getContext("2d");
     if (!ctx) return;
 
+    // Skaleringsfaktor basert på standardstørrelse 360px
+    const scale = size / 360;
+
     const dpr = window.devicePixelRatio || 1;
     c.width = size * dpr;
     c.height = size * dpr;
@@ -48,7 +51,7 @@ export function WheelCanvas({ names, angle, size = 360, winnerName }: Props) {
 
     // Outer circle
     ctx.beginPath();
-    ctx.arc(cx, cy, r - 2, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r - (2 * scale), 0, Math.PI * 2);
     ctx.fillStyle = "rgba(0,0,0,0.25)";
     ctx.fill();
 
@@ -61,23 +64,23 @@ export function WheelCanvas({ names, angle, size = 360, winnerName }: Props) {
     for (const seg of segments) {
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.arc(cx, cy, r - 6, seg.a0, seg.a1);
+      ctx.arc(cx, cy, r - (6 * scale), seg.a0, seg.a1);
       ctx.closePath();
       ctx.fillStyle = seg.fill;
       ctx.fill();
 
       ctx.strokeStyle = "rgba(255,255,255,0.10)";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * scale; // Tykkere linjer når hjulet er stort
       ctx.stroke();
 
       // label
       const mid = (seg.a0 + seg.a1) / 2;
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.rotate(mid);                 // roter til segmentretning
-      ctx.translate(r * 0.62, 0);      // start nærmere utsiden
+      ctx.rotate(mid);                 
+      ctx.translate(r * 0.62, 0);      
       ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.font = "600 14px system-ui";
+      ctx.font = `600 ${14 * scale}px system-ui`; // Fontstørrelse skalerer
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
       ctx.fillText(seg.name, 0, 0);
@@ -90,24 +93,26 @@ export function WheelCanvas({ names, angle, size = 360, winnerName }: Props) {
     ctx.fillStyle = "rgba(255,255,255,0.10)";
     ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,0.22)";
+    ctx.lineWidth = 2 * scale;
     ctx.stroke();
 
     ctx.restore();
 
     // pointer at right
     ctx.beginPath();
-    ctx.moveTo(size - 36, cy);
-    ctx.lineTo(size -8, cy - 14);
-    ctx.lineTo(size - 8, cy + 14);
+    ctx.moveTo(size - (36 * scale), cy);
+    ctx.lineTo(size - (8 * scale), cy - (14 * scale));
+    ctx.lineTo(size - (8 * scale), cy + (14 * scale));
     ctx.closePath();
     ctx.fillStyle = "rgba(233,237,255,0.95)";
     ctx.fill();
     ctx.strokeStyle = "rgba(0,0,0,0.35)";
+    ctx.lineWidth = 1 * scale;
     ctx.stroke();
 
     if (winnerName) {
       ctx.fillStyle = "rgba(233,237,255,0.92)";
-      ctx.font = "700 14px system-ui";
+      ctx.font = `700 ${14 * scale}px system-ui`;
       ctx.textAlign = "center";
     }
   }, [segments, angle, size, winnerName]);

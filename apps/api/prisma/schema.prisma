@@ -38,7 +38,8 @@ model Attempt {
   note          String?
 
   participant Participant @relation(fields: [participantId], references: [id])
-  session     Session     @relation(fields: [sessionId], references: [id])
+  // ENDRING HER: La til onDelete: Cascade
+  session     Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([participantId, sessionId])
 }
@@ -61,7 +62,8 @@ model Violation {
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id])
-  session     Session     @relation(fields: [sessionId], references: [id])
+  // ENDRING HER: La til onDelete: Cascade
+  session     Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([participantId, sessionId])
 }

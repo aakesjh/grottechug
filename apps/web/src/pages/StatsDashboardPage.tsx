@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, Tooltip, CartesianGrid, ScatterChart, Scatter, Cell
+  XAxis, YAxis, Tooltip, CartesianGrid, ScatterChart, Scatter, Cell, Legend
 } from "recharts";
 
 type Semester = "all" | "2026V" | "2025H";
@@ -50,7 +50,6 @@ function fmtDate(isoOrDate: string) {
 }
 
 // --- FARGE-GENERATOR FOR NAVN ---
-// Gir hver person en fast farge basert på navnet deres
 const AVATAR_COLORS = [
   "#ef4444", "#f97316", "#f59e0b", "#84cc16", "#10b981",
   "#06b6d4", "#3b82f6", "#6366f1", "#a855f7", "#ec4899"
@@ -69,6 +68,9 @@ export function StatsDashboardPage() {
   const [data, setData] = useState<AnalyticsResp | null>(null);
   const [tableData, setTableData] = useState<TableResponse | null>(null);
 
+  // NY: State for å vise/skjule gjester med >= 4 chugs i scatterplottet
+  const [showScatterGuests, setShowScatterGuests] = useState(false);
+
   useEffect(() => {
     (async () => {
       const [resA, resT] = await Promise.all([
@@ -80,7 +82,6 @@ export function StatsDashboardPage() {
     })();
   }, [semester]);
 
-  // --- FRONTEND-BEREGNINGER BASERT PÅ TABELL-DATA ---
   const participantStats: ParticipantStat[] = useMemo(() => {
     if (!tableData) return [];
     
@@ -106,14 +107,50 @@ export function StatsDashboardPage() {
     });
   }, [tableData]);
 
-  // Formater timeSeries
-  const timeSeriesData = data?.timeSeries.map(x => ({
-    ...x,
-    dateFormatted: fmtDate(x.dateISO),
-    wetPct: x.wetRate * 100
-  })) || [];
+  // --- FLETT SAMMEN API-DATA OG RASKEST/TREGEST FRA TABELL ---
+  const timeSeriesData = useMemo(() => {
+    const base = data?.timeSeries.map(x => ({
+      ...x,
+      dateFormatted: fmtDate(x.dateISO),
+      wetPct: x.wetRate * 100 // Denne er riktig fra API-et!
+    })) || [];
 
-  // --- Håndter case-insensitive anmerkninger ---
+    if (!tableData) return base;
+
+    return base.map(day => {
+      const col = tableData.columns.find(c => c.dateISO === day.dateISO);
+      
+      let fastestTime = Infinity;
+      let fastestPerson = "";
+      let slowestTime = -Infinity;
+      let slowestPerson = "";
+
+      if (col) {
+        tableData.rows.forEach(r => {
+          const cell = tableData.cells[r.participantId]?.[col.sessionId];
+          if (cell && cell.seconds != null) {
+            if (cell.seconds < fastestTime) {
+              fastestTime = cell.seconds;
+              fastestPerson = r.name;
+            }
+            if (cell.seconds > slowestTime) {
+              slowestTime = cell.seconds;
+              slowestPerson = r.name;
+            }
+          }
+        });
+      }
+
+      return {
+        ...day,
+        fastestTime: fastestTime !== Infinity ? fastestTime : null,
+        fastestPerson,
+        slowestTime: slowestTime !== -Infinity ? slowestTime : null,
+        slowestPerson
+      };
+    });
+  }, [data, tableData]);
+
   const normNotes: Record<string, number> = {};
   if (data?.noteBreakdown) {
     Object.entries(data.noteBreakdown).forEach(([k, v]) => {
@@ -124,7 +161,6 @@ export function StatsDashboardPage() {
     });
   }
 
-  // Definer farger og hent verdier med nye navn
   const noteBars = [
     { type: "mm", label: "Mildly Moist (mm)", count: normNotes["mm"] || 0, color: "#10b981" },
     { type: "p-chug", label: "P-Chug", count: normNotes["p-chug"] || 0, color: "#f59e0b" },
@@ -135,38 +171,46 @@ export function StatsDashboardPage() {
     { type: "p", label: "Pause (p)", count: normNotes["p"] || 0, color: "#ef4444" }
   ].filter(n => n.count > 0);
 
-  // --- Kalkuleringer for dashbord-bokser ---
+  // --- NY, KORREKT UTTREGNING FOR TOTAL WET-RATE ---
   const overallWetRate = useMemo(() => {
     if (!data?.timeSeries?.length) return 0;
-    const totalAttempts = data.timeSeries.reduce((s, d) => s + (d.attempts || 0), 0);
-    const wetAttempts = data.timeSeries.reduce((s, d) => s + (d.wetRate || 0) * (d.attempts || 0), 0);
-    return totalAttempts ? (wetAttempts / totalAttempts) * 100 : 0;
+    
+    let totalWets = 0;
+    let totalAtt = 0;
+
+    data.timeSeries.forEach(day => {
+      if (day.attempts > 0) {
+        totalAtt += day.attempts;
+        totalWets += (day.wetRate * day.attempts);
+      }
+    });
+
+    return totalAtt > 0 ? (totalWets / totalAtt) * 100 : 0;
   }, [data]);
+
   const chugsPerSession = data?.overview.sessions ? (data.overview.attempts / data.overview.sessions) : 0;
 
-  // Analyser personstatistikk for beste/dårligste snitt
   const validParticipants = participantStats.filter(p => p.attempts > 0 && p.avg !== null);
   const hasParticipantStats = validParticipants.length > 0;
   
   const qualifiedForAwards = validParticipants.filter(p => p.attempts >= 3);
   
-  // Finner dårligste (tregest)
   const slowestPerson = qualifiedForAwards.length > 0 
     ? qualifiedForAwards.reduce((prev, current) => ((current.avg || 0) > (prev.avg || 0) ? current : prev))
     : null;
 
-  // Finner raskeste i snitt
   const fastestPerson = qualifiedForAwards.length > 0
     ? qualifiedForAwards.reduce((prev, current) => ((current.avg || Infinity) < (prev.avg || Infinity) ? current : prev))
     : null;
 
-  // ScatterData: Kun faste deltakere!
+  // --- OPPDATERT SCATTERDATA MED FILTRERING FOR GJESTER ---
   const scatterData = validParticipants
-    .filter(p => p.isRegular)
+    .filter(p => p.isRegular || (showScatterGuests && !p.isRegular && p.attempts >= 3))
     .map(p => ({
       name: p.name,
       attempts: p.attempts,
-      avg: Number(p.avg?.toFixed(2))
+      avg: Number(p.avg?.toFixed(2)),
+      isRegular: p.isRegular // Sender med isRegular slik at tooltip kan vite det
     }));
 
   const noteRateData = validParticipants
@@ -178,10 +222,88 @@ export function StatsDashboardPage() {
     .sort((a, b) => b.notePct - a.notePct)
     .slice(0, 5);
 
+  // --- CUSTOM TOOLTIP FOR GRAFEN ØVERST ---
+  const CustomTimeSeriesTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white", minWidth: 200 }}>
+          <strong style={{ display: "block", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.1)", fontSize: "1.1rem" }}>
+            {label}
+          </strong>
+          
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+            <span style={{ color: "var(--muted)" }}>Gjennomsnitt:</span>
+            <strong style={{ color: "var(--accent)" }}>{data.avg?.toFixed(2)}s</strong>
+          </div>
+
+          {data.fastestPerson && (
+             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, gap: 16 }}>
+               <span style={{ color: "var(--muted)" }}>Raskest:</span>
+               <span style={{ textAlign: "right" }}>
+                 <strong style={{ color: getColor(data.fastestPerson) }}>{data.fastestPerson}</strong> ({data.fastestTime?.toFixed(2)}s)
+               </span>
+             </div>
+          )}
+
+          {data.slowestPerson && (
+             <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
+               <span style={{ color: "var(--muted)" }}>Tregest:</span>
+               <span style={{ textAlign: "right" }}>
+                 <strong style={{ color: getColor(data.slowestPerson) }}>{data.slowestPerson}</strong> ({data.slowestTime?.toFixed(2)}s)
+               </span>
+             </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // --- CUSTOM TOOLTIP FOR ACTIVITY CHART ---
+  const CustomActivityTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
+          <div style={{ marginBottom: 6, color: "var(--muted)" }}>Dato: {label}</div>
+          <div style={{ color: "#ffffff", fontWeight: 600 }}>Antall chugs: {payload[0].value}</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // --- CUSTOM TOOLTIP FOR NOTE TYPES CHART ---
+  const CustomNoteTypesTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      const fullLabel = noteBars.find((n: any) => n.type === label)?.label;
+      return (
+        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
+          <div style={{ marginBottom: 6, color: "var(--muted)" }}>{fullLabel || label}</div>
+          <div style={{ color: "#ffffff", fontWeight: 600 }}>Antall: {payload[0].value}</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // --- CUSTOM TOOLTIP FOR PUNISHMENT RATE CHART ---
+  const CustomPunishmentTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
+          <div style={{ marginBottom: 6, color: "var(--muted)" }}>{label}</div>
+          <div style={{ color: "#ffffff", fontWeight: 600 }}>Straffeprosent: {payload[0].value.toFixed(1)}%</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div>
       <h1>Dashbord & Statistikk</h1>
-      <p>Dypdykk i tallene bak prestasjonene.</p>
+      <p>Diverse nyttige og unyttige statistikker.</p>
 
       <div className="tabs" style={{ marginTop: 10, marginBottom: 20 }}>
         <button className={`tab ${semester === "2025H" ? "tabActive" : ""}`} onClick={() => setSemester("2025H")}>2025 Høst</button>
@@ -245,19 +367,25 @@ export function StatsDashboardPage() {
           {/* RAD 1: Tid og Aktivitet */}
           <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
             <div className="col card" style={{ flex: "1 1 400px" }}>
-              <h2>Gjennomsnittstid per dag</h2>
+              <h2>Raskest/snitt/treigest per dag</h2>
               <div style={{ width: "100%", height: 300 }}>
                 <ResponsiveContainer>
                   <LineChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                     <XAxis dataKey="dateFormatted" stroke="var(--muted)" />
                     <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}s`} domain={['auto', 'auto']} />
-                    <Tooltip 
-                      labelFormatter={(label) => `Dato: ${label}`}
-                      formatter={(v: number) => [`${v.toFixed(2)}s`, "Snitt-tid"]}
-                      contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
-                    />
-                    <Line type="monotone" dataKey="avg" stroke="var(--accent)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
+                    
+                    <Tooltip content={<CustomTimeSeriesTooltip />} />
+                    <Legend verticalAlign="top" height={36} />
+
+                    {/* Raskeste tid (Grønn) */}
+                    <Line type="monotone" dataKey="fastestTime" name="Raskeste tid" stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: "#10b981" }} activeDot={{ r: 5 }} connectNulls />
+                    
+                    {/* Snitt-tid (Hovedfarge) */}
+                    <Line type="monotone" dataKey="avg" name="Snitt-tid" stroke="var(--accent)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} connectNulls />
+
+                    {/* Tregeste tid (Rød) */}
+                    <Line type="monotone" dataKey="slowestTime" name="Tregeste tid" stroke="#ef4444" strokeWidth={2} dot={{ r: 3, fill: "#ef4444" }} activeDot={{ r: 5 }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -265,7 +393,23 @@ export function StatsDashboardPage() {
 
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Kvantitet vs Kvalitet</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Kun faste. Nederst til høyre = Mange forsøk og veldig rask.</div>
+              
+              {/* NYTT: Layout med flexbox for å plassere tekst til venstre og toggle til høyre */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
+                <div style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+                  Nederst til høyre = Mange forsøk og rask.
+                </div>
+                
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: "var(--text)", fontSize: "0.85rem" }}>
+                  <input
+                    type="checkbox"
+                    checked={showScatterGuests}
+                    onChange={e => setShowScatterGuests(e.target.checked)}
+                  />
+                  Gjester (≥ 3 chugs)
+                </label>
+              </div>
+
               <div style={{ width: "100%", height: 280 }}>
                 {hasParticipantStats ? (
                   <ResponsiveContainer>
@@ -280,7 +424,9 @@ export function StatsDashboardPage() {
                             const p = payload[0].payload;
                             return (
                               <div style={{ background: "rgba(18,26,51,0.95)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
-                                <strong style={{ display: "block", marginBottom: 4, color: getColor(p.name) }}>{p.name}</strong>
+                                <strong style={{ display: "block", marginBottom: 4, color: getColor(p.name) }}>
+                                  {p.name} {!p.isRegular && <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(gjest)</span>}
+                                </strong>
                                 <div>Antall chugs: {p.attempts}</div>
                                 <div>Snitt-tid: {p.avg}s</div>
                               </div>
@@ -289,7 +435,6 @@ export function StatsDashboardPage() {
                           return null;
                         }}
                       />
-                      {/* Endring: Scatter har nå Cell-komponenter for individuelle farger */}
                       <Scatter data={scatterData}>
                         {scatterData.map((entry, index) => (
                           <Cell key={`scatter-${index}`} fill={getColor(entry.name)} />
@@ -335,15 +480,7 @@ export function StatsDashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                     <XAxis dataKey="type" stroke="var(--muted)" />
                     <YAxis stroke="var(--muted)" allowDecimals={false} />
-                    <Tooltip 
-                      labelFormatter={(label) => {
-                        const fullLabel = noteBars.find(n => n.type === label)?.label;
-                        return fullLabel || label;
-                      }}
-                      formatter={(v: number) => [v, "Antall"]}
-                      contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
-                      cursor={{ fill: "rgba(255,255,255,0.05)" }}
-                    />
+                    <Tooltip content={<CustomNoteTypesTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                       {noteBars.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -367,12 +504,7 @@ export function StatsDashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                       <XAxis dataKey="name" stroke="var(--muted)" />
                       <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}%`} />
-                      <Tooltip 
-                        formatter={(v: number) => [`${v.toFixed(1)}%`, "Straffeprosent"]}
-                        contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
-                        cursor={{ fill: "rgba(255,255,255,0.05)" }}
-                      />
-                      {/* Endring: Bar har nå Cell-komponenter for individuelle farger */}
+                      <Tooltip content={<CustomPunishmentTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                       <Bar dataKey="notePct" radius={[4, 4, 0, 0]}>
                         {noteRateData.map((entry, index) => (
                           <Cell key={`bar-${index}`} fill={getColor(entry.name)} />
@@ -395,12 +527,7 @@ export function StatsDashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                     <XAxis dataKey="dateFormatted" stroke="var(--muted)" />
                     <YAxis stroke="var(--muted)" allowDecimals={false} />
-                    <Tooltip 
-                      labelFormatter={(label) => `Dato: ${label}`}
-                      formatter={(v: number) => [v, "Antall chugs"]}
-                      contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
-                      cursor={{ fill: "rgba(255,255,255,0.05)" }}
-                    />
+                    <Tooltip content={<CustomActivityTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                     <Bar dataKey="attempts" fill="var(--accent)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

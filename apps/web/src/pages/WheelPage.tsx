@@ -2,8 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import confetti from "canvas-confetti";
 import { WheelCanvas } from "../components/WheelCanvas";
 
-// La til imageUrl i typen!
 type Participant = { id: string; name: string; isRegular: boolean; imageUrl?: string | null };
+
+// Typer for å hente ut stats fra API-et
+type Point = { dateISO: string; seconds: number; note: string | null };
+type WinnerStats = {
+  isVirgin: boolean;
+  lastTime: number | null;
+  avgTime: number | null;
+  projectedNext: number | null;
+};
 
 // Hjelpefunksjon for å hente initialer hvis bilde mangler
 function getInitials(name: string) {
@@ -14,35 +22,40 @@ function getInitials(name: string) {
 }
 
 export function WheelPage() {
-  // Faste (alltid i lista)
   const [regulars, setRegulars] = useState<Participant[]>([]);
-  // Gjester som er lagt til "i dag" (vises nederst i lista)
   const [selectedGuests, setSelectedGuests] = useState<Participant[]>([]);
-
   const [present, setPresent] = useState<Record<string, boolean>>({});
 
   const [angle, setAngle] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<string>("");
   const [winnerImage, setWinnerImage] = useState<string | null>(null);
+  const [winnerStats, setWinnerStats] = useState<WinnerStats | null>(null);
 
-  // --- Add guest UI
   const [guestTabOpen, setGuestTabOpen] = useState(true);
   const [guestQuery, setGuestQuery] = useState("");
   const [guestSuggestions, setGuestSuggestions] = useState<Participant[]>([]);
   const [guestLoading, setGuestLoading] = useState(false);
 
-  // --- States for å fryse hjulet ---
   const [freezeWheel, setFreezeWheel] = useState(false);
   const [wheelNames, setWheelNames] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Hent KUN faste
+  const [windowSize, setWindowSize] = useState({ w: 1000, h: 800 });
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+      const handleResize = () => setWindowSize({ w: window.innerWidth, h: window.innerHeight });
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
   async function loadRegulars() {
     const res = await fetch(`/api/participants?includeGuests=false`);
     const data: Participant[] = await res.json();
     setRegulars(data);
 
-    // Init presence: faste = true, men ikke overskriv gjester som allerede er valgt
     setPresent(prev => {
       const next = { ...prev };
       data.forEach(p => {
@@ -57,7 +70,6 @@ export function WheelPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Autocomplete søk mot DB
   useEffect(() => {
     const q = guestQuery.trim();
     if (!q) {
@@ -72,10 +84,7 @@ export function WheelPage() {
       try {
         const res = await fetch(`/api/participants/search?query=${encodeURIComponent(q)}`);
         const data: Participant[] = await res.json();
-
         if (!alive) return;
-
-        // Vi viser forslag, men vi vil ikke liste opp alle gjester i UI ellers.
         setGuestSuggestions(data.slice(0, 8));
       } finally {
         if (!alive) return;
@@ -89,7 +98,6 @@ export function WheelPage() {
     };
   }, [guestQuery]);
 
-  // Kandidater = faste + selectedGuests som er huket av
   const visiblePeople = useMemo(() => [...regulars, ...selectedGuests], [regulars, selectedGuests]);
 
   const candidateList = useMemo(() => {
@@ -99,21 +107,18 @@ export function WheelPage() {
   const candidateNames = useMemo(() => candidateList.map(p => p.name), [candidateList]);
   const candidateIds = useMemo(() => candidateList.map(p => p.id), [candidateList]);
 
-  // Oppdater hjulnavnene kun når hjulet IKKE er frosset
   useEffect(() => {
     if (!freezeWheel) {
       setWheelNames(candidateNames);
     }
   }, [candidateNames, freezeWheel]);
 
-  // Enkel av/på for tilstedeværelse
   function togglePresent(p: Participant, checked: boolean) {
-    setFreezeWheel(false); // Tin opp hjulet ved manuell interaksjon
+    setFreezeWheel(false);
     setPresent(prev => ({ ...prev, [p.id]: checked }));
   }
 
   function fireConfetti() {
-    // to "cannons" fra sidene
     const duration = 900;
     const end = Date.now() + duration;
 
@@ -123,21 +128,19 @@ export function WheelPage() {
         startVelocity: 42,
         spread: 62,
         ticks: 200,
-        origin: { x: originX, y: 0.55 }
+        origin: { x: originX, y: 0.55 },
+        zIndex: 10000 
       });
     };
 
-    // burst nå
     shoot(0.05);
     shoot(0.95);
 
-    // liten ekstra burst etter 250ms
     setTimeout(() => {
       shoot(0.08);
       shoot(0.92);
     }, 250);
 
-    // micro-bursts i en kort periode for litt “cascade”
     (function frame() {
       if (Date.now() > end) return;
       confetti({
@@ -145,7 +148,8 @@ export function WheelPage() {
         startVelocity: 20,
         spread: 80,
         ticks: 120,
-        origin: { x: Math.random() < 0.5 ? 0.1 : 0.9, y: 0.55 }
+        origin: { x: Math.random() < 0.5 ? 0.1 : 0.9, y: 0.55 },
+        zIndex: 10000
       });
       requestAnimationFrame(frame);
     })();
@@ -153,22 +157,16 @@ export function WheelPage() {
 
   async function spin() {
     if (spinning) return;
-
-    // Fjern gammel vinner og bilde umiddelbart
     setWinner("");
     setWinnerImage(null);
-
-    // Hvis ingen er valgt, stopper vi her (da fungerer klikket kun som en "lukk bilde"-knapp)
+    setWinnerStats(null);
     if (!candidateIds.length) return;
 
-    // 1. Lås navnene i en lokal variabel FØR vi spinner.
     const currentNames = [...candidateNames];
     setWheelNames(currentNames);
     setFreezeWheel(true);
-    
     setSpinning(true);
 
-    // 2. Hent vinner fra API
     const res = await fetch(`/api/wheel/spin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -185,11 +183,43 @@ export function WheelPage() {
       return;
     }
 
-    // Hent ut bildet til vinneren mens vi først vet hvem det er
     const winnerObj = candidateList.find(p => p.id === winnerId);
     const wImage = winnerObj?.imageUrl || null;
 
-    // 3. Finn indeksen i den FROSNE listen
+    // --- HENT STATISTIKK FOR VINNEREN MENS HJULET SPINNER ---
+    fetch(`/api/person/${winnerId}?semester=all`)
+      .then(r => r.json())
+      .then(data => {
+        const points: Point[] = data?.points || [];
+        // Sorter i tilfelle de ikke kommer i rekkefølge
+        points.sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime());
+
+        if (points.length === 0) {
+          setWinnerStats({ isVirgin: true, lastTime: null, avgTime: null, projectedNext: null });
+        } else {
+          const lastTime = points[points.length - 1].seconds;
+          const avgTime = data?.stats?.avg || null;
+          let projectedNext = null;
+
+          // Regn ut projisert tid (samme lineære regresjon som på profil-siden)
+          if (points.length >= 2) {
+            const n = points.length;
+            const sumX = points.map((_, i) => i).reduce((a, b) => a + b, 0);
+            const sumY = points.reduce((a, pt) => a + pt.seconds, 0);
+            const sumXY = points.map((pt, i) => i * pt.seconds).reduce((a, b) => a + b, 0);
+            const sumXX = points.map((_, i) => i * i).reduce((a, b) => a + b, 0);
+            const denom = n * sumXX - sumX * sumX;
+            const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
+            const b = (sumY - m * sumX) / n;
+            
+            projectedNext = Math.max(0, m * n + b);
+          }
+
+          setWinnerStats({ isVirgin: false, lastTime, avgTime, projectedNext });
+        }
+      })
+      .catch(e => console.error("Klarte ikke hente vinnerstats", e));
+
     const idx = currentNames.findIndex(name => name === winnerName);
     if (idx === -1) {
       setSpinning(false);
@@ -197,40 +227,31 @@ export function WheelPage() {
       return;
     }
 
-    // 4. Matte for vinkelen
     const n = currentNames.length;
     const step = (Math.PI * 2) / n;
-
-    // Finn lokal vinkel for midten av vinnerens kakestykke.
     const randomOffset = (Math.random() - 0.5) * (step * 0.7); 
     const targetLocalAngle = (idx * step) + (step / 2) + randomOffset;
-
-    // Utregning som treffer nøyaktig når pekeren står kl. 3 (0 radianer)
     const baseAngle = (Math.PI * 2) - targetLocalAngle;
 
-    // 5. Finn ut hvor mye hjulet skal snurre
     let nextAngle = baseAngle + Math.floor(angle / (Math.PI * 2)) * Math.PI * 2;
     if (nextAngle < angle) {
       nextAngle += Math.PI * 2;
     }
 
-    // Legg til *nøyaktig* antall hele runder (8, 9 eller 10)
     const fullTurns = Math.floor(8 + Math.random() * 3);
     const extraSpins = fullTurns * Math.PI * 2;
     
     const endAngle = nextAngle + extraSpins;
     const startAngle = angle;
-
     const duration = 4600 + Math.random() * 800;
     const t0 = performance.now();
-
     const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
 
     function anim(now: number) {
       const t = Math.min(1, (now - t0) / duration);
       const eased = easeOutQuint(t);
-
       const wobble = t > 0.85 ? Math.sin((t - 0.85) * 45) * (1 - t) * 0.18 : 0;
+      
       setAngle(startAngle + (endAngle - startAngle) * eased + wobble);
 
       if (t < 1) {
@@ -240,9 +261,7 @@ export function WheelPage() {
 
       setAngle(endAngle % (Math.PI * 2)); 
       setWinner(winnerName);
-      setWinnerImage(wImage); // Sett bildet
-      
-      // Fjern vinneren fra neste spinn
+      setWinnerImage(wImage);
       setPresent(prev => ({ ...prev, [winnerId]: false }));
 
       fireConfetti();
@@ -253,12 +272,10 @@ export function WheelPage() {
   }
 
   async function addGuestByName(name: string) {
-    setFreezeWheel(false); // Tin opp hjulet
-
+    setFreezeWheel(false);
     const n = name.trim();
     if (!n) return;
 
-    // Opprett hvis ikke finnes (eller returner eksisterende)
     const res = await fetch("/api/participants/guest-upsert", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -267,7 +284,6 @@ export function WheelPage() {
 
     const p: Participant = await res.json();
 
-    // Hvis det var en fast (burde sjelden skje), bare huk den av
     if (p.isRegular) {
       setPresent(prev => ({ ...prev, [p.id]: true }));
       setGuestQuery("");
@@ -275,19 +291,14 @@ export function WheelPage() {
       return;
     }
 
-    // Legg til nederst hvis den ikke allerede er lagt til i dag
     setSelectedGuests(prev => (prev.some(x => x.id === p.id) ? prev : [...prev, p]));
-
-    // Huk den av (default)
     setPresent(prev => ({ ...prev, [p.id]: true }));
-
     setGuestQuery("");
     setGuestSuggestions([]);
   }
 
   function removeSelectedGuest(id: string) {
-    setFreezeWheel(false); // Tin opp hjulet
-
+    setFreezeWheel(false);
     setSelectedGuests(prev => prev.filter(x => x.id !== id));
     setPresent(prev => {
       const next = { ...prev };
@@ -296,13 +307,21 @@ export function WheelPage() {
     });
   }
 
+  const maxExpandedSize = Math.min(windowSize.w * 0.9, windowSize.h * 0.75, 850);
+  const wheelSize = isExpanded ? maxExpandedSize : 360;
+
+  const isClickable = !spinning && (candidateIds.length > 0 || winner);
+  const finalScale = isClickable ? 1.02 : 1; 
+
   return (
     <div>
-      <h1>Hjulet</h1>
-      <p>Listen viser kun faste. Gjester må søkes opp og legges til.</p>
+      <h1 style={{ display: isExpanded ? "none" : "block" }}>Hjulet</h1>
+      <p style={{ display: isExpanded ? "none" : "block" }}>Listen viser kun grottamedlemmer. Gjester må søkes opp og legges til.</p>
 
       <div className="row" style={{ marginTop: 14 }}>
-        <div className="col card" style={{ maxWidth: 460 }}>
+        
+        {/* Venstre kolonne skjules når hjulet er i fullskjerm */}
+        <div className="col card" style={{ maxWidth: 460, display: isExpanded ? "none" : "block" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
             <h2 style={{ margin: 0 }}>Deltakere</h2>
             <button className="btn" onClick={() => setGuestTabOpen(v => !v)}>
@@ -347,7 +366,7 @@ export function WheelPage() {
 
           <div className="hr" />
 
-          {/* Kun faste + gjester lagt til i dag */}
+          {/* Kun grottamedlemmer + gjester lagt til i dag */}
           <div style={{ display: "grid", gap: 8 }}>
             {regulars.map(p => (
               <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -391,17 +410,111 @@ export function WheelPage() {
           </div>
         </div>
 
-        <div className="col card">
-          <div style={{ display: "grid", placeItems: "center", gap: 14 }}>
+        {/* Høyre kolonne (Selve Hjulet) */}
+        <div 
+          className="col card"
+          style={{
+            position: isExpanded ? "fixed" : "relative",
+            inset: isExpanded ? 0 : "auto",
+            zIndex: isExpanded ? 9999 : 1,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            width: isExpanded ? "100vw" : "auto",
+            height: isExpanded ? "100vh" : "auto",
+            borderRadius: isExpanded ? 0 : undefined,
+            background: isExpanded ? "var(--bg, #111)" : "var(--card-bg)",
+            margin: 0
+          }}
+        >
+          {/* Fullscreen knapp */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); 
+              setIsExpanded(!isExpanded);
+            }}
+            title={isExpanded ? "Lukk fullskjerm" : "Fullskjerm"}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              padding: 8,
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 8,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              color: "var(--text)",
+              zIndex: 20,
+              transition: "background 0.2s"
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)"}
+            onMouseLeave={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"}
+          >
+            {isExpanded ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+              </svg>
+            )}
+          </button>
+
+          <div style={{ display: "grid", placeItems: "center", gap: isExpanded ? 24 : 14 }}>
             
-            {/* Vinner-banneret øverst */}
-            <div style={{ minHeight: 60, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+            {/* Vinner-banneret øverst + Statistikk */}
+            <div style={{ 
+              minHeight: isExpanded ? 110 : 80, // Økt høyde for å gi plass til stats
+              display: "flex", 
+              flexDirection: "column",
+              alignItems: "center", 
+              justifyContent: "center", 
+              textAlign: "center" 
+            }}>
               {winner && !spinning ? (
-                <div style={{ fontSize: "2.8rem", fontWeight: 900, color: "var(--accent)" }}>
-                  🎉 {winner} 🎉
-                </div>
+                <>
+                  <div style={{ 
+                    fontSize: isExpanded ? "3.5rem" : "2.4rem", 
+                    fontWeight: 900, 
+                    color: "var(--accent)", 
+                    textShadow: "0px 4px 15px rgba(0,0,0,0.5)",
+                    lineHeight: 1.1
+                  }}>
+                    🎉 {winner} 🎉
+                  </div>
+                  
+                  {/* Vis statistikk-pillen når API-et har svart */}
+                  {winnerStats && (
+                    <div style={{ 
+                      marginTop: 8, 
+                      fontSize: isExpanded ? "1.1rem" : "0.95rem", 
+                      color: "var(--text)", 
+                      fontWeight: 600, 
+                      background: "rgba(0,0,0,0.3)", 
+                      padding: "6px 16px", 
+                      borderRadius: 30,
+                      border: "1px solid rgba(255,255,255,0.08)"
+                    }}>
+                      {winnerStats.isVirgin ? (
+                        <span>Lykke til med jomfruchuggen! 🍻</span>
+                      ) : (
+                        <div style={{ display: "flex", gap: isExpanded ? 20 : 12, flexWrap: "wrap", justifyContent: "center" }}>
+                          <span>Forrige: <span style={{ color: "var(--accent)" }}>{winnerStats.lastTime?.toFixed(2)}s</span></span>
+                          <span>Snitt: <span style={{ color: "var(--accent)" }}>{winnerStats.avgTime?.toFixed(2)}s</span></span>
+                          {winnerStats.projectedNext != null && (
+                            <span>Projisert: <span style={{ color: "var(--accent2)" }}>{winnerStats.projectedNext.toFixed(2)}s</span></span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               ) : (
-                <div style={{ color: "var(--muted)", fontSize: "1.2rem", fontWeight: 600 }}>
+                <div style={{ color: "var(--muted)", fontSize: isExpanded ? "1.5rem" : "1.2rem", fontWeight: 600 }}>
                   {spinning 
                     ? "Spinner..." 
                     : candidateIds.length > 0 
@@ -414,16 +527,15 @@ export function WheelPage() {
             {/* Klikkbart hjul med overlay for bilde */}
             <div 
               onClick={() => {
-                // Vi snurrer på nytt (eller lukker bildet) hvis vi ikke allerede spinner
                 if (!spinning && (candidateIds.length > 0 || winner)) spin();
               }}
               style={{
                 cursor: spinning ? "default" : "pointer",
                 borderRadius: "50%",
                 transition: "transform 0.2s ease-in-out",
-                transform: (!spinning && (candidateIds.length > 0 || winner)) ? "scale(1.02)" : "scale(1)",
+                transform: `scale(${finalScale})`, 
                 position: "relative",
-                display: "inline-block" // Sørger for at wrapperen smyger seg rundt hjulet
+                display: "inline-block", 
               }}
               title={winner ? "Spinn på ny!" : "Spinn hjulet!"}
             >
@@ -432,13 +544,13 @@ export function WheelPage() {
               {winner && !spinning && (
                 <div style={{
                   position: "absolute",
-                  inset: 0, // Dekker 100% av mor-diven (altså oppå WheelCanvas)
+                  inset: 0,
                   borderRadius: "50%",
                   overflow: "hidden",
                   background: "var(--bg)", 
                   display: "grid",
                   placeItems: "center",
-                  boxShadow: "0 0 0 6px var(--accent)", // Fin accent-ramme rundt vinneren
+                  boxShadow: "0 0 0 6px var(--accent)", 
                   zIndex: 10
                 }}>
                   {winnerImage ? (
@@ -448,7 +560,7 @@ export function WheelPage() {
                       style={{ width: "100%", height: "100%", objectFit: "cover" }} 
                     />
                   ) : (
-                    <div style={{ fontSize: "6rem", fontWeight: 900, color: "var(--muted)" }}>
+                    <div style={{ fontSize: `${wheelSize * 0.25}px`, fontWeight: 900, color: "var(--muted)" }}>
                       {getInitials(winner)}
                     </div>
                   )}
@@ -456,7 +568,7 @@ export function WheelPage() {
               )}
 
               {/* Selve hjulet */}
-              <WheelCanvas names={wheelNames.length ? wheelNames : ["Ingen"]} angle={angle} winnerName={winner} />
+              <WheelCanvas size={wheelSize} names={wheelNames.length ? wheelNames : ["Ingen"]} angle={angle} winnerName={winner} />
             </div>
 
           </div>
