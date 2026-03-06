@@ -26,6 +26,8 @@ participantsRouter.get("/search", async (req, res) => {
 /**
  * GET /api/participants?includeGuests=true|false
  */
+// participantsRouter.ts
+
 participantsRouter.get("/", async (req, res) => {
   const includeGuests = req.query.includeGuests === "true";
   const where = includeGuests ? {} : { isRegular: true };
@@ -33,10 +35,28 @@ participantsRouter.get("/", async (req, res) => {
   const people = await prisma.participant.findMany({
     where,
     orderBy: [{ isRegular: "desc" }, { name: "asc" }],
-    select: { id: true, name: true, isRegular: true, imageUrl: true }
+    select: { 
+      id: true, 
+      name: true, 
+      isRegular: true, 
+      imageUrl: true,
+      // Legg til denne for å telle antall forsøk
+      _count: {
+        select: { attempts: true }
+      }
+    }
   });
 
-  res.json(people);
+  // Mapper om resultatet slik at frontend får "attempts" som et flatt felt
+  const formattedPeople = people.map(p => ({
+    id: p.id,
+    name: p.name,
+    isRegular: p.isRegular,
+    imageUrl: p.imageUrl,
+    attempts: p._count.attempts
+  }));
+
+  res.json(formattedPeople);
 });
 
 /**

@@ -31,16 +31,33 @@ export function PersonPage() {
   const [compareId, setCompareId] = useState<string>("");
   const [compareData, setCompareData] = useState<Resp | null>(null);
 
+  // 1. Hent alle deltakere for sammenligning
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`/api/leaderboard?semester=all`);
+        // Vi bruker nå /api/participants med includeGuests=true
+        const res = await fetch(`/api/participants?includeGuests=true`);
         const json = await res.json();
-        const list = json.rows
-          .filter((r: any) => String(r.participantId) !== String(id) && r.isRegular)
-          .map((r: any) => ({ id: String(r.participantId), name: r.name }));
         
-        const uniqueList = Array.from(new Map(list.map((item: any) => [item.id, item])).values());
+        // json vil nå se slik ut: [{ id: "...", name: "...", attempts: 5, isRegular: false }, ...]
+        console.log("Deltakere mottatt:", json);
+
+        const list = json
+          .filter((r: any) => {
+            // Ikke ta med seg selv
+            if (String(r.id) === String(id)) return false;
+            
+            // Inkluder hvis person er fast ELLER gjest med 4 eller flere forsøk
+            return r.isRegular || (r.attempts >= 4);
+          })
+          .map((r: any) => ({ 
+            id: String(r.id), 
+            name: r.isRegular ? r.name : `${r.name} (Gjest)` 
+          }));
+        
+        const uniqueList = Array.from(new Map(list.map((item: any) => [item.id, item])).values())
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
         setParticipants(uniqueList as {id: string, name: string}[]);
       } catch (e) {
         console.error("Kunne ikke hente deltakere", e);
@@ -48,6 +65,7 @@ export function PersonPage() {
     })();
   }, [id]);
 
+  // 2. Hent hovedpersonens data
   useEffect(() => {
     (async () => {
       const res = await fetch(`/api/person/${id}?semester=${semester}`);
@@ -56,6 +74,7 @@ export function PersonPage() {
     })();
   }, [id, semester]);
 
+  // 3. Hent sammenligningspersonens data
   useEffect(() => {
     if (!compareId) {
       setCompareData(null);
@@ -83,12 +102,10 @@ export function PersonPage() {
       const xs = pts.map(p => p.idx);
       const ys = pts.map(p => p.seconds);
       const n = xs.length;
-
       const sumX = xs.reduce((a, b) => a + b, 0);
       const sumY = ys.reduce((a, b) => a + b, 0);
       const sumXY = xs.reduce((a, x, i) => a + x * ys[i], 0);
       const sumXX = xs.reduce((a, x) => a + x * x, 0);
-
       const denom = n * sumXX - sumX * sumX;
       const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
       const b = (sumY - m * sumX) / n;
@@ -97,7 +114,6 @@ export function PersonPage() {
     }
 
     const dateMap = new Map<string, any>();
-
     const addData = (points: Point[], key: string) => {
       points.forEach(p => {
         const d = fmtDDMMYYYY(p.dateISO);
@@ -107,7 +123,6 @@ export function PersonPage() {
         dateMap.get(d)[key] = p.seconds;
       });
     };
-
     addData(data.points, "mainSeconds");
     addData(compareData.points, "compSeconds");
 
@@ -121,7 +136,7 @@ export function PersonPage() {
   const p = data.participant;
   const bestClean = data.stats.bestClean;
 
-  // --- Omfattende kalkuleringer for Innsikt-boksen ---
+  // Innsikt-kalkuleringer
   let changeSinceStart = null;
   let last3Avg = null;
   let projectedNext = null;
@@ -130,10 +145,8 @@ export function PersonPage() {
   if (data.points.length > 0) {
     const pts = data.points;
     totalTime = pts.reduce((sum, pt) => sum + pt.seconds, 0);
-
     if (pts.length >= 2) {
       changeSinceStart = pts[0].seconds - pts[pts.length - 1].seconds; 
-      
       const n = pts.length;
       const sumX = pts.map((_, i) => i).reduce((a, b) => a + b, 0);
       const sumY = pts.reduce((a, pt) => a + pt.seconds, 0);
@@ -142,15 +155,13 @@ export function PersonPage() {
       const denom = n * sumXX - sumX * sumX;
       const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
       const b = (sumY - m * sumX) / n;
-      
       projectedNext = Math.max(0, m * n + b); 
     }
-
     const last3 = pts.slice(-3);
     last3Avg = last3.reduce((sum, pt) => sum + pt.seconds, 0) / last3.length;
   }
 
-  // Head-to-head stats
+  // Head-to-head
   let headToHeadAvg = "Uavgjort / Mangler data";
   let headToHeadBest = "Uavgjort / Mangler data";
   let headToHeadConsistency = "Uavgjort / Mangler data";
@@ -161,18 +172,15 @@ export function PersonPage() {
       if (diff < 0) headToHeadAvg = `${p.name} (-${Math.abs(diff).toFixed(2)}s)`;
       else if (diff > 0) headToHeadAvg = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
     }
-
     if (data.stats.bestClean && compareData.stats.bestClean) {
       const diff = data.stats.bestClean - compareData.stats.bestClean;
       if (diff < 0) headToHeadBest = `${p.name} (-${Math.abs(diff).toFixed(2)}s)`;
       else if (diff > 0) headToHeadBest = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
     }
-
     if (data.points.length >= 2 && compareData.points.length >= 2) {
       const getGap = (pts: Point[]) => Math.max(...pts.map(p => p.seconds)) - Math.min(...pts.map(p => p.seconds));
       const myGap = getGap(data.points);
       const compGap = getGap(compareData.points);
-      
       if (myGap < compGap) headToHeadConsistency = p.name;
       else if (myGap > compGap) headToHeadConsistency = compareData.participant.name;
       else headToHeadConsistency = "Likt gap";
@@ -190,29 +198,23 @@ export function PersonPage() {
             <span className="badge">{p.isRegular ? "fast" : "gjest"}</span>
           </div>
           
-          <div
-            style={{
-              borderRadius: 18,
-              overflow: "hidden",
-              border: "1px solid rgba(255,255,255,0.12)",
-              background: "rgba(255,255,255,0.05)",
-              aspectRatio: "4 / 5",
-              maxWidth: 200, // Redusert max-width
-              flex: "0 1 auto",
-              maxHeight: 260, // Redusert max-høyde
-              margin: "0 auto", 
-              display: "grid",
-              placeItems: "center",
-              marginBottom: 14,
-              width: "100%"
-            }}
-          >
+          <div style={{
+            borderRadius: 18,
+            overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(255,255,255,0.05)",
+            aspectRatio: "4 / 5",
+            maxWidth: 200,
+            flex: "0 1 auto",
+            maxHeight: 260,
+            margin: "0 auto", 
+            display: "grid",
+            placeItems: "center",
+            marginBottom: 14,
+            width: "100%"
+          }}>
             {p.imageUrl ? (
-              <img
-                src={p.imageUrl}
-                alt={p.name}
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-              />
+              <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
             ) : (
               <div style={{ color: "var(--muted)", fontWeight: 800 }}>Ingen bilde</div>
             )}
@@ -220,7 +222,6 @@ export function PersonPage() {
 
           <div className="hr" style={{ marginTop: 8, marginBottom: 12 }} />
 
-          {/* Statistikk-området dyttes ned slik at det flusher med bunnen av høyre kort */}
           <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
             <h2 style={{ margin: 0 }}>Statistikk</h2>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
@@ -335,9 +336,7 @@ export function PersonPage() {
             paddingBottom: 4,
             marginTop: "auto"
           }}>
-            
             {!compareData ? (
-              // Normal visning
               <>
                 <div>
                   <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Endring siden start</div>
@@ -365,29 +364,21 @@ export function PersonPage() {
                 </div>
               </>
             ) : (
-              // Head-to-Head visning
               <>
                 <div>
                   <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Raskest i snitt (Totalt)</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>
-                    {headToHeadAvg}
-                  </div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>{headToHeadAvg}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Beste Clean Tid</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>
-                    {headToHeadBest}
-                  </div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>{headToHeadBest}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Mest konsekvent</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>
-                    {headToHeadConsistency}
-                  </div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>{headToHeadConsistency}</div>
                 </div>
               </>
             )}
-            
           </div>
         </div>
       </div>
@@ -407,7 +398,6 @@ export function PersonPage() {
             <tbody>
               {data.points.map((pt, i) => {
                 const isPB = !pt.note && bestClean !== null && pt.seconds === bestClean;
-
                 return (
                   <tr key={`${pt.dateISO}-${i}`}>
                     <td style={{ padding: 10, color: "var(--muted)" }}>{fmtDDMMYYYY(pt.dateISO)}</td>

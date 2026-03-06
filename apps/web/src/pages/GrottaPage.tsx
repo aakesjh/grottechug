@@ -22,9 +22,8 @@ type TableResponse = {
   cells: Record<string, Record<string, Cell>>;
 };
 
-type SortMode = "alpha" | "chugs";
+type GuestSortMode = "alpha" | "chugs";
 
-// Hjelpefunksjon for initialer
 function getInitials(name: string) {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -36,9 +35,7 @@ export function GrottaPage() {
   const nav = useNavigate();
   const [people, setPeople] = useState<Person[]>([]);
   const [showGuests, setShowGuests] = useState(false);
-  const [sortMode, setSortMode] = useState<SortMode>("alpha");
-
-  // antall chugs per person
+  const [guestSortMode, setGuestSortMode] = useState<GuestSortMode>("alpha");
   const [chugCountById, setChugCountById] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -70,37 +67,29 @@ export function GrottaPage() {
     })();
   }, []);
 
-  function sortPeople(list: Person[]) {
-    const copy = [...list];
+  const regularCards = useMemo(() => {
+    return [...people.filter(p => p.isRegular)].sort((a, b) => a.name.localeCompare(b.name, "no"));
+  }, [people]);
 
-    if (sortMode === "alpha") {
-      copy.sort((a, b) => a.name.localeCompare(b.name, "no"));
-      return copy;
+  const guestCards = useMemo(() => {
+    const guests = [...people.filter(p => !p.isRegular)];
+
+    if (guestSortMode === "alpha") {
+      guests.sort((a, b) => a.name.localeCompare(b.name, "no"));
+      return guests;
     }
 
-    // sortMode === "chugs"
-    copy.sort((a, b) => {
+    guests.sort((a, b) => {
       const ca = chugCountById[a.id] ?? 0;
       const cb = chugCountById[b.id] ?? 0;
-
-      if (cb !== ca) return cb - ca; // flest først
+      if (cb !== ca) return cb - ca;
       return a.name.localeCompare(b.name, "no");
     });
 
-    return copy;
-  }
+    return guests;
+  }, [people, guestSortMode, chugCountById]);
 
-  const cards = useMemo(
-    () => sortPeople(people.filter(p => p.isRegular)),
-    [people, sortMode, chugCountById]
-  );
-
-  const guestCards = useMemo(
-    () => sortPeople(people.filter(p => !p.isRegular)),
-    [people, sortMode, chugCountById]
-  );
-
-  const renderCard = (p: Person) => {
+  const renderCard = (p: Person, showChugCount: boolean) => {
     const chugCount = chugCountById[p.id] ?? 0;
 
     return (
@@ -124,7 +113,7 @@ export function GrottaPage() {
         <div
           style={{
             fontWeight: 900,
-            fontSize: 18,
+            fontSize: 20,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -135,7 +124,7 @@ export function GrottaPage() {
           {p.name}
         </div>
 
-        {/* Bilde eller initialer */}
+        {/* Bilde / initialer */}
         <div
           style={{
             borderRadius: 16,
@@ -168,51 +157,33 @@ export function GrottaPage() {
           )}
         </div>
 
-        {/* Liten info nederst uten å endre layout for mye */}
-        <div
-          style={{
-            alignItems: "center",
-            marginTop: "auto"
-          }}
-        >
-          <span style={{ color: "var(--muted)", fontSize: 13, fontWeight: 700 }}>
-            {chugCount} chugs
-          </span>
-        </div>
+        {/* Bare gjester får chugs nederst */}
+        {showChugCount && (
+          <div
+            style={{
+              marginTop: "auto",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 8,
+              color: "var(--muted)",
+              fontSize: 13,
+              fontWeight: 700
+            }}
+          >
+            <span>{chugCount} chugs</span>
+          </div>
+        )}
       </button>
     );
   };
 
   return (
     <div style={{ paddingBottom: 60 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          flexWrap: "wrap"
-        }}
-      >
-        <div>
-          <h1>Grotta</h1>
-          <p>Grottamedlemmer. Trykk på et kort for profil.</p>
-        </div>
+      <h1>Grotta</h1>
+      <p>Grottamedlemmer. Trykk på et kort for profil.</p>
 
-        {/* Sort-knapp */}
-        <button
-          className="btn"
-          onClick={() => setSortMode(prev => (prev === "alpha" ? "chugs" : "alpha"))}
-          title={sortMode === "alpha" ? "Sorter etter antall chugs" : "Sorter alfabetisk"}
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
-        >
-          <span style={{ fontSize: 16 }}>⇅</span>
-          <span>
-            {sortMode === "alpha" ? "Alfabetisk" : "Flest chugs"}
-          </span>
-        </button>
-      </div>
-
+      {/* Faste */}
       <div
         style={{
           marginTop: 14,
@@ -221,15 +192,16 @@ export function GrottaPage() {
           gap: 14
         }}
       >
-        {cards.map(renderCard)}
+        {regularCards.map(p => renderCard(p, false))}
 
-        {!cards.length && (
+        {!regularCards.length && (
           <div style={{ color: "var(--muted)" }}>
             Ingen grottamedlemmer registrert enda.
           </div>
         )}
       </div>
 
+      {/* Toggle guests */}
       <div style={{ marginTop: 40, textAlign: "center" }}>
         <button
           className="btn"
@@ -240,9 +212,61 @@ export function GrottaPage() {
         </button>
       </div>
 
+      {/* Guests section */}
       {showGuests && (
         <div style={{ marginTop: 30 }}>
-          <h2 style={{ borderBottom: "1px solid var(--border)", paddingBottom: 10 }}>Gjester</h2>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 12,
+              flexWrap: "wrap",
+              borderBottom: "1px solid var(--border)",
+              paddingBottom: 10
+            }}
+          >
+            <h2 style={{ margin: 0 }}>Gjester</h2>
+
+            {/* Finere sorteringsknapp */}
+            <button
+              className="btn"
+              onClick={() => setGuestSortMode(prev => (prev === "alpha" ? "chugs" : "alpha"))}
+              title={guestSortMode === "alpha" ? "Sorter gjester etter antall chugs" : "Sorter gjester alfabetisk"}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 14px",
+                borderRadius: 999,
+                background: "rgba(255,255,255,0.07)"
+              }}
+            >
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 999,
+                  display: "grid",
+                  placeItems: "center",
+                  background: "rgba(255,255,255,0.08)",
+                  fontSize: 15,
+                  fontWeight: 900
+                }}
+              >
+                {guestSortMode === "alpha" ? "A" : "🏆"}
+              </span>
+
+              <span style={{ fontWeight: 700 }}>
+                {guestSortMode === "alpha" ? "Alfabetisk" : "Flest chugs"}
+              </span>
+
+              <span style={{ color: "var(--muted)", fontSize: 12 }}>
+                ⇅
+              </span>
+            </button>
+          </div>
+
           <div
             style={{
               marginTop: 14,
@@ -251,7 +275,7 @@ export function GrottaPage() {
               gap: 14
             }}
           >
-            {guestCards.map(renderCard)}
+            {guestCards.map(p => renderCard(p, true))}
 
             {!guestCards.length && (
               <div style={{ color: "var(--muted)" }}>
