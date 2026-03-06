@@ -30,7 +30,7 @@ type ViolationEntry = {
   crosses: number;
 };
 
-const VIOLATION_CODES = ["MM", "W", "VW", "P", "DNS", "DNF", "ABSENCE", "VOMIT", "KPR"] as const;
+const PERF_CODES = ["MM", "W", "VW", "P", "DNS", "DNF", "VOMIT", "KPR"] as const;
 
 type SortKey =
   | { kind: "none" }
@@ -176,6 +176,30 @@ export function ChugListPage() {
     return data.columns.find(c => c.sessionId === editSessionId) ?? null;
   }, [data, editSessionId]);
 
+  const projectedTimes = useMemo(() => {
+    if (!data) return {} as Record<string, number | null>;
+    const result: Record<string, number | null> = {};
+    for (const r of data.rows) {
+      const pts: number[] = [];
+      for (const col of data.columns) {
+        const cell = data.cells?.[r.participantId]?.[col.sessionId];
+        if (cell?.seconds != null) pts.push(cell.seconds);
+      }
+      if (pts.length < 2) { result[r.participantId] = null; continue; }
+      const n = pts.length;
+      const xs = pts.map((_, i) => i);
+      const sumX = xs.reduce((a, b) => a + b, 0);
+      const sumY = pts.reduce((a, b) => a + b, 0);
+      const sumXY = xs.reduce((a, x, i) => a + x * pts[i], 0);
+      const sumXX = xs.reduce((a, x) => a + x * x, 0);
+      const denom = n * sumXX - sumX * sumX;
+      const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
+      const b = (sumY - m * sumX) / n;
+      result[r.participantId] = Math.max(0, m * n + b);
+    }
+    return result;
+  }, [data]);
+
   async function openEditor(sessionId: string) {
     if (!data) return;
 
@@ -241,10 +265,14 @@ export function ChugListPage() {
       if (sessionId !== sid) continue;
 
       const secStr = (draftSeconds[participantId] ?? "").trim();
-      if (!secStr) continue;
+      const violations = draftViolations[participantId] ?? [];
+      const seconds = secStr ? parseSeconds(secStr) : null;
+      const hasValidTime = seconds !== null && Number.isFinite(seconds) && seconds > 0;
 
-      const seconds = parseSeconds(secStr);
-      if (!Number.isFinite(seconds) || seconds <= 0) continue;
+      // Skip if no time AND no violations
+      if (!hasValidTime && violations.length === 0) continue;
+      // Skip if time was entered but is invalid
+      if (secStr && !hasValidTime) continue;
 
       const note = (draftNote[participantId] ?? "").trim();
 
@@ -254,9 +282,9 @@ export function ChugListPage() {
         body: JSON.stringify({
           participantId,
           sessionId: sid,
-          seconds,
+          seconds: hasValidTime ? seconds : null,
           note: note ? note : null,
-          violations: draftViolations[participantId] ?? []
+          violations
         })
       });
     }
@@ -467,7 +495,7 @@ export function ChugListPage() {
                   <input
                     ref={el => { inputRefs.current[r.participantId] = el; }}
                     className={`input cellInput ${isDirty ? "cellDirty" : ""}`}
-                    placeholder="12.34"
+                    placeholder={projectedTimes[r.participantId] != null ? projectedTimes[r.participantId]!.toFixed(2) : "12.34"}
                     value={draftSeconds[r.participantId] ?? ""}
                     onChange={e => {
                       setDraftSeconds(prev => ({ ...prev, [r.participantId]: e.target.value }));
@@ -494,7 +522,7 @@ export function ChugListPage() {
                     }}
                   />
 
-                  {VIOLATION_CODES.map(code => {
+                  {PERF_CODES.map(code => {
                     const active = activeViolations.includes(code);
                     return (
                       <button
@@ -522,6 +550,36 @@ export function ChugListPage() {
                       </button>
                     );
                   })}
+
+                  <span style={{ color: "var(--border)", userSelect: "none" }}>|</span>
+
+                  {(() => {
+                    const active = activeViolations.includes("ABSENCE");
+                    return (
+                      <button
+                        className="btn"
+                        style={{
+                          padding: "5px 9px",
+                          fontSize: 11,
+                          background: active ? "rgba(234,179,8,0.25)" : "rgba(234,179,8,0.07)",
+                          borderColor: active ? "rgba(234,179,8,0.6)" : "rgba(234,179,8,0.3)",
+                          color: active ? "#eab308" : "rgba(234,179,8,0.6)"
+                        }}
+                        onClick={() => {
+                          setDraftViolations(prev => {
+                            const cur = prev[r.participantId] ?? [];
+                            const next = cur.includes("ABSENCE")
+                              ? cur.filter(c => c !== "ABSENCE")
+                              : [...cur, "ABSENCE"];
+                            return { ...prev, [r.participantId]: next };
+                          });
+                          markDirty(r.participantId, editSession.sessionId);
+                        }}
+                      >
+                        ABSENCE
+                      </button>
+                    );
+                  })()}
 
                   <input
                     className="input"

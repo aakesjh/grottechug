@@ -3,6 +3,8 @@ import { prisma } from "../prisma";
 
 export const attemptsRouter = Router();
 
+const VALID_CODES = new Set(["MM", "W", "VW", "P", "DNS", "DNF", "ABSENCE", "VOMIT", "KPR"]);
+
 function parseRuleCodes(note: string | null | undefined): string[] {
   if (!note) return [];
   const codes: string[] = [];
@@ -20,26 +22,32 @@ function parseRuleCodes(note: string | null | undefined): string[] {
 
 // POST /api/attempts/upsert
 // body: { participantId, sessionId, seconds, note, violations? }
+// seconds may be null for violation-only records (e.g. ABSENCE)
 attemptsRouter.post("/upsert", async (req, res) => {
   const { participantId, sessionId, seconds, note, violations: violationCodes } = req.body as {
     participantId: string;
     sessionId: string;
-    seconds: number;
+    seconds: number | null;
     note?: string | null;
     violations?: string[];
   };
 
-  if (!participantId || !sessionId || typeof seconds !== "number" || !Number.isFinite(seconds)) {
+  if (!participantId || !sessionId) {
     return res.status(400).json({ error: "Bad input" });
   }
 
+  const hasTime = typeof seconds === "number" && Number.isFinite(seconds) && seconds > 0;
+
   const cleanNote = note?.trim() ? note.trim() : null;
 
-  const saved = await prisma.attempt.upsert({
-    where: { participantId_sessionId: { participantId, sessionId } },
-    update: { seconds, note: cleanNote },
-    create: { participantId, sessionId, seconds, note: cleanNote }
-  });
+  let saved: any = null;
+  if (hasTime) {
+    saved = await prisma.attempt.upsert({
+      where: { participantId_sessionId: { participantId, sessionId } },
+      update: { seconds: seconds!, note: cleanNote },
+      create: { participantId, sessionId, seconds: seconds!, note: cleanNote }
+    });
+  }
 
   // Explicit violations array takes precedence; otherwise parse from note text
   const codes = Array.isArray(violationCodes)
@@ -63,5 +71,5 @@ attemptsRouter.post("/upsert", async (req, res) => {
     }
   }
 
-  res.json(saved);
+  res.json(saved ?? { participantId, sessionId, seconds: null });
 });

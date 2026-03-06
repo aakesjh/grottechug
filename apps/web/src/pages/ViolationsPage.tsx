@@ -161,7 +161,7 @@ export function ViolationsPage() {
                       </button>
                     </td>
                     <td><span className="badge">{r.isRegular ? "fast" : "gjest"}</span></td>
-                    <td><b>{r.total}</b></td>
+                    <td><b>{Math.floor(r.total)}</b></td> 
                     {ruleCols.map(code => (
                       <td key={code}>
                         {r.byRule[code]
