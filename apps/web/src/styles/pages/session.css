@@ -1,0 +1,152 @@
+/* ==========================================================================
+   Session Page
+   ========================================================================== */
+
+.session {
+  padding-bottom: 60px;
+}
+
+.session__nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.session__nav-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.session__nav-btn {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* --- Header Card --- */
+.session__header {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+}
+
+.session__title {
+  font-size: 2.4rem;
+  margin-bottom: 8px;
+}
+
+.session__note {
+  font-size: 1.05rem;
+  color: var(--accent2);
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 15px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
+/* --- Stat Grid --- */
+.session__stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* --- Award Grid --- */
+.session__award-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* --- Chart Grid --- */
+.session__chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.session__chart-area {
+  width: 100%;
+  height: 300px;
+}
+
+.session__chart-area--lg {
+  width: 100%;
+  height: 420px;
+}
+
+.session__chart-desc {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+/* --- Person Link --- */
+.session__person-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: white;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.18s ease;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.18em;
+}
+
+.session__person-link:hover {
+  text-decoration-color: rgba(255, 255, 255, 0.8);
+  opacity: 0.88;
+}
+
+.session__table-person-link {
+  padding: 0;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.18em;
+  transition: all 0.18s ease;
+}
+
+.session__table-person-link:hover {
+  text-decoration-color: rgba(255, 255, 255, 0.75);
+  opacity: 0.88;
+}
+
+/* --- Winner highlight values --- */
+.session__value--gold {
+  color: #facc15;
+  text-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
+}
+
+.session__value--gold-light {
+  color: #fef08a;
+  text-shadow: 0 0 14px rgba(250, 204, 21, 0.35);
+}
+
+.session__value--danger-light {
+  color: #fca5a5;
+  text-shadow: 0 0 14px rgba(239, 68, 68, 0.28);
+}
+
+/* --- Violations Table --- */
+.session__violations-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}

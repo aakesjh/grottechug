@@ -96,82 +96,22 @@ export function GrottaPage() {
     return (
       <button
         key={p.id}
-        className="card cardCard"
+        className="card cardCard grotta__card"
         onClick={() => nav(`/person/${p.id}`)}
-        style={{
-          cursor: "pointer",
-          padding: 12,
-          textAlign: "left",
-          border: "1px solid var(--border)",
-          background: "rgba(0,0,0,0.16)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10
-        }}
         title={`Åpne profil: ${p.name}`}
       >
-        {/* Navn over bildet */}
-        <div
-          style={{
-            fontWeight: 900,
-            fontSize: 20,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            color: "var(--text)",
-            textAlign: "center"
-          }}
-        >
-          {p.name}
-        </div>
+        <div className="grotta__card-name">{p.name}</div>
 
-        {/* Bilde / initialer */}
-        <div
-          style={{
-            borderRadius: 16,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: "rgba(255,255,255,0.05)",
-            aspectRatio: "3 / 4",
-            display: "grid",
-            placeItems: "center",
-            width: "100%"
-          }}
-        >
+        <div className="grotta__card-image-frame">
           {p.imageUrl ? (
-            <img
-              src={p.imageUrl}
-              alt={p.name}
-              style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-            />
+            <img src={p.imageUrl} alt={p.name} className="grotta__card-image" />
           ) : (
-            <div
-              style={{
-                color: "var(--muted)",
-                fontWeight: 900,
-                fontSize: "3.5rem",
-                opacity: 0.5
-              }}
-            >
-              {getInitials(p.name)}
-            </div>
+            <div className="grotta__card-initials">{getInitials(p.name)}</div>
           )}
         </div>
 
-        {/* Bare gjester får chugs nederst */}
         {showChugCount && (
-          <div
-            style={{
-              marginTop: "auto",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 8,
-              color: "var(--muted)",
-              fontSize: 13,
-              fontWeight: 700
-            }}
-          >
+          <div className="grotta__card-chug-count">
             <span>{chugCount} chugs</span>
           </div>
         )}
@@ -180,108 +120,50 @@ export function GrottaPage() {
   };
 
   return (
-    <div style={{ paddingBottom: 60 }}>
+    <div className="grotta">
       <h1>Grotta</h1>
       <p>Grottamedlemmer. Trykk på et kort for profil.</p>
 
-      {/* Faste */}
-      <div
-        style={{
-          marginTop: 14,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
-          gap: 14
-        }}
-      >
+      <div className="grotta__grid">
         {regularCards.map(p => renderCard(p, false))}
-
         {!regularCards.length && (
-          <div style={{ color: "var(--muted)" }}>
-            Ingen grottamedlemmer registrert enda.
-          </div>
+          <div className="u-text-muted">Ingen grottamedlemmer registrert enda.</div>
         )}
       </div>
 
-      {/* Toggle guests */}
-      <div style={{ marginTop: 40, textAlign: "center" }}>
+      <div className="grotta__toggle-guests">
         <button
-          className="btn"
+          className="btn grotta__toggle-btn"
           onClick={() => setShowGuests(!showGuests)}
-          style={{ padding: "10px 20px", fontSize: "1rem" }}
         >
           {showGuests ? "Skjul gjester" : "Vis gjester"}
         </button>
       </div>
 
-      {/* Guests section */}
       {showGuests && (
-        <div style={{ marginTop: 30 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-              borderBottom: "1px solid var(--border)",
-              paddingBottom: 10
-            }}
-          >
-            <h2 style={{ margin: 0 }}>Gjester</h2>
+        <div className="grotta__guests-section">
+          <div className="grotta__guests-header">
+            <h2 className="u-mb-0">Gjester</h2>
 
-            {/* Finere sorteringsknapp */}
             <button
-              className="btn"
+              className="btn grotta__sort-btn"
               onClick={() => setGuestSortMode(prev => (prev === "alpha" ? "chugs" : "alpha"))}
               title={guestSortMode === "alpha" ? "Sorter gjester etter antall chugs" : "Sorter gjester alfabetisk"}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 14px",
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.07)"
-              }}
             >
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 999,
-                  display: "grid",
-                  placeItems: "center",
-                  background: "rgba(255,255,255,0.08)",
-                  fontSize: 15,
-                  fontWeight: 900
-                }}
-              >
+              <span className="grotta__sort-icon">
                 {guestSortMode === "alpha" ? "A" : "🏆"}
               </span>
-
-              <span style={{ fontWeight: 700 }}>
+              <span className="grotta__sort-label">
                 {guestSortMode === "alpha" ? "Alfabetisk" : "Flest chugs"}
               </span>
-
-              <span style={{ color: "var(--muted)", fontSize: 12 }}>
-                ⇅
-              </span>
+              <span className="grotta__sort-arrow">⇅</span>
             </button>
           </div>
 
-          <div
-            style={{
-              marginTop: 14,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))",
-              gap: 14
-            }}
-          >
+          <div className="grotta__grid">
             {guestCards.map(p => renderCard(p, true))}
-
             {!guestCards.length && (
-              <div style={{ color: "var(--muted)" }}>
-                Ingen gjester registrert enda.
-              </div>
+              <div className="u-text-muted">Ingen gjester registrert enda.</div>
             )}
           </div>
         </div>

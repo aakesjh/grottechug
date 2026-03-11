@@ -1,0 +1,82 @@
+/* ==========================================================================
+   Admin Page — Submission review cards
+   ========================================================================== */
+
+.admin__header {
+  margin-bottom: 20px;
+}
+
+.admin__header h1 {
+  margin-bottom: 8px;
+}
+
+.admin__subtitle {
+  color: var(--muted);
+}
+
+.admin__error {
+  margin-bottom: 16px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.admin__grid {
+  display: grid;
+  gap: 16px;
+}
+
+.admin__card-layout {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.admin__card-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.admin__card-body {
+  display: grid;
+  gap: 10px;
+}
+
+.admin__card-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin__field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.admin__textarea {
+  width: 100%;
+  resize: vertical;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.admin__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin__reject-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+}

@@ -1,0 +1,132 @@
+/* ==========================================================================
+   Person Page
+   ========================================================================== */
+
+.person__header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.person__photo-frame {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  aspect-ratio: 4 / 5;
+  max-width: 200px;
+  flex: 0 1 auto;
+  max-height: 260px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+  width: 100%;
+}
+
+.person__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.person__no-photo {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.person__stats-list {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.person__stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-lg);
+}
+
+/* --- Development Chart --- */
+.person__chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.person__chart-controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.person__compare-select {
+  width: auto;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+.person__chart-area {
+  width: 100%;
+  height: 240px;
+  min-height: 240px;
+  flex: 1;
+}
+
+/* --- Bottom Stats Grid --- */
+.person__bottom-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 16px;
+  text-align: center;
+  padding-bottom: 4px;
+  margin-top: auto;
+}
+
+.person__bottom-stat-label {
+  font-size: 0.80rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.person__bottom-stat-value {
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+/* --- History Table --- */
+.person__history-table {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.person__history-table th {
+  padding: 10px;
+}
+
+.person__history-date-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  color: var(--accent);
+}
+
+.person__pb-cell {
+  font-weight: 900;
+  color: var(--accent4);
+}

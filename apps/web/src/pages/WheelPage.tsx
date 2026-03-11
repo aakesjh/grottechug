@@ -371,6 +371,20 @@ export function WheelPage() {
     <div>
       <h1 style={{ display: isExpanded ? "none" : "block" }}>Hjulet</h1>
 
+      <div className="row u-mt-sm">
+        <div className="col card wheel-page__sidebar" style={{ display: isExpanded ? "none" : "block" }}>
+          <h2 style={{ fontSize: 18, marginBottom: 12 }}>Legg til gjest</h2>
+          <div className="wheel-page__guest-row">
+            <input
+              className="input"
+              value={guestQuery}
+              onChange={e => setGuestQuery(e.target.value)}
+              placeholder="Søk eller skriv nytt navn…"
+            />
+            <button className="btn" onClick={() => addGuestByName(guestQuery)} disabled={!guestQuery.trim()}>
+              Legg til
+            </button>
+          </div>
       <div className="row" style={{ marginTop: 14 }}>
         <div className="col card" style={{ maxWidth: 460, display: isExpanded ? "none" : "block" }}>
           {isAdmin ? (
@@ -388,52 +402,22 @@ export function WheelPage() {
                 </button>
               </div>
 
-              {guestQuery.trim() && (
-                <div style={{ marginBottom: 15, display: "grid", gap: 6 }}>
-                  {guestLoading && <div style={{ color: "var(--muted)", fontSize: 13 }}>Søker…</div>}
-                  {guestSuggestions.map(s => (
-                    <button key={s.id} className="btn" style={{ textAlign: "left" }} onClick={() => addGuestByName(s.name)}>
-                      {s.name} <span style={{ opacity: 0.7 }}>{s.isRegular ? "(fast)" : "(gjest)"}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="hr" />
-            </>
-          ) : (
-            <>
-              <h2 style={{ fontSize: 18, marginBottom: 12 }}>Legg til eksisterende gjest</h2>
-              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-                <input
-                  className="input"
-                  value={guestQuery}
-                  onChange={e => setGuestQuery(e.target.value)}
-                  placeholder="Søk etter eksisterende gjest…"
-                />
-              </div>
-
-              {guestQuery.trim() && (
-                <div style={{ marginBottom: 15, display: "grid", gap: 6 }}>
-                  {guestLoading && <div style={{ color: "var(--muted)", fontSize: 13 }}>Søker…</div>}
-                  {!guestLoading && guestSuggestions.length === 0 && (
-                    <div style={{ color: "var(--muted)", fontSize: 13 }}>Ingen eksisterende gjester funnet.</div>
-                  )}
-                  {guestSuggestions.map(s => (
-                    <button key={s.id} className="btn" style={{ textAlign: "left" }} onClick={() => addExistingGuest(s)}>
-                      {s.name} <span style={{ opacity: 0.7 }}>(gjest)</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              <div className="hr" />
-            </>
+          {guestQuery.trim() && (
+            <div className="wheel-page__suggestions">
+              {guestLoading && <div className="wheel-page__search-loading">Søker…</div>}
+              {guestSuggestions.map(s => (
+                <button key={s.id} className="btn u-text-left" onClick={() => addGuestByName(s.name)}>
+                  {s.name} <span className="wheel-page__suggestion-type">{s.isRegular ? "(fast)" : "(gjest)"}</span>
+                </button>
+              ))}
+            </div>
           )}
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div className="hr" />
+
+          <div className="wheel-page__participants-header">
             <h2 style={{ margin: 0, fontSize: 18 }}>Deltakere</h2>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 14 }}>
+            <label className="wheel-page__select-all">
               <input
                 type="checkbox"
                 checked={allRegularsSelected}
@@ -443,33 +427,33 @@ export function WheelPage() {
             </label>
           </div>
 
-          <div style={{ display: "grid", gap: 8 }}>
+          <div className="wheel-page__participant-list">
             {regulars.map(p => (
-              <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <label key={p.id} className="wheel-page__participant-label">
                 <input
                   type="checkbox"
                   checked={!!present[p.id]}
                   onChange={e => togglePresent(p, e.target.checked)}
                 />
-                <span style={{ flex: 1 }}>{p.name}</span>
+                <span className="wheel-page__participant-name">{p.name}</span>
                 <span className="badge">fast</span>
               </label>
             ))}
 
             {selectedGuests.length > 0 && (
               <>
-                <div style={{ marginTop: 10, color: "var(--muted)", fontSize: 13, fontWeight: 700 }}>
+                <div className="wheel-page__guest-header">
                   Gjester lagt til i dag
                 </div>
                 {selectedGuests.map(p => (
-                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <label style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+                  <div key={p.id} className="wheel-page__guest-row-item">
+                    <label className="wheel-page__participant-label" style={{ flex: 1 }}>
                       <input
                         type="checkbox"
                         checked={!!present[p.id]}
                         onChange={e => togglePresent(p, e.target.checked)}
                       />
-                      <span style={{ flex: 1 }}>{p.name}</span>
+                      <span className="wheel-page__participant-name">{p.name}</span>
                       <span className="badge">gjest</span>
                     </label>
                     {isAdmin && <button className="btn" onClick={() => removeSelectedGuest(p.id)}>Fjern</button>}
@@ -480,26 +464,14 @@ export function WheelPage() {
           </div>
 
           <div className="hr" />
-          <div style={{ color: "var(--muted)", fontSize: 13 }}>
+          <div className="wheel-page__candidate-count">
             Kandidater i hjulet: <b style={{ color: "var(--text)" }}>{candidateIds.length}</b>
           </div>
         </div>
 
         <div
-          className="col card"
-          style={{
-            position: isExpanded ? "fixed" : "relative",
-            inset: isExpanded ? 0 : "auto",
-            zIndex: isExpanded ? 9999 : 1,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            width: isExpanded ? "100vw" : "auto",
-            height: isExpanded ? "100vh" : "auto",
-            background: isExpanded ? "var(--bg, #111)" : "var(--card-bg)",
-            margin: 0
-          }}
+          className={`col card wheel-page__canvas-area ${isExpanded ? "wheel-page__canvas-area--expanded" : ""}`}
+          style={isExpanded ? undefined : { position: "relative" }}
         >
           <button
             onClick={(e) => {
@@ -507,23 +479,7 @@ export function WheelPage() {
               setIsExpanded(!isExpanded);
             }}
             title={isExpanded ? "Lukk fullskjerm" : "Fullskjerm"}
-            style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              padding: 8,
-              background: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 8,
-              cursor: "pointer",
-              display: "grid",
-              placeItems: "center",
-              color: "var(--text)",
-              zIndex: 20,
-              transition: "background 0.2s"
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)"}
-            onMouseLeave={e => e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)"}
+            className="wheel-page__fullscreen-btn"
           >
             {isExpanded ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -536,28 +492,20 @@ export function WheelPage() {
             )}
           </button>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20 }}>
+          <div className="wheel-page__canvas-content">
             {/* Vinner-banner og Stats */}
-            <div style={{ minHeight: 110, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div className="wheel-page__winner-area">
               {winner && !spinning ? (
                 <>
-                  <div style={{ fontSize: isExpanded ? "3.5rem" : "2.4rem", fontWeight: 900, color: "var(--accent)" }}>
+                  <div className={`wheel-page__winner-name ${isExpanded ? "wheel-page__winner-name--expanded" : "wheel-page__winner-name--normal"}`}>
                     🎉 {winner} 🎉
                   </div>
                   {winnerStats && (
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: isExpanded ? "1.1rem" : "0.95rem",
-                        background: "rgba(0,0,0,0.3)",
-                        padding: "8px 18px",
-                        borderRadius: 30
-                      }}
-                    >
+                    <div className={`wheel-page__winner-stats ${isExpanded ? "wheel-page__winner-stats--expanded" : "wheel-page__winner-stats--normal"}`}>
                       {winnerStats.isVirgin ? (
                         <span>Lykke til med jomfruchuggen! 🍻</span>
                       ) : (
-                        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", justifyContent: "center" }}>
+                        <div className="wheel-page__stats-detail">
                           <span>Forrige: <b style={{ color: "var(--accent)" }}>{fmtSeconds(winnerStats.lastTime)}</b></span>
                           <span>Snitt: <b style={{ color: "var(--accent3)" }}>{fmtSeconds(winnerStats.avgTime)}</b></span>
                           <span>Rekord: <b style={{ color: "var(--accent4)" }}>{fmtSeconds(winnerStats.recordTime)}</b></span>
@@ -568,7 +516,7 @@ export function WheelPage() {
                   )}
                 </>
               ) : (
-                <div style={{ color: "transparent", fontSize: "1.2rem", fontWeight: 600 }}>
+                <div className="wheel-page__spacer">
                   {/* Skjult spacer for å holde høyden når hjulet spinner, teksten ligger inni selve canvaset nå */}
                   &nbsp;
                 </div>
@@ -577,29 +525,14 @@ export function WheelPage() {
 
             <div
               onClick={() => !spinning && spin()}
-              style={{
-                cursor: spinning ? "default" : "pointer",
-                position: "relative",
-                transform: spinning ? "scale(1)" : "scale(1.02)",
-                transition: "transform 0.2s"
-              }}
+              className={`wheel-page__wheel-click ${spinning ? "wheel-page__wheel-click--spinning" : "wheel-page__wheel-click--idle"}`}
             >
               {winner && !spinning && (
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    borderRadius: "50%",
-                    zIndex: 10,
-                    overflow: "hidden",
-                    border: "6px solid var(--accent)",
-                    background: "var(--bg)"
-                  }}
-                >
+                <div className="wheel-page__winner-overlay">
                   {winnerImage ? (
-                    <img src={winnerImage} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={winnerImage} className="wheel-page__winner-img" />
                   ) : (
-                    <div style={{ display: "grid", placeItems: "center", height: "100%", fontSize: wheelSize * 0.25, fontWeight: 900, color: "var(--muted)" }}>
+                    <div className="wheel-page__winner-initials" style={{ fontSize: wheelSize * 0.25 }}>
                       {getInitials(winner)}
                     </div>
                   )}

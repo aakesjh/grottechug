@@ -1,0 +1,174 @@
+/* ==========================================================================
+   Leaderboard Page
+   ========================================================================== */
+
+.leaderboard {
+  padding-bottom: 60px;
+}
+
+/* --- Podium --- */
+.podium {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.podium__slot {
+  flex: 1;
+  text-align: center;
+}
+
+.podium__label {
+  margin-bottom: 8px;
+  font-weight: 900;
+}
+
+.podium__box {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--overlay-subtle);
+  display: grid;
+  place-items: center;
+  padding: 12px;
+}
+
+.podium__card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.podium__button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: center;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.podium__button--clickable {
+  cursor: pointer;
+}
+
+.podium__emoji {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+.podium__frame {
+  width: 100%;
+  border-radius: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.podium__frame--empty {
+  border: 2px dashed rgba(255, 255, 255, 0.14);
+}
+
+.podium__info {
+  margin-top: 8px;
+  width: 100%;
+  text-align: center;
+  color: var(--text);
+}
+
+.podium__name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podium__time {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* --- Leaderboard List --- */
+.leaderboard__list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.leaderboard__guest-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: var(--font-base);
+}
+
+.leaderboard__table {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.leaderboard__rank {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.leaderboard__name-btn {
+  padding: 6px 12px;
+  font-size: var(--font-md);
+  font-weight: 500;
+  white-space: normal;
+  text-align: left;
+}
+
+.leaderboard__time {
+  padding: 8px;
+  font-weight: 600;
+}
+
+.leaderboard__date-btn {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: none;
+  color: var(--muted);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: color var(--transition-base), background var(--transition-base);
+  background: transparent;
+  text-align: left;
+}
+
+.leaderboard__date-btn:hover {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Inline table overrides */
+.leaderboard__table th {
+  padding: 10px 8px;
+  background: transparent;
+}
+
+.leaderboard__table th:first-child {
+  width: 50px;
+  text-align: center;
+}
+
+.leaderboard__table th:nth-child(3) {
+  width: 80px;
+}
+
+.leaderboard__table th:nth-child(4) {
+  width: 110px;
+}

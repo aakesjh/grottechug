@@ -1,0 +1,139 @@
+/* ==========================================================================
+   Table & Tooltip Styles
+   ========================================================================== */
+
+.tableWrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding-bottom: 60px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--bg) 40%, rgba(18, 26, 51, 0.95));
+  z-index: 1;
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  overflow: visible !important;
+}
+
+td.sticky,
+th.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--bg) 40%, rgba(18, 26, 51, 0.95));
+}
+
+.separatorRow td {
+  background: var(--overlay-subtle);
+  color: rgba(233, 237, 255, 0.80);
+  font-weight: 700;
+}
+
+/* --- Cell with dots --- */
+.cell {
+  position: relative;
+  padding-right: 22px !important;
+}
+
+.cell:hover {
+  z-index: 90 !important;
+}
+
+/* --- Note dots --- */
+.noteDot {
+  position: absolute;
+  top: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 2px rgba(11, 16, 32, 0.8);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.noteDotRed {
+  background: var(--danger);
+  right: 4px;
+}
+
+.noteDotYellow {
+  background: #facc15;
+  right: 4px;
+}
+
+/* --- Tooltip --- */
+.tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--tooltip-bg-solid);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  color: rgba(233, 237, 255, 0.95);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: var(--font-sm);
+  width: max-content;
+  max-width: 250px;
+  white-space: normal;
+  text-align: left;
+  visibility: hidden;
+  opacity: 0;
+  z-index: 99999 !important;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: 4px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: transparent transparent var(--tooltip-bg-solid) transparent;
+  filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, 0.14));
+}
+
+.cell:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* For å sikre at tooltip på sticky elementer vises over alt */
+th.sticky .tooltip,
+th.cell .tooltip,
+td.sticky .tooltip {
+  z-index: 999999;
+}
+
+/* --- Cell Input (spreadsheet editing) --- */
+.cellInput {
+  width: 74px;
+  text-align: center;
+  padding: 6px;
+}
+
+.cellDirty {
+  outline: 2px solid rgba(255, 193, 7, 0.45);
+  border-radius: var(--radius-sm);
+}

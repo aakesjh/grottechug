@@ -136,3 +136,20 @@ model Violation {
 
   @@index([participantId, sessionId])
 }
+
+model ParticipantSubmission {
+  id          String   @id @default(cuid())
+  name        String
+  nameLower   String
+  imageUrl    String
+  status      String   @default("pending") // pending | approved | rejected
+  adminNote   String?
+  editedName  String?
+  createdAt   DateTime @default(now())
+  reviewedAt  DateTime?
+
+  approvedParticipantId String?
+
+  @@index([status, createdAt])
+  @@index([nameLower])
+}

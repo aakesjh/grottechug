@@ -1,0 +1,100 @@
+/* ==========================================================================
+   Card Component
+   ========================================================================== */
+
+.card {
+  background: linear-gradient(180deg, var(--panel), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  box-shadow: var(--shadow);
+  padding: var(--space-lg);
+}
+
+.cardCard {
+  padding: var(--space-md);
+  text-align: left;
+  background: var(--overlay-subtle);
+}
+
+.cardCard:hover {
+  transform: translateY(-2px);
+  transition: var(--transition-fast);
+}
+
+.cardCard img {
+  transition: transform 160ms ease;
+}
+
+.cardCard:hover img {
+  transform: scale(1.02);
+}
+
+/* --- Card Variants --- */
+.card--highlight-gold {
+  border: 2px solid rgba(250, 204, 21, 0.8);
+  background: linear-gradient(180deg, rgba(250, 204, 21, 0.1), rgba(255, 255, 255, 0.02));
+}
+
+.card--highlight-gold .card__glow {
+  box-shadow: 0 0 24px rgba(250, 204, 21, 0.18);
+}
+
+.card--highlight-danger {
+  border: 2px solid rgba(239, 68, 68, 0.8);
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.12), rgba(255, 255, 255, 0.02));
+}
+
+.card--highlight-danger .card__glow {
+  box-shadow: 0 0 24px rgba(239, 68, 68, 0.16);
+}
+
+/* --- Stat Box (used in stats, session pages) --- */
+.stat-box {
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.stat-box__label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.stat-box__value {
+  font-size: var(--font-3xl);
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-box__sub {
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* --- Award card --- */
+.award-card {
+  padding: var(--space-lg);
+}
+
+.award-card__label {
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  font-weight: bold;
+}
+
+.award-card__name {
+  font-size: var(--font-xl);
+  font-weight: 900;
+}
+
+.award-card__detail {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 4px 0;
+}
+
+.award-card__highlight {
+  font-size: 0.85rem;
+}

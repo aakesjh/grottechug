@@ -1,0 +1,94 @@
+/* ==========================================================================
+   ChugList Page — Editor & Table
+   ========================================================================== */
+
+.chuglist__editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chuglist__editor-header h2 {
+  margin: 0;
+}
+
+.chuglist__editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.chuglist__editor-hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.chuglist__delete-btn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.chuglist__perf-btn {
+  padding: 5px 9px;
+  font-size: 11px;
+}
+
+.chuglist__perf-btn--active {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+}
+
+.chuglist__perf-btn--inactive {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--muted);
+}
+
+.chuglist__absence-btn--active {
+  background: rgba(234, 179, 8, 0.25);
+  border-color: rgba(234, 179, 8, 0.6);
+  color: #eab308;
+}
+
+.chuglist__absence-btn--inactive {
+  background: rgba(234, 179, 8, 0.07);
+  border-color: rgba(234, 179, 8, 0.3);
+  color: rgba(234, 179, 8, 0.6);
+}
+
+.chuglist__separator {
+  color: var(--border);
+  user-select: none;
+}
+
+.chuglist__note-input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.chuglist__session-icon {
+  margin-left: 8px;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 14px;
+  transition: opacity var(--transition-fast);
+}
+
+.chuglist__session-icon:hover {
+  opacity: 1;
+}
+
+.chuglist__name-btn {
+  min-width: 190px;
+}
+
+/* --- Modal helpers --- */
+.chuglist__modal-semester-hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 6px;
+}

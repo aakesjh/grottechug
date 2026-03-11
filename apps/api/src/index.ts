@@ -1,5 +1,19 @@
 import express from "express";
 import cors from "cors";
+
+import { participantsRouter } from "./routes/participants";
+import { wheelRouter } from "./routes/wheel";
+import { rulesRouter } from "./routes/rules";
+import { statsRouter } from "./routes/stats";
+import { importRouter } from "./routes/import";
+import { sessionsRouter } from "./routes/sessions";
+import { attemptsRouter } from "./routes/attempts";
+import { personRouter } from "./routes/person";
+import { leaderboardRouter } from "./routes/leaderboard";
+import { analyticsRouter } from "./routes/analytics";
+import { crossesRouter } from "./routes/crosses";
+import { violationsRouter } from "./routes/violations";
+import { participantSubmissionsRouter } from "./routes/participantSubmissionRouter";
 import { toNodeHandler } from "better-auth/node";
 
 import { auth, getRequestSession, isTrustedOrigin } from "./auth.js";
@@ -86,6 +100,7 @@ app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/crosses", crossesRouter);
 app.use("/api/violations", violationsRouter);
+app.use("/api/participant-submissions", participantSubmissionsRouter);
 
 const port = appEnv.port;
 

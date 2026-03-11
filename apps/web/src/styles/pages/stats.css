@@ -1,0 +1,108 @@
+/* ==========================================================================
+   Stats Dashboard Page
+   ========================================================================== */
+
+.stats__stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.stats__chart-desc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+
+.stats__chart-area {
+  width: 100%;
+  height: 300px;
+}
+
+.stats__chart-area--sm {
+  width: 100%;
+  height: 280px;
+}
+
+.stats__scatter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stats__scatter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.stats__no-data {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* --- Fastest/Slowest stat box border --- */
+.stat-box--fastest {
+  border: 1px solid color-mix(in srgb, #10b981 40%, transparent);
+}
+
+.stat-box--fastest .stat-box__label {
+  color: #10b981;
+}
+
+.stat-box--slowest {
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, transparent);
+}
+
+.stat-box--slowest .stat-box__label {
+  color: var(--danger);
+}
+
+.stat-box__name {
+  font-size: var(--font-xl);
+  font-weight: 900;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-box__sub-value {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* --- Custom Tooltip Styles --- */
+.chart-tooltip {
+  background: var(--chart-tooltip-bg);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--chart-tooltip-border);
+  color: white;
+}
+
+.chart-tooltip__title {
+  display: block;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.chart-tooltip__row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  gap: 16px;
+}
