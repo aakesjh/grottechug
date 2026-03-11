@@ -280,9 +280,10 @@ export function JoinPage() {
     return (
       <div className="container join join--done">
         <div className="card join__card--done">
-          <h1 className="join__title--done">Velkommen til grotta</h1>
-          <p className="u-text-muted u-mb-0">
-            Registreringen er sendt inn og venter på godkjenning.
+          <div className="join__done-icon">🎉</div>
+          <h1 className="join__title--done">Du er med!</h1>
+          <p className="join__done-text">
+            Registreringen din er sendt inn og venter på godkjenning fra en admin. Du får tilgang så snart den er godkjent.
           </p>
         </div>
       </div>
@@ -292,17 +293,27 @@ export function JoinPage() {
   return (
     <div className="container join">
       <div className="card join__card">
-        <h1 className="join__title">Velkommen til grotta</h1>
+        <div className="join__header">
+          <div className="join__header-icon">🍺</div>
+          <h1 className="join__title">Bli med på grottechug</h1>
+          <p className="join__subtitle">Fyll ut skjemaet for å registrere deg som deltaker</p>
+        </div>
 
         <form onSubmit={onSubmit} className="join__form">
-          <div>
-            <label className="join__label">Fornavn</label>
+          {/* Step 1: Name */}
+          <div className="join__step">
+            <div className="join__step-header">
+              <span className="join__step-number">1</span>
+              <label className="join__label">Hva heter du?</label>
+            </div>
             <input
-              className="input u-w-full"
+              className="input join__input"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               placeholder="Skriv inn fornavnet ditt"
+              autoComplete="given-name"
             />
+            <div className="join__field-hint">Eventuelt et kallenavn om det er det alle kaller deg </div>
           </div>
 
           {searching && normalizedInput && (
@@ -413,17 +424,40 @@ export function JoinPage() {
             </div>
           )}
 
-          <div>
-            <label className="join__label">Bilde (et morsomt om du har)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => onSelectFile(e.target.files?.[0] || null)}
-            />
+          <div className="join__step">
+            <div className="join__step-header">
+              <span className="join__step-number">2</span>
+              <label className="join__label">Last opp et bilde</label>
+            </div>
+
+            {!hasImage ? (
+              <label className="join__upload-zone">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="join__file-input"
+                  onChange={(e) => onSelectFile(e.target.files?.[0] || null)}
+                />
+                <svg className="join__upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="8" width="40" height="32" rx="6" stroke="currentColor" strokeWidth="2.5" fill="none" />
+                  <circle cx="16" cy="20" r="4" stroke="currentColor" strokeWidth="2" fill="none" />
+                  <path d="M4 32 L16 22 L24 28 L34 18 L44 28 V34 C44 37.3137 41.3137 40 38 40 H10 C6.68629 40 4 37.3137 4 34 Z" fill="currentColor" opacity="0.15" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+                </svg>
+                <span className="join__upload-text">Trykk for å velge bilde</span>
+                <span className="join__upload-hint">Selfie, stygt bilde, morsomt bilde. Hvertfall av deg</span>
+              </label>
+            ) : (
+              <div className="join__upload-chosen">
+                <button type="button" className="join__upload-change" onClick={() => { setRawImageUrl(null); setCroppedBlob(null); setCroppedPreviewUrl(null); }}>
+                  Bytt bilde
+                </button>
+              </div>
+            )}
           </div>
 
           {hasImage && (
-            <div>
+            <div className="join__crop-section">
+              <div className="join__crop-label">Dra for å justere utsnittet</div>
               <div className="join__cropper-wrap">
                 <Cropper
                   image={rawImageUrl!}
@@ -438,8 +472,8 @@ export function JoinPage() {
                 />
               </div>
 
-              <div className="u-mt-md">
-                <label className="join__label">Zoom</label>
+              <div className="join__zoom-row">
+                <span className="join__zoom-label">🔍</span>
                 <input
                   type="range"
                   min={1}
@@ -447,23 +481,23 @@ export function JoinPage() {
                   step={0.01}
                   value={zoom}
                   onChange={(e) => setZoom(Number(e.target.value))}
-                  className="u-w-full"
+                  className="join__zoom-slider"
                 />
               </div>
 
               <button
                 type="button"
-                className="btn u-w-full u-mt-md"
+                className="btn join__crop-btn"
                 onClick={finalizeCrop}
               >
-                Bruk bildet
+                ✂️ Beskjær bildet
               </button>
             </div>
           )}
 
           {preview && (
             <div className="join__preview">
-              <div className="join__preview-label">Forhåndsvisning</div>
+              <div className="join__preview-label">Ser bra ut! 👌</div>
               <img
                 src={preview}
                 alt="Croppet forhåndsvisning"
@@ -478,9 +512,13 @@ export function JoinPage() {
             </div>
           )}
 
-          <button className="btn" type="submit" disabled={!canSubmit}>
-            {saving ? "Sender inn..." : "Registrer meg"}
+          <button className="btn btnPrimary join__submit" type="submit" disabled={!canSubmit}>
+            {saving ? "Sender inn..." : "🚀 Registrer meg"}
           </button>
+
+          <div className="join__footer-hint">
+            En admin godkjenner registreringen din. Purr på Åke eller Morten før chuggen settes i 15:15 på fredag. 
+          </div>
         </form>
       </div>
     </div>
