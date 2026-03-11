@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
 
@@ -17,6 +17,7 @@ export function RulesPage() {
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "alpha-asc" | "alpha-desc" | "crosses-asc" | "crosses-desc">("default");
 
   const [label, setLabel] = useState("");
   const [crosses, setCrosses] = useState("");
@@ -85,34 +86,47 @@ export function RulesPage() {
 
   const colCount = isAdmin ? 6 : 5;
 
+  const sortedRules = useMemo(() => {
+    const copy = [...rules];
+    if (sortBy === "alpha-asc") copy.sort((a, b) => a.label.localeCompare(b.label));
+    else if (sortBy === "alpha-desc") copy.sort((a, b) => b.label.localeCompare(a.label));
+    else if (sortBy === "crosses-desc") copy.sort((a, b) => b.crosses - a.crosses);
+    else if (sortBy === "crosses-asc") copy.sort((a, b) => a.crosses - b.crosses);
+    return copy;
+  }, [rules, sortBy]);
+
   return (
     <div>
       <h1>Regler</h1>
       <p>Her kan du se regelverket.</p>
 
-      {isAdmin && (
-        <div className="u-mt-md u-text-right">
+      <div className="rules__toolbar u-mt-md">
+        {isAdmin && (
           <button className={`btn ${editMode ? "" : "btnGhost"}`} onClick={() => setEditMode(v => !v)}>
             {editMode ? "Ferdig" : "Rediger"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className={`card ${isAdmin ? 'u-mt-sm' : 'u-mt-md'} rules__card`}>
+      <div className="card u-mt-sm rules__card">
         <div className="tableWrap rules__tableWrap">
           <table className="rules__table">
             <thead>
               <tr>
-                <th>Kode</th>
-                <th>Regel</th>
-                <th className="rules__col-crosses">Kryss</th>
+                <th className="rules__col-code">Kode</th>
+                <th className="rules__th-sortable" onClick={() => setSortBy(prev => prev === "alpha-asc" ? "alpha-desc" : prev === "alpha-desc" ? "default" : "alpha-asc")}>
+                  Regel {sortBy === "alpha-asc" && <span className="rules__sort-arrow">▲</span>}{sortBy === "alpha-desc" && <span className="rules__sort-arrow">▼</span>}
+                </th>
+                <th className="rules__col-crosses rules__th-sortable" onClick={() => setSortBy(prev => prev === "crosses-desc" ? "crosses-asc" : prev === "crosses-asc" ? "default" : "crosses-desc")}>
+                  Kryss {sortBy === "crosses-desc" && <span className="rules__sort-arrow">▼</span>}{sortBy === "crosses-asc" && <span className="rules__sort-arrow">▲</span>}
+                </th>
                 <th className="rules__col-details">Detaljer</th>
                 {isAdmin && <th className="rules__col-details" />}
                 <th className="rules__col-chevron"></th>
               </tr>
             </thead>
             <tbody>
-              {rules.map(r => {
+              {sortedRules.map(r => {
                 const color = RULE_COLORS[r.code] || "var(--muted)";
                 const isOpen = expandedCode === r.code;
                 return (
@@ -122,10 +136,13 @@ export function RulesPage() {
                       className={`rules__row ${isOpen ? "rules__row--expanded" : ""}`}
                       onClick={() => setExpandedCode(prev => prev === r.code ? null : r.code)}
                     >
-                      <td>
+                      <td className="rules__col-code">
                         <span className="badge" style={{ borderColor: color, color }}>{r.code}</span>
                       </td>
-                      <td><b>{r.label}</b></td>
+                      <td>
+                        <b className="rules__label-desktop">{r.label}</b>
+                        <b className="rules__label-mobile" style={{ color }}>{r.label}</b>
+                      </td>
                       <td className="rules__col-crosses">{r.crosses}</td>
                       <td className="rules__col-details u-text-muted">{r.details ?? ""}</td>
                       {isAdmin && editMode && (
@@ -144,6 +161,9 @@ export function RulesPage() {
                       <tr key={`${r.code}-detail`} className="rules__expand-row">
                         <td colSpan={colCount}>
                           <div className="rules__expand-content">
+                            <div className="rules__expand-item rules__expand-badge">
+                              <span className="badge" style={{ borderColor: color, color }}>{r.code}</span>
+                            </div>
                             <div className="rules__expand-item">
                               <span className="u-text-muted">Kryss:</span> <b>{r.crosses}</b>
                             </div>

@@ -10,8 +10,45 @@
   overflow-x: auto;
 }
 
+.rules__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .rules__row {
   cursor: pointer;
+}
+
+.rules__th-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.rules__th-sortable:hover {
+  color: var(--text);
+}
+
+.rules__sort-arrow {
+  font-size: 0.7em;
+  margin-left: 4px;
+  color: var(--accent);
+}
+
+/* Desktop: show normal label, hide mobile label */
+.rules__label-desktop {
+  display: inline;
+}
+
+.rules__label-mobile {
+  display: none;
+}
+
+/* Badge in expand row - hidden on desktop */
+.rules__expand-badge {
+  display: none;
 }
 
 /* Chevron - hidden on desktop */
@@ -121,17 +158,39 @@
 
 /* --- Mobile --- */
 @media (max-width: 768px) {
-  .rules__col-details,
-  .rules__col-crosses {
+  /* Hide code badge column and details on mobile */
+  .rules__col-code,
+  .rules__col-details {
     display: none;
   }
 
+  /* Show kryss column on mobile */
+  .rules__col-crosses {
+    display: table-cell;
+  }
+
+  /* Swap label variants */
+  .rules__label-desktop {
+    display: none;
+  }
+
+  .rules__label-mobile {
+    display: inline;
+  }
+
+  /* Show badge in expand row on mobile */
+  .rules__expand-badge {
+    display: block;
+  }
+
+  /* Show the chevron column */
   .rules__col-chevron {
     display: table-cell;
     width: 30px;
     text-align: center;
   }
 
+  /* Show the expand sub-row */
   .rules__expand-row {
     display: table-row;
   }
