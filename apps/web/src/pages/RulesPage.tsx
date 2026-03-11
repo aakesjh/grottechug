@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
 
@@ -98,7 +99,7 @@ export function RulesPage() {
   return (
     <div>
       <h1>Regler</h1>
-      <p>Her kan du se regelverket.</p>
+      <p>Her kan du se regelverket. Ny her? <Link to="/howto" style={{ color: "var(--accent2)", fontWeight: 600, textDecoration: "none" }}>Lær hvordan man chugger →</Link></p>
 
       <div className="rules__toolbar u-mt-md">
         {isAdmin && (

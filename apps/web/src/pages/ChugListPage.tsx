@@ -461,7 +461,7 @@ export function ChugListPage() {
               </button>
             </>
           ) : (
-            <span className="chuglist__hint">Dobbeltklikk en dato for å redigere</span>
+            isAdmin && <span className="chuglist__hint">Dobbeltklikk en dato for å redigere</span>
           )}
         </div>
       </div>

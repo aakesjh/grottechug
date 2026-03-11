@@ -125,14 +125,6 @@ export function Navbar() {
                   Regler
                 </NavLink>
                 <NavLink
-                  to="/howto"
-                  className={({ isActive }) =>
-                    `navLink ${isActive ? "navLinkActive" : ""}`
-                  }
-                >
-                  How to
-                </NavLink>
-                <NavLink
                   to="/leaderboard"
                   className={({ isActive }) =>
                     `navLink ${isActive ? "navLinkActive" : ""}`
@@ -270,7 +262,6 @@ export function Navbar() {
             <NavLink to="/chug" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Chuggelista</NavLink>
             <NavLink to="/violations" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Kryssliste</NavLink>
             <NavLink to="/rules" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Regler</NavLink>
-            <NavLink to="/howto" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>How to</NavLink>
             <NavLink to="/leaderboard" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Toppliste</NavLink>
             <NavLink to="/stats" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Statistikk</NavLink>
             <NavLink to="/grotta" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Grotta</NavLink>
