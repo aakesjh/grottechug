@@ -19,5 +19,8 @@
   },
   "dependencies": {
     "recharts": "^3.7.0"
+  },
+  "overrides": {
+    "node-domexception": "1.0.0"
   }
 }
