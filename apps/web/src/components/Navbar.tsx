@@ -12,6 +12,7 @@ export function Navbar() {
   const [participantName, setParticipantName] = useState<string | null>(null);
   const [participantImage, setParticipantImage] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // LØSNINGEN: Er vi på forsiden, er den ALLTID i hero-modus (låst).
@@ -214,7 +215,70 @@ export function Navbar() {
               </div>
             )}
 
+            <button
+              className={`hamburger ${drawerOpen ? "hamburgerOpen" : ""}`}
+              onClick={() => setDrawerOpen((v) => !v)}
+              aria-label="Meny"
+            >
+              <span className="hamburgerLine" />
+              <span className="hamburgerLine" />
+              <span className="hamburgerLine" />
+            </button>
+
           </div>
+        </div>
+
+        {drawerOpen && (
+          <div className="mobileOverlay" onClick={() => setDrawerOpen(false)} />
+        )}
+        <div className={`mobileDrawer ${drawerOpen ? "mobileDrawerOpen" : ""}`}>
+          {!isPending && isAuthenticated && (
+            <div className="mobileDrawerProfile">
+              <div
+                className="mobileDrawerProfileInfo"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  if (user?.participantId) navigate(`/person/${user.participantId}`);
+                }}
+              >
+                {participantImage ? (
+                  <img src={participantImage} alt={participantName ?? ""} className="profileImg" />
+                ) : (
+                  <span className="profileInitial">
+                    {(participantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="profileBlobInfo">
+                  <span className="profileBlobName">{participantName ?? user?.name}</span>
+                  <span className={`profileBlobRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                    {isAdmin ? "Admin" : "Medlem"}
+                  </span>
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="mobileDrawerLinks">
+            <NavLink to="/wheel" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Hjulet</NavLink>
+            <NavLink to="/chug" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Chuggelista</NavLink>
+            <NavLink to="/violations" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Kryssliste</NavLink>
+            <NavLink to="/rules" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Regler</NavLink>
+            <NavLink to="/leaderboard" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Toppliste</NavLink>
+            <NavLink to="/stats" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Statistikk</NavLink>
+            <NavLink to="/grotta" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Grotta</NavLink>
+            {isAdmin && (
+              <NavLink to="/admin" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Admin</NavLink>
+            )}
+          </div>
+          {!isPending && isAuthenticated && (
+            <div className="mobileDrawerFooter">
+              <button
+                className="mobileDrawerBtn mobileDrawerDanger"
+                onClick={() => { setDrawerOpen(false); handleSignOut(); }}
+              >
+                Logg ut
+              </button>
+            </div>
+          )}
         </div>
       </nav>
     </>

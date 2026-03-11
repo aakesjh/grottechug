@@ -50,6 +50,12 @@
   filter: drop-shadow(0 0 20px rgba(124, 92, 255, 0.4));
 }
 
+.heroMode .navControls {
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
 .heroMode .navLinks {
   justify-content: center;
   width: 100%;
@@ -75,6 +81,185 @@
 
 .compactMode .navLinks {
   justify-content: flex-end;
+}
+
+/* --- Nav Controls --- */
+.navControls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.compactMode .navControls {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.navAuth {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* --- Profile Menu (inline in nav, hidden on mobile) --- */
+.profileMenu {
+  position: relative;
+  z-index: 1001;
+  flex-shrink: 0;
+}
+
+/* --- Profile Blob & Dropdown --- */
+.profileBlob {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  padding: 4px 16px 4px 4px;
+  overflow: hidden;
+  transition: 150ms ease;
+  flex-shrink: 0;
+}
+
+.profileBlob:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: var(--overlay-light);
+}
+
+.profileImg {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.profileInitial {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profileBlobInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.profileBlobName {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profileBlobRole {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profileDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: rgba(14, 20, 38, 0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  z-index: 2000;
+  animation: dropIn 120ms ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.profileDropdownHeader {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profileDropdownLink {
+  cursor: pointer;
+  border-radius: 10px;
+  transition: 100ms ease;
+}
+
+.profileDropdownLink:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profileDropdownName {
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profileDropdownDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 2px 6px;
+}
+
+.profileDropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  font-weight: 500;
+  transition: 100ms ease;
+}
+
+.profileDropdownItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profileDropdownDanger:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+
+/* --- Auth Role Badges --- */
+.authRole {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.authRoleAdmin {
+  color: var(--accent);
+}
+
+.authRoleMember {
+  color: var(--accent2);
 }
 
 /* --- Nav Placeholder (prevents content jump) --- */
@@ -184,7 +369,15 @@
     gap: 15px;
   }
 
+  .compactMode .navControls {
+    justify-content: center;
+  }
+
   .compactMode .navLinks {
+    justify-content: center;
+  }
+
+  .navAuth {
     justify-content: center;
   }
 
@@ -253,7 +446,8 @@
 
   /* Mobile drawer */
   .mobileDrawer {
-    display: block;
+    display: flex;
+    flex-direction: column;
     position: fixed;
     top: 0;
     right: 0;
@@ -269,6 +463,7 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-top: 70px;
   }
 
   .mobileDrawerOpen {
@@ -279,7 +474,7 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    padding: 80px 20px 40px;
+    padding: 12px 20px 40px;
   }
 
   .mobileDrawerLinks .navLink {
@@ -293,6 +488,58 @@
 
   .mobileDrawerLinks .navLink:active {
     background: rgba(255, 255, 255, 0.12);
+  }
+
+  .profileMenu {
+    display: none;
+  }
+
+  .mobileDrawerProfile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .mobileDrawerProfileInfo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    cursor: pointer;
+    border-radius: 12px;
+  }
+
+  .mobileDrawerFooter {
+    padding: 0 20px 20px;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 12px;
+  }
+
+  .mobileDrawerBtn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text);
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    min-height: 44px;
+    transition: var(--transition-fast);
+  }
+
+  .mobileDrawerBtn:active {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .mobileDrawerDanger {
+    color: var(--danger);
   }
 }
 
