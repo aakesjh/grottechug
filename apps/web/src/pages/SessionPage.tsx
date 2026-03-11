@@ -897,13 +897,13 @@ export function SessionPage() {
                   textAnchor="end"
                   height={70}
                 />
-                <YAxis stroke="var(--muted)" tickFormatter={(v: number) => `${v}s`} />
+                <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.04)" }}
                   contentStyle={TOOLTIP_STYLE}
                   labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                   itemStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: unknown) => {
+                  formatter={(value: any) => {
                     const numericValue = Number(value ?? 0);
                     return [
                       `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}s`,
@@ -942,13 +942,13 @@ export function SessionPage() {
                     textAnchor="end"
                     height={70}
                   />
-                  <YAxis stroke="var(--muted)" tickFormatter={(v: number) => `${v}s`} />
+                  <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
                   <Tooltip
                     cursor={{ fill: "rgba(255,255,255,0.04)" }}
                     contentStyle={TOOLTIP_STYLE}
                     labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                     itemStyle={{ color: "#e2e8f0" }}
-                    formatter={(value: unknown) => {
+                    formatter={(value: any) => {
                       const numericValue = Number(value ?? 0);
                       return [
                         `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}s`,
@@ -989,7 +989,7 @@ export function SessionPage() {
                     paddingAngle={3}
                     dataKey="value"
                     nameKey="label"
-                    label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}
+                    label={({ name, value }: any) => `${name}: ${value}`}
                   >
                     {pieData.map((entry, i) => (
                       <Cell
@@ -1004,7 +1004,7 @@ export function SessionPage() {
                     contentStyle={TOOLTIP_STYLE}
                     labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                     itemStyle={{ color: "#e2e8f0" }}
-                    formatter={(value: unknown, _name: unknown, props: any) => [
+                    formatter={(value: any, _name: any, props: any) => [
                       `${Number(value ?? 0)} stk`,
                       props?.payload?.label || props?.payload?.name || "Kryss",
                     ]}
@@ -1031,13 +1031,13 @@ export function SessionPage() {
                   textAnchor="end"
                   height={70}
                 />
-                <YAxis stroke="var(--muted)" tickFormatter={(v: number) => `${v}s`} />
+                <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.04)" }}
                   contentStyle={TOOLTIP_STYLE}
                   labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                   itemStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: unknown, name: unknown, props: any) => {
+                  formatter={(value: any, name: any, props: any) => {
                     const numericValue = Number(value ?? 0);
                     if (name === "gap") {
                       return [`+${numericValue.toFixed(2)}s`, "Bak dagens beste"];
@@ -1073,13 +1073,13 @@ export function SessionPage() {
                 textAnchor="end"
                 height={70}
               />
-              <YAxis stroke="var(--muted)" tickFormatter={(v: number) => `${v}s`} />
+              <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
               <Tooltip
                 cursor={{ fill: "rgba(255,255,255,0.04)" }}
                 contentStyle={TOOLTIP_STYLE}
                 labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                 itemStyle={{ color: "#e2e8f0" }}
-                formatter={(value: unknown, name: unknown) => {
+                formatter={(value: any, name: any) => {
                   if (name === "seconds") return [fmtSeconds(Number(value ?? 0)), "Tid"];
                   return [String(value), String(name ?? "")];
                 }}

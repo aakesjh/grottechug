@@ -264,16 +264,16 @@ export function PersonPage() {
               <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="date" stroke="var(--muted)" />
-                <YAxis domain={['auto', 'auto']} stroke="var(--muted)" tickFormatter={(tick: number) => `${tick}s`} />
+                <YAxis domain={['auto', 'auto']} stroke="var(--muted)" tickFormatter={(tick: any) => `${tick}s`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
-                  formatter={(v: unknown, name: unknown) => {
+                  formatter={(v: any, name: any) => {
                     if (name === "trend") return [`${Number(v).toFixed(2)}s`, "Trend"];
                     if (name === "seconds" || name === "mainSeconds") return [`${Number(v).toFixed(2)}s`, p.name];
                     if (name === "compSeconds" && compareData) return [`${Number(v).toFixed(2)}s`, compareData.participant.name];
                     return [String(v), String(name)];
                   }}
-                  labelFormatter={(label: React.ReactNode) => `Dato: ${label}`}
+                  labelFormatter={(label: any) => `Dato: ${label}`}
                 />
                 
                 {compareData && <Legend verticalAlign="top" height={36} />}
