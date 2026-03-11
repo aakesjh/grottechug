@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install --include=dev",
+  "installCommand": "cd ../.. && npm install --include=dev",
   "buildCommand": "cd ../.. && npm run vercel-build",
   "outputDirectory": "apps/web/dist",
   "functions": {
