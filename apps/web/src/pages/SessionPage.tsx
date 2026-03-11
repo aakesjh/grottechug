@@ -617,7 +617,7 @@ export function SessionPage() {
             {sessionStats.avgTime?.toFixed(2)}s
           </div>
           <div style={{ fontSize: "0.8rem", opacity: 0.6 }}>
-            #{sessionStats.avgRank} raskeste av {sessionStats.totalSessionsWithAvg}
+            #{sessionStats.avgRank}/{sessionStats.totalSessionsWithAvg} raskeste snitt
           </div>
         </div>
 
@@ -655,7 +655,7 @@ export function SessionPage() {
             {sessionStats.participantCount}
           </div>
           <div style={{ fontSize: "0.8rem", opacity: 0.6 }}>
-            #{sessionStats.countRank} best oppmøte av {sessionStats.totalSessionsWithCount}
+            #{sessionStats.countRank}/{sessionStats.totalSessionsWithCount} beste oppmøte
           </div>
         </div>
 
@@ -709,8 +709,7 @@ export function SessionPage() {
             </div>
 
             <div style={{ fontSize: "0.8rem", opacity: 0.65, marginTop: 4 }}>
-              #{sessionStats.fastestGlobalRank} raskeste av {sessionStats.totalHistoricalAttempts}{" "}
-              forsøk totalt
+              #{sessionStats.fastestGlobalRank}/{sessionStats.totalHistoricalAttempts} raskeste tid noensinne
             </div>
           </div>
         )}
@@ -765,8 +764,7 @@ export function SessionPage() {
             </div>
 
             <div style={{ fontSize: "0.8rem", opacity: 0.65, marginTop: 4 }}>
-              #{sessionStats.slowestGlobalRank} tregeste av {sessionStats.totalHistoricalAttempts}{" "}
-              forsøk totalt
+              #{sessionStats.slowestGlobalRank}/{sessionStats.totalHistoricalAttempts} tregeste tid noensinne
             </div>
           </div>
         )}
