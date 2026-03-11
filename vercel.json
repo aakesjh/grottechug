@@ -1,7 +1,7 @@
 {
   "installCommand": "cd ../.. && npm install --include=dev",
   "buildCommand": "cd ../.. && npm run vercel-build",
-  "outputDirectory": "apps/web/dist",
+  "outputDirectory": "dist",
   "functions": {
     "api/index.ts": {
       "includeFiles": "apps/api/dist/**"
