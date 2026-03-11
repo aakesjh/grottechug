@@ -587,7 +587,7 @@ export function AdminPage() {
       <section className="card admin__header">
         <h1>Admin</h1>
         <p className="admin__subtitle">
-          Administrasjonspanel for {user?.name}
+          Administrasjonspanel. Her kan du godkjenne eller avvise innmeldinger, redigere deltakere og se historikk. Vær forsiktig med endringer her, spesielt sletting av deltakere, da det kan påvirke statistikk og historiske data!
         </p>
       </section>
 
