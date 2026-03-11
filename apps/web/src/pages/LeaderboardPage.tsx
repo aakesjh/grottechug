@@ -12,6 +12,7 @@ type Row = {
   imageUrl?: string | null;
   bestClean: number;
   dateISO: string;
+  sessionId?: string;
 };
 
 type Resp = { semester: string; rows: Row[] };
@@ -24,78 +25,66 @@ function fmtDDMMYYYY(iso: string) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-function Podium({
-  title,
-  rows,
-  showAvatar
-}: {
-  title: string;
-  rows: Row[];
-  showAvatar: boolean;
-}) {
+const MEDAL = ["🥇", "🥈", "🥉"] as const;
+const PODIUM_COLORS = [
+  { bg: "linear-gradient(180deg, rgba(255,215,0,0.18), rgba(255,215,0,0.06))", border: "#FFD700", glow: "0 0 20px rgba(255,215,0,0.2)" },
+  { bg: "linear-gradient(180deg, rgba(192,192,192,0.14), rgba(192,192,192,0.04))", border: "#C0C0C0", glow: "0 0 16px rgba(192,192,192,0.15)" },
+  { bg: "linear-gradient(180deg, rgba(205,127,50,0.14), rgba(205,127,50,0.04))", border: "#CD7F32", glow: "0 0 16px rgba(205,127,50,0.15)" },
+];
+const STAND_HEIGHTS = [100, 72, 52];
+
+function MedalStand({ rows }: { rows: Row[] }) {
   const nav = useNavigate();
   const top3 = rows.slice(0, 3);
+  // Display order: 2nd, 1st, 3rd
+  const order = [1, 0, 2];
 
   return (
-    <div className="card podium__card">
-      <h2 style={{ marginTop: 0 }}>{title}</h2>
+    <div className="podium">
+      {order.map(pos => {
+        const r = top3[pos];
+        const colors = PODIUM_COLORS[pos];
+        const standH = STAND_HEIGHTS[pos];
 
-      {!top3.length ? (
-        <div className="u-text-muted" style={{ flex: 1 }}>
-          Ingen data funnet.
-        </div>
-      ) : (
-        <div className="podium" style={{ flex: 1, paddingBottom: 10 }}>
-          {[1, 0, 2].map(pos => {
-            const r = top3[pos];
-            const rank = pos === 0 ? 1 : pos === 1 ? 2 : 3;
-            const label = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
-            const height = pos === 0 ? 170 : pos === 1 ? 140 : 120;
+        if (!r) {
+          return (
+            <div key={pos} className="podium__slot">
+              <div className="podium__medal">{MEDAL[pos]}</div>
+              <div className="podium__avatar-wrap podium__avatar-wrap--empty">—</div>
+              <div className="podium__stand podium__stand--empty" style={{ height: standH }} />
+            </div>
+          );
+        }
 
-            const hasBgImage = showAvatar && r?.imageUrl;
-            const bgStyle = hasBgImage
-              ? { backgroundImage: `url(${r.imageUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
-              : { background: "rgba(0,0,0,0.18)" };
-
-            const frameColors = {
-              1: { border: "#FFD700", glow: "rgba(255, 215, 0, 0.3)" },
-              2: { border: "#C0C0C0", glow: "rgba(192, 192, 192, 0.3)" },
-              3: { border: "#CD7F32", glow: "rgba(205, 127, 50, 0.3)" }
-            };
-            const theme = frameColors[rank as keyof typeof frameColors];
-
-            return (
-              <button
-                key={pos}
-                onClick={() => r && nav(`/person/${r.participantId}`)}
-                disabled={!r}
-                className={`podium__button ${r ? "podium__button--clickable" : ""}`}
-              >
-                <div className="podium__emoji">{label}</div>
-                <div
-                  className={`podium__frame ${!r ? "podium__frame--empty" : ""}`}
-                  style={{
-                    height,
-                    ...(r ? { border: `3px solid ${theme.border}`, boxShadow: `0 4px 15px ${theme.glow}` } : {}),
-                    ...bgStyle,
-                  }}
-                >
-                  {r && showAvatar && !hasBgImage && <Avatar name={r.name} size={height * 0.4} />}
-                  {!r && <div className="u-text-muted">—</div>}
-                </div>
-                {r ? (
-                  <div className="podium__info">
-                    <div className="podium__name">{r.name}</div>
-                    <div className="podium__time">{r.bestClean.toFixed(2)}s</div>
-                  </div>
-                ) : (
-                  <div style={{ marginTop: 8, fontSize: "0.85rem", color: "transparent" }}>&nbsp;</div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+        return (
+          <button
+            key={pos}
+            className="podium__slot podium__slot--clickable"
+            onClick={() => nav(`/person/${r.participantId}`)}
+          >
+            <div className="podium__medal">{MEDAL[pos]}</div>
+            <div
+              className="podium__avatar-wrap"
+              style={{ borderColor: colors.border, boxShadow: colors.glow }}
+            >
+              {r.imageUrl
+                ? <img src={r.imageUrl} alt={r.name} className="podium__avatar-img" />
+                : <Avatar name={r.name} size={56} />
+              }
+            </div>
+            <div className="podium__details">
+              <div className="podium__name">{r.name}</div>
+              <div className="podium__time">{r.bestClean.toFixed(2)}s</div>
+            </div>
+            <div
+              className="podium__stand"
+              style={{ height: standH, background: colors.bg, borderColor: colors.border }}
+            >
+              <span className="podium__stand-rank">{pos + 1}</span>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -105,6 +94,7 @@ export function LeaderboardPage() {
   const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<Resp | null>(null);
   const [showGuests, setShowGuests] = useState<boolean>(false);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -116,7 +106,27 @@ export function LeaderboardPage() {
 
   const rows = data?.rows ?? [];
   const topRegular = useMemo(() => rows.filter(r => r.isRegular), [rows]);
-  const tableRows = showGuests ? rows : topRegular;
+  const baseRows = showGuests ? rows : topRegular;
+  const tableRows = useMemo(() => {
+    if (!search.trim()) return baseRows;
+    const q = search.toLowerCase();
+    return baseRows.filter(r => r.name.toLowerCase().includes(q));
+  }, [baseRows, search]);
+
+  const slowest = useMemo(() => tableRows.length ? Math.max(...tableRows.map(r => r.bestClean)) : 1, [tableRows]);
+  const fastest = useMemo(() => tableRows.length ? Math.min(...tableRows.map(r => r.bestClean)) : 0, [tableRows]);
+
+  const getRankClass = (i: number) => {
+    if (i === 0) return "leaderboard__row--gold";
+    if (i === 1) return "leaderboard__row--silver";
+    if (i === 2) return "leaderboard__row--bronze";
+    return "";
+  };
+
+  const getBarPct = (time: number) => {
+    if (slowest === fastest) return 100;
+    return 100 - ((time - fastest) / (slowest - fastest)) * 80;
+  };
 
   return (
     <div className="leaderboard">
@@ -133,60 +143,78 @@ export function LeaderboardPage() {
             {s === "all" ? "Total" : s === "2025H" ? "2025 Høst" : "2026 Vår"}
           </button>
         ))}
+        <button
+          className={`tab ${showGuests ? "tabActive" : ""}`}
+          onClick={() => setShowGuests(g => !g)}
+        >
+          Vis gjester
+        </button>
       </div>
 
-      <div className="row u-mt-sm" style={{ alignItems: "stretch" }}>
-        
-        {/* Venstre kolonne - Podium */}
-        <div 
-          className="col u-flex" 
-          style={{ 
-            flexDirection: "column", 
-            gap: 14,
-          }}
-        >
-          <Podium title="Podium (kun grottamedlemmer)" rows={topRegular} showAvatar />
-          <Podium title="Best uansett" rows={rows} showAvatar />
+      {/* Podium */}
+      <div className="card u-mt-sm">
+        <MedalStand rows={showGuests ? rows : topRegular} />
+      </div>
+
+      {/* Table */}
+      <div className="card u-mt-sm">
+        <div className="leaderboard__list-header">
+          <h2 style={{ margin: 0 }}>Hele listen</h2>
         </div>
 
-        {/* Høyre kolonne - Listen */}
-        <div 
-          className="col card u-flex" 
-          style={{ flexDirection: "column" }}
-        >
-          <div className="leaderboard__list-header">
-            <h2 style={{ margin: 0 }}>Hele listen</h2>
-            <label className="leaderboard__guest-toggle">
-              <input type="checkbox" checked={showGuests} onChange={(e) => setShowGuests(e.target.checked)} />
-              Vis gjester
-            </label>
-          </div>
+        <div className="leaderboard__search-wrap">
+          <input
+            type="text"
+            className="leaderboard__search"
+            placeholder="Søk etter navn..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button className="leaderboard__search-clear" onClick={() => setSearch("")}>✕</button>
+          )}
+        </div>
 
-          <div className="tableWrap" style={{ border: "none", overflow: "visible" }}>
-            <table className="leaderboard__table">
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                  <th>#</th>
-                  <th>Navn</th>
-                  <th>Tid</th>
-                  <th>Dato</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableRows.map((r: any, i) => (
-                  <tr key={`${r.participantId}-${i}`} style={{ borderBottom: "1px solid var(--border)" }}>
+        <div className="tableWrap" style={{ border: "none", overflow: "visible" }}>
+          <table className="leaderboard__table">
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                <th>#</th>
+                <th>Navn</th>
+                <th>Tid</th>
+                <th>Dato</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableRows.map((r, i) => {
+                const globalIdx = baseRows.indexOf(r);
+                return (
+                  <tr
+                    key={`${r.participantId}-${i}`}
+                    className={`leaderboard__row ${getRankClass(globalIdx)}`}
+                    style={{ animationDelay: `${i * 30}ms` }}
+                  >
                     <td className="leaderboard__rank">
-                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
+                      {globalIdx === 0 ? "🥇" : globalIdx === 1 ? "🥈" : globalIdx === 2 ? "🥉" : globalIdx + 1}
                     </td>
-                    <td style={{ padding: "8px" }}>
+                    <td className="leaderboard__name-cell">
                       <button 
                         className="leaderboard__name-btn" 
                         onClick={() => nav(`/person/${r.participantId}`)}
                       >
                         {r.name}
                       </button>
+                      {!r.isRegular && <span className="leaderboard__guest-badge">gjest</span>}
                     </td>
-                    <td className="leaderboard__time">{r.bestClean.toFixed(2)}s</td>
+                    <td className="leaderboard__time-cell">
+                      <div className="leaderboard__time-bar-bg">
+                        <div
+                          className="leaderboard__time-bar"
+                          style={{ width: `${getBarPct(r.bestClean)}%` }}
+                        />
+                      </div>
+                      <span className="leaderboard__time-value">{r.bestClean.toFixed(2)}s</span>
+                    </td>
                     <td style={{ padding: "8px" }}>
                       <button
                         className="leaderboard__date-btn"
@@ -197,10 +225,15 @@ export function LeaderboardPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                );
+              })}
+              {tableRows.length === 0 && (
+                <tr><td colSpan={4} style={{ textAlign: "center", padding: 20, color: "var(--muted)" }}>
+                  {search ? "Ingen treff" : "Ingen data"}
+                </td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

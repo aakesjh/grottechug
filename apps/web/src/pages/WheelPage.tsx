@@ -41,6 +41,7 @@ export function WheelPage() {
   const [freezeWheel, setFreezeWheel] = useState(false);
   const [wheelNames, setWheelNames] = useState<string[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [spinHistory, setSpinHistory] = useState<Array<{ name: string; imageUrl: string | null; time: string }>>([]);
 
   const [windowSize, setWindowSize] = useState({ w: 1000, h: 800 });
 
@@ -87,8 +88,7 @@ export function WheelPage() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) return;
-
+    // Clear search state when auth changes
     setGuestQuery("");
     setGuestSuggestions([]);
   }, [isAdmin]);
@@ -203,6 +203,80 @@ export function WheelPage() {
     setFreezeWheel(true);
     setSpinning(true);
 
+    // Jevn deceleration fra start — én sammenhengende animasjon
+    const startAngle = angleRef.current;
+    const v0 = 0.035; // start-fart (rad/ms) — høy nok til å føles rask
+    const animStart = performance.now();
+    let cancelled = false;
+
+    // Fase 1: Fri deceleration (før API-svar)
+    // Bruker v(t) = v0 * (1 - t/T)^k med estimert T
+    // Posisjonen: integral av v(t) dt = v0*T/(k+1) * [1 - (1-t/T)^(k+1)]
+    const k = 3; // decelerasjonskurve-eksponent
+    const estimatedDuration = 10000; // ms, foreløpig estimat
+    let phase: "free" | "targeted" = "free";
+
+    // Targeted-fase variabler (settes når API returnerer)
+    let targetStartTime = 0;
+    let targetStartAngle = 0;
+    let targetStartSpeed = 0;
+    let targetEndAngle = 0;
+    let targetDuration = 0;
+
+    function getFreePosAndSpeed(now: number) {
+      const elapsed = now - animStart;
+      const t = Math.min(elapsed / estimatedDuration, 0.99); // Begrens til 99% slik at den ikke stopper helt
+      const oneMinus = 1 - t;
+      const pos = startAngle + (v0 * estimatedDuration / (k + 1)) * (1 - Math.pow(oneMinus, k + 1));
+      const speed = v0 * Math.pow(oneMinus, k);
+      return { pos, speed, elapsed };
+    }
+
+    function animate(now: number) {
+      if (cancelled) return;
+
+      if (phase === "free") {
+        const { pos } = getFreePosAndSpeed(now);
+        setAngle(pos);
+        requestAnimationFrame(animate);
+      } else {
+        // Fase 2: Målrettet deceleration til endAngle
+        const elapsed = now - targetStartTime;
+        const t = Math.min(1, elapsed / targetDuration);
+        // Easing: starter ved nåværende fart, bremser jevnt til 0
+        // Bruker kubisk ease-out: pos = startAngle + totalDist * (1 - (1-t)^3)
+        // Men vi tilpasser slik at startfarten matcher
+        const eased = 1 - Math.pow(1 - t, 3);
+        const totalDist = targetEndAngle - targetStartAngle;
+        const currentAngle = targetStartAngle + totalDist * eased;
+        
+        setAngle(currentAngle);
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setAngle(targetEndAngle % (Math.PI * 2));
+          cancelled = true;
+          onSpinComplete();
+        }
+      }
+    }
+
+    let resolvedWinnerId = "";
+    let resolvedWinnerName = "";
+
+    function onSpinComplete() {
+      setWinner(resolvedWinnerName);
+      const img = candidateList.find(p => p.id === resolvedWinnerId)?.imageUrl || null;
+      setWinnerImage(img);
+      setPresent(prev => ({ ...prev, [resolvedWinnerId]: false }));
+      setSpinHistory(prev => [{ name: resolvedWinnerName, imageUrl: img, time: new Date().toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" }) }, ...prev]);
+      fireConfetti();
+      setSpinning(false);
+    }
+
+    requestAnimationFrame(animate);
+
     try {
       const res = await apiFetch(`/api/wheel/spin`, {
         method: "POST",
@@ -214,9 +288,13 @@ export function WheelPage() {
       const winnerName: string = json?.winner?.name ?? "Ukjent";
 
       if (!winnerId) {
+        cancelled = true;
         setSpinning(false);
         return;
       }
+
+      resolvedWinnerId = winnerId;
+      resolvedWinnerName = winnerName;
 
       // Hent vinnerstats mens hjulet spinner
       apiFetch(`/api/person/${winnerId}?semester=all`)
@@ -269,64 +347,59 @@ export function WheelPage() {
         })
         .catch(e => console.error(e));
 
+      // Beregn målvinkel for vinneren
       const idx = currentNames.findIndex(name => name === winnerName);
       const n = currentNames.length;
       const step = (Math.PI * 2) / n;
       
-      // Tving pekeren til å lande farlig nærme kanten ("Near Miss")
+      // "Near Miss" — pekeren lander nær kanten av segmentet
       const direction = Math.random() > 0.5 ? 1 : -1; 
       const nearMissOffset = (Math.random() * 0.1 + 0.35) * direction; 
       
       const targetLocalAngle = (idx * step) + (step / 2) + (nearMissOffset * step);
       const baseAngle = (Math.PI * 2) - targetLocalAngle;
 
-      // Start der idle-spinnet slapp
-      const currentRot = angleRef.current;
-      let nextAngle = baseAngle + Math.floor(currentRot / (Math.PI * 2)) * Math.PI * 2;
-      if (nextAngle < currentRot) nextAngle += Math.PI * 2;
+      // Hent nåværende posisjon og fart fra fri-fasen
+      const now = performance.now();
+      const { pos: currentPos, speed: currentSpeed } = getFreePosAndSpeed(now);
+
+      let nextAngle = baseAngle + Math.floor(currentPos / (Math.PI * 2)) * Math.PI * 2;
+      if (nextAngle < currentPos) nextAngle += Math.PI * 2;
       
-      const extraSpins = 10 + Math.floor(Math.random() * 3); 
-      const endAngle = nextAngle + (Math.PI * 2 * extraSpins);
+      // Legg til nok ekstra rotasjoner basert på nåværende fart
+      const minExtraSpins = 5;
+      const endAngle = nextAngle + (Math.PI * 2 * (minExtraSpins + Math.floor(Math.random() * 3)));
+      const remainingDist = endAngle - currentPos;
       
-      const totalDist = endAngle - currentRot;
-      const duration = 8000 + Math.random() * 1000; 
-      const t0 = performance.now();
+      // Beregn varighet slik at startfarten matcher nåværende fart
+      // For ease-out kubisk: v(0) = 3 * totalDist / duration (derivert av (1-(1-t)^3) ved t=0)
+      // Så duration = 3 * totalDist / currentSpeed
+      const easePower = 3;
+      const duration = Math.max(4000, (easePower * remainingDist) / currentSpeed);
 
-      function anim(now: number) {
-        const t = Math.min(1, (now - t0) / duration);
-        const eased = 1 - Math.pow(1 - t, 7); 
-        
-        setAngle(currentRot + (totalDist * eased));
-        
-        const remainingAngle = totalDist * (1 - eased);
-        
-        // Kutt ventetiden når bevegelsen er umerkelig
-        if (t < 1 && remainingAngle > 0.003) {
-          requestAnimationFrame(anim);
-          return;
-        }
-
-        setAngle(endAngle % (Math.PI * 2));
-        setWinner(winnerName);
-        setWinnerImage(candidateList.find(p => p.id === winnerId)?.imageUrl || null);
-        setPresent(prev => ({ ...prev, [winnerId]: false }));
-        fireConfetti();
-        setSpinning(false);
-      }
-
-      requestAnimationFrame(anim);
+      // Bytt til målrettet fase — sømløs overgang
+      targetStartTime = now;
+      targetStartAngle = currentPos;
+      targetEndAngle = endAngle;
+      targetDuration = duration;
+      phase = "targeted";
 
     } catch (error) {
       console.error("Feil ved spin:", error);
+      cancelled = true;
       setSpinning(false);
     }
   }
 
   function addExistingGuest(guest: Participant) {
     setFreezeWheel(false);
-    if (guest.isRegular) return;
-    setSelectedGuests(prev => (prev.some(x => x.id === guest.id) ? prev : [...prev, guest]));
-    setPresent(prev => ({ ...prev, [guest.id]: true }));
+    if (guest.isRegular) {
+      // Regular is already in the list, just check them in
+      setPresent(prev => ({ ...prev, [guest.id]: true }));
+    } else {
+      setSelectedGuests(prev => (prev.some(x => x.id === guest.id) ? prev : [...prev, guest]));
+      setPresent(prev => ({ ...prev, [guest.id]: true }));
+    }
     setGuestQuery("");
     setGuestSuggestions([]);
   }
@@ -367,96 +440,129 @@ export function WheelPage() {
 
   const wheelSize = isExpanded
     ? Math.min(windowSize.w * 0.95, windowSize.h * 0.8, 850)
-    : Math.min(windowSize.w - 48, 360);
+    : Math.min(windowSize.w - 48, 480);
+
+  const presentCount = regulars.filter(p => !!present[p.id]).length;
 
   return (
-    <div>
-      <h1 style={{ display: isExpanded ? "none" : "block" }}>Hjulet</h1>
+    <div className="wheel-page">
+      {!isExpanded && (
+        <div className="wheel-page__hero">
+          <h1 className="wheel-page__title">Hjulet</h1>
+          <div className="wheel-page__subtitle">
+            <span className="wheel-page__candidate-pill">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+              {candidateIds.length} kandidater
+            </span>
+          </div>
+        </div>
+      )}
 
-      <div className="wheel-page__row" style={{ marginTop: 14 }}>
-        <div className="wheel-page__sidebar card" style={{ display: isExpanded ? "none" : "block" }}>
-          {isAdmin ? (
-            <>
-              <h2 style={{ fontSize: 18, marginBottom: 12 }}>Legg til gjest</h2>
-              <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-                <input
-                  className="input"
-                  value={guestQuery}
-                  onChange={e => setGuestQuery(e.target.value)}
-                  placeholder="Søk eller skriv nytt navn…"
-                />
-                <button className="btn" onClick={() => addGuestByName(guestQuery)} disabled={!guestQuery.trim()}>
-                  Legg til
-                </button>
-              </div>
-            </>
-          ) : null}
-
-          {guestQuery.trim() && (
-            <div className="wheel-page__suggestions">
-              {guestLoading && <div className="wheel-page__search-loading">Søker…</div>}
-              {guestSuggestions.map(s => (
-                <button key={s.id} className="btn u-text-left" onClick={() => addGuestByName(s.name)}>
-                  {s.name} <span className="wheel-page__suggestion-type">{s.isRegular ? "(fast)" : "(gjest)"}</span>
-                </button>
-              ))}
+      <div className="wheel-page__row">
+        <div className="wheel-page__sidebar" style={{ display: isExpanded ? "none" : undefined }}>
+          {/* --- Søk / legg til gjest --- */}
+          <div className="wheel-page__section card">
+            <div className="wheel-page__section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <h2 className="wheel-page__section-title">Legg til gjest</h2>
             </div>
-          )}
-
-          <div className="hr" />
-
-          <div className="wheel-page__participants-header">
-            <h2 style={{ margin: 0, fontSize: 18 }}>Deltakere</h2>
-            <label className="wheel-page__select-all">
+            <div className="wheel-page__search-row">
               <input
-                type="checkbox"
-                checked={allRegularsSelected}
-                onChange={(e) => toggleAllRegulars(e.target.checked)}
+                className="input"
+                value={guestQuery}
+                onChange={e => setGuestQuery(e.target.value)}
+                placeholder={isAdmin ? "Søk eller skriv nytt navn…" : "Søk etter gjest…"}
               />
-              <b>Marker alle faste</b>
-            </label>
+              {isAdmin && (
+                <button className="btn" onClick={() => addGuestByName(guestQuery)} disabled={!guestQuery.trim()}>
+                  Opprett
+                </button>
+              )}
+            </div>
+
+            {guestQuery.trim() && (
+              <div className="wheel-page__suggestions">
+                {guestLoading && <div className="wheel-page__search-loading">Søker…</div>}
+                {guestSuggestions.map(s => (
+                  <button key={s.id} className="wheel-page__suggestion-btn" onClick={() => addExistingGuest(s)}>
+                    {s.imageUrl ? (
+                      <img src={s.imageUrl} alt="" className="wheel-page__suggestion-avatar-img" />
+                    ) : (
+                      <span className="wheel-page__suggestion-avatar">{getInitials(s.name)}</span>
+                    )}
+                    <span className="wheel-page__suggestion-name">{s.name}</span>
+                    <span className="wheel-page__suggestion-type">{s.isRegular ? "fast" : "gjest"}</span>
+                  </button>
+                ))}
+                {!guestLoading && guestSuggestions.length === 0 && (
+                  <div className="wheel-page__search-loading">Ingen treff</div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="wheel-page__participant-list">
-            {regulars.map(p => (
-              <label key={p.id} className="wheel-page__participant-label">
+          {/* --- Faste deltakere --- */}
+          <div className="wheel-page__section card">
+            <div className="wheel-page__section-header">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+              <h2 className="wheel-page__section-title">
+                Faste medlemmer
+                <span className="wheel-page__member-count">{presentCount}/{regulars.length}</span>
+              </h2>
+              <label className="wheel-page__select-all">
                 <input
                   type="checkbox"
-                  checked={!!present[p.id]}
-                  onChange={e => togglePresent(p, e.target.checked)}
+                  checked={allRegularsSelected}
+                  onChange={(e) => toggleAllRegulars(e.target.checked)}
                 />
-                <span className="wheel-page__participant-name">{p.name}</span>
-                <span className="badge">fast</span>
+                Alle
               </label>
-            ))}
+            </div>
 
-            {selectedGuests.length > 0 && (
-              <>
-                <div className="wheel-page__guest-header">
-                  Gjester lagt til i dag
-                </div>
+            <div className="wheel-page__participant-list">
+              {regulars.map(p => (
+                <label key={p.id} className={`wheel-page__participant-row ${present[p.id] ? "wheel-page__participant-row--active" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={!!present[p.id]}
+                    onChange={e => togglePresent(p, e.target.checked)}
+                    className="wheel-page__checkbox"
+                  />
+                  <span className="wheel-page__participant-name">{p.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* --- Gjester i dag --- */}
+          {selectedGuests.length > 0 && (
+            <div className="wheel-page__section card">
+              <div className="wheel-page__section-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                <h2 className="wheel-page__section-title">
+                  Gjester i dag
+                  <span className="wheel-page__member-count">{selectedGuests.filter(g => !!present[g.id]).length}</span>
+                </h2>
+              </div>
+              <div className="wheel-page__participant-list">
                 {selectedGuests.map(p => (
-                  <div key={p.id} className="wheel-page__guest-row-item">
-                    <label className="wheel-page__participant-label" style={{ flex: 1 }}>
+                  <div key={p.id} className={`wheel-page__participant-row ${present[p.id] ? "wheel-page__participant-row--active" : ""}`}>
+                    <label className="wheel-page__guest-inner">
                       <input
                         type="checkbox"
                         checked={!!present[p.id]}
                         onChange={e => togglePresent(p, e.target.checked)}
+                        className="wheel-page__checkbox"
                       />
                       <span className="wheel-page__participant-name">{p.name}</span>
-                      <span className="badge">gjest</span>
+                      <span className="wheel-page__guest-badge">gjest</span>
                     </label>
-                    {isAdmin && <button className="btn" onClick={() => removeSelectedGuest(p.id)}>Fjern</button>}
+                    {isAdmin && <button className="wheel-page__remove-btn" onClick={() => removeSelectedGuest(p.id)} title="Fjern gjest">✕</button>}
                   </div>
                 ))}
-              </>
-            )}
-          </div>
-
-          <div className="hr" />
-          <div className="wheel-page__candidate-count">
-            Kandidater i hjulet: <b style={{ color: "var(--text)" }}>{candidateIds.length}</b>
-          </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div
@@ -538,6 +644,25 @@ export function WheelPage() {
                 imageSrc="/jatha-chug.png" /* Bytt ut med den faktiske bilde-URLen din her */
               />
             </div>
+
+            {/* --- Spin Historikk under hjulet --- */}
+            {spinHistory.length > 0 && !isExpanded && (
+              <div className="wheel-page__history" style={{ maxWidth: wheelSize }}>
+                <div className="wheel-page__history-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  <span>Historikk</span>
+                </div>
+                <div className="wheel-page__history-list">
+                  {spinHistory.map((entry, i) => (
+                    <div key={i} className={`wheel-page__history-item ${i === 0 ? "wheel-page__history-item--latest" : ""}`}>
+                      <span className="wheel-page__history-number">#{spinHistory.length - i}</span>
+                      <span className="wheel-page__history-name">{entry.name}</span>
+                      <span className="wheel-page__history-time">{entry.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

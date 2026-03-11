@@ -6,79 +6,76 @@
   padding-bottom: 60px;
 }
 
-/* --- Podium --- */
+/* --- Podium (medal stand) --- */
 .podium {
   display: flex;
-  gap: 12px;
   align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0 0;
 }
 
 .podium__slot {
   flex: 1;
-  text-align: center;
-}
-
-.podium__label {
-  margin-bottom: 8px;
-  font-weight: 900;
-}
-
-.podium__box {
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: var(--overlay-subtle);
-  display: grid;
-  place-items: center;
-  padding: 12px;
-}
-
-.podium__card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.podium__button {
-  flex: 1;
-  border: none;
-  background: transparent;
-  padding: 0;
-  text-align: center;
-  min-width: 0;
+  max-width: 180px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text);
+  font-family: inherit;
 }
 
-.podium__button--clickable {
+.podium__slot--clickable {
   cursor: pointer;
 }
 
-.podium__emoji {
-  font-size: 1.6rem;
-  margin-bottom: 6px;
+.podium__slot--clickable:hover .podium__avatar-wrap {
+  transform: translateY(-3px);
+}
+
+.podium__slot--clickable:hover .podium__name {
+  text-decoration-color: rgba(255, 255, 255, 0.6);
+}
+
+.podium__medal {
+  font-size: 1.8rem;
   line-height: 1;
+  margin-bottom: 6px;
 }
 
-.podium__frame {
-  width: 100%;
-  border-radius: 18px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.podium__avatar-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
   overflow: hidden;
-  position: relative;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  transition: transform var(--transition-base);
+  margin-bottom: 8px;
 }
 
-.podium__frame--empty {
-  border: 2px dashed rgba(255, 255, 255, 0.14);
+.podium__avatar-wrap--empty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+  font-size: 1.2rem;
 }
 
-.podium__info {
-  margin-top: 8px;
+.podium__avatar-img {
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.podium__details {
   text-align: center;
-  color: var(--text);
+  margin-bottom: 8px;
+  min-height: 36px;
 }
 
 .podium__name {
@@ -87,11 +84,83 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 140px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color 0.2s;
 }
 
 .podium__time {
   font-size: 0.8rem;
-  opacity: 0.8;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.podium__stand {
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.podium__stand--empty {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.podium__stand-rank {
+  font-size: 1.6rem;
+  font-weight: 900;
+  opacity: 0.18;
+}
+
+/* --- Search --- */
+.leaderboard__search-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.leaderboard__search {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font-size: var(--font-base);
+  outline: none;
+  transition: border-color var(--transition-base);
+}
+
+.leaderboard__search:focus {
+  border-color: var(--accent);
+}
+
+.leaderboard__search::placeholder {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.leaderboard__search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.leaderboard__search-clear:hover {
+  color: var(--text);
 }
 
 /* --- Leaderboard List --- */
@@ -102,14 +171,6 @@
   margin-bottom: 14px;
 }
 
-.leaderboard__guest-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  font-size: var(--font-base);
-}
-
 .leaderboard__table {
   width: 100%;
   min-width: 0;
@@ -118,10 +179,61 @@
   table-layout: auto;
 }
 
+/* --- Row animations & highlights --- */
+@keyframes leaderboard-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.leaderboard__row {
+  border-bottom: 1px solid var(--border);
+  animation: leaderboard-fade-in 0.3s ease both;
+  transition: background var(--transition-base);
+}
+
+.leaderboard__row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.leaderboard__row--gold {
+  border-left: 3px solid #FFD700;
+  background: rgba(255, 215, 0, 0.04);
+}
+
+.leaderboard__row--gold:hover {
+  background: rgba(255, 215, 0, 0.08);
+}
+
+.leaderboard__row--silver {
+  border-left: 3px solid #C0C0C0;
+  background: rgba(192, 192, 192, 0.03);
+}
+
+.leaderboard__row--silver:hover {
+  background: rgba(192, 192, 192, 0.06);
+}
+
+.leaderboard__row--bronze {
+  border-left: 3px solid #CD7F32;
+  background: rgba(205, 127, 50, 0.03);
+}
+
+.leaderboard__row--bronze:hover {
+  background: rgba(205, 127, 50, 0.06);
+}
+
 .leaderboard__rank {
   padding: 12px 8px;
   text-align: center;
   font-weight: 900;
+}
+
+/* --- Name cell with guest badge --- */
+.leaderboard__name-cell {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .leaderboard__name-btn {
@@ -144,9 +256,55 @@
   text-decoration-color: rgba(255, 255, 255, 0.7);
 }
 
-.leaderboard__time {
-  padding: 8px;
+.leaderboard__guest-badge {
+  font-size: var(--font-xs);
+  color: var(--accent3);
+  background: rgba(255, 184, 108, 0.12);
+  border: 1px solid rgba(255, 184, 108, 0.25);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
   font-weight: 600;
+}
+
+/* --- Time cell with bar --- */
+.leaderboard__time-cell {
+  padding: 8px;
+  position: relative;
+  min-width: 100px;
+}
+
+.leaderboard__time-bar-bg {
+  position: absolute;
+  inset: 6px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.leaderboard__time-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(124, 92, 255, 0.18), rgba(43, 210, 255, 0.12));
+  transition: width 0.5s ease;
+}
+
+.leaderboard__row--gold .leaderboard__time-bar {
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.22), rgba(255, 215, 0, 0.08));
+}
+
+.leaderboard__row--silver .leaderboard__time-bar {
+  background: linear-gradient(90deg, rgba(192, 192, 192, 0.20), rgba(192, 192, 192, 0.06));
+}
+
+.leaderboard__row--bronze .leaderboard__time-bar {
+  background: linear-gradient(90deg, rgba(205, 127, 50, 0.22), rgba(205, 127, 50, 0.08));
+}
+
+.leaderboard__time-value {
+  position: relative;
+  font-weight: 600;
+  z-index: 1;
 }
 
 .leaderboard__date-btn {
@@ -178,7 +336,7 @@
 }
 
 .leaderboard__table th:nth-child(3) {
-  width: 80px;
+  width: 100px;
 }
 
 .leaderboard__table th:nth-child(4) {
@@ -187,24 +345,34 @@
 
 /* --- Mobile --- */
 @media (max-width: 768px) {
-  .leaderboard .row {
-    flex-direction: column;
+  .podium {
+    gap: 6px;
   }
 
-  .leaderboard .col {
-    width: 100%;
+  .podium__slot {
+    max-width: none;
   }
 
-  .podium__emoji {
-    font-size: 1.2rem;
+  .podium__medal {
+    font-size: 1.3rem;
+  }
+
+  .podium__avatar-wrap {
+    width: 48px;
+    height: 48px;
   }
 
   .podium__name {
     font-size: 0.75rem;
+    max-width: 90px;
   }
 
   .podium__time {
     font-size: 0.7rem;
+  }
+
+  .podium__stand-rank {
+    font-size: 1.2rem;
   }
 
   .leaderboard__table {
@@ -215,12 +383,22 @@
     padding: 8px 4px;
   }
 
-  .leaderboard__time {
+  .leaderboard__time-cell {
+    padding: 6px 4px;
+    min-width: 70px;
+  }
+
+  .leaderboard__name-cell {
     padding: 6px 4px;
   }
 
   .leaderboard__name-btn {
     font-size: var(--font-sm);
+  }
+
+  .leaderboard__guest-badge {
+    font-size: 0.65rem;
+    padding: 0 4px;
   }
 
   .leaderboard__date-btn {
@@ -238,6 +416,6 @@
   }
 
   .leaderboard__table th:nth-child(3) {
-    width: 60px;
+    width: 70px;
   }
 }
