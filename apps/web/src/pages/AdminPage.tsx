@@ -218,6 +218,8 @@ function ParticipantsTab() {
   const [search, setSearch] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   // Crop modal state
   const [cropTarget, setCropTarget] = useState<Participant | null>(null);
@@ -326,6 +328,30 @@ function ParticipantsTab() {
     }
   }
 
+  async function saveRename(id: string) {
+    const trimmed = editName.trim();
+    if (!trimmed) return;
+    setBusy((b) => ({ ...b, [id]: true }));
+    setError("");
+    try {
+      const res = await apiFetch(`/api/participants/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Kunne ikke endre navn");
+      setParticipants((list) =>
+        list.map((x) => (x.id === id ? { ...x, name: data.name } : x))
+      );
+      setEditingId(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy((b) => ({ ...b, [id]: false }));
+    }
+  }
+
   const filtered = participants.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -360,7 +386,31 @@ function ParticipantsTab() {
                 </div>
               )}
               <div>
-                <span className="admin__participant-name">{p.name}</span>
+                {editingId === p.id ? (
+                  <span className="admin__participant-name-edit">
+                    <input
+                      className="input input--sm"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveRename(p.id);
+                        if (e.key === "Escape") setEditingId(null);
+                      }}
+                      autoFocus
+                    />
+                    <button className="btn btn--sm btnPrimary" disabled={busy[p.id]} onClick={() => saveRename(p.id)}>Lagre</button>
+                    <button className="btn btn--sm" onClick={() => setEditingId(null)}>Avbryt</button>
+                  </span>
+                ) : (
+                  <span
+                    className="admin__participant-name"
+                    onClick={() => { setEditingId(p.id); setEditName(p.name); }}
+                    title="Klikk for å endre navn"
+                    style={{ cursor: "pointer" }}
+                  >
+                    {p.name} ✏️
+                  </span>
+                )}
                 <span className="admin__participant-meta">
                   {p.isRegular ? "Fast" : "Gjest"} · {p.attempts} forsøk
                 </span>

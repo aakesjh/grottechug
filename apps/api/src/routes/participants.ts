@@ -148,6 +148,39 @@ participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), asyn
 });
 
 /**
+ * PATCH /api/participants/:id
+ * body: { name: string }
+ */
+participantsRouter.patch("/:id", requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    const name = String(req.body?.name ?? "").trim();
+    if (!name) return res.status(400).json({ error: "Missing name" });
+
+    const nameLower = name.toLowerCase();
+
+    const existing = await prisma.participant.findFirst({
+      where: { nameLower, NOT: { id } },
+      select: { id: true },
+    });
+    if (existing) {
+      return res.status(409).json({ error: "En deltaker med dette navnet finnes allerede" });
+    }
+
+    const updated = await prisma.participant.update({
+      where: { id },
+      data: { name, nameLower },
+      select: { id: true, name: true, isRegular: true, imageUrl: true },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not update participant" });
+  }
+});
+
+/**
  * DELETE /api/participants/:id/hard
  * (må ligge før /:id)
  */

@@ -303,9 +303,7 @@ export function JoinPage() {
               onChange={(e) => setNameInput(e.target.value)}
               placeholder="Skriv inn fornavnet ditt"
             />
-            <div className="join__hint">
-              Hvis fornavnet allerede finnes, må du legge til første bokstav i etternavnet ditt.
-            </div>
+
           </div>
 
           {searching && normalizedInput && (
@@ -421,7 +419,6 @@ export function JoinPage() {
             <input
               type="file"
               accept="image/*"
-              capture="user"
               onChange={(e) => onSelectFile(e.target.files?.[0] || null)}
             />
           </div>
