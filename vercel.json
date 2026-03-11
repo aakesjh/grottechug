@@ -1,6 +1,6 @@
 {
   "installCommand": "npm install --include=dev",
-  "buildCommand": "npm run vercel-build",
+  "buildCommand": "cd ../.. && npm run vercel-build",
   "outputDirectory": "apps/web/dist",
   "functions": {
     "api/index.ts": {
