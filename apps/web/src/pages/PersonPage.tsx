@@ -273,7 +273,7 @@ export function PersonPage() {
                     if (name === "compSeconds" && compareData) return [`${Number(v).toFixed(2)}s`, compareData.participant.name];
                     return [String(v), String(name)];
                   }}
-                  labelFormatter={(label: string) => `Dato: ${label}`}
+                  labelFormatter={(label: React.ReactNode) => `Dato: ${label}`}
                 />
                 
                 {compareData && <Legend verticalAlign="top" height={36} />}

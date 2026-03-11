@@ -119,10 +119,10 @@ export function ViolationsPage() {
           </button>
         </div>
         <div className="violations__controls">
-          <button className="btn" onClick={() => setShowGuests(v => !v)}>
+          <button className={`btn ${showGuests ? "" : "btnGhost"}`} onClick={() => setShowGuests(v => !v)}>
             {showGuests ? "Skjul gjester" : "Vis gjester"}
           </button>
-          <button className="btn" onClick={() => setShowDetails(v => !v)}>
+          <button className={`btn ${showDetails ? "" : "btnGhost"}`} onClick={() => setShowDetails(v => !v)}>
             {showDetails ? "Skjul detaljer" : "Vis detaljer"}
           </button>
         </div>

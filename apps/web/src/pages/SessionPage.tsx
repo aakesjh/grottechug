@@ -903,7 +903,7 @@ export function SessionPage() {
                   contentStyle={TOOLTIP_STYLE}
                   labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                   itemStyle={{ color: "#e2e8f0" }}
-                  formatter={(value: number) => {
+                  formatter={(value: unknown) => {
                     const numericValue = Number(value ?? 0);
                     return [
                       `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}s`,
@@ -948,7 +948,7 @@ export function SessionPage() {
                     contentStyle={TOOLTIP_STYLE}
                     labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                     itemStyle={{ color: "#e2e8f0" }}
-                    formatter={(value: number) => {
+                    formatter={(value: unknown) => {
                       const numericValue = Number(value ?? 0);
                       return [
                         `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}s`,
