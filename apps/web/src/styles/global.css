@@ -135,9 +135,49 @@ th.sticky .tooltip, th.cell .tooltip, td.sticky .tooltip {
 .btnGhost { background: rgba(255,255,255,0.04); }
 .btnDanger { background: color-mix(in srgb, var(--danger) 22%, transparent); }
 
-.tabs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-.tab { border: 1px solid var(--border); background: rgba(0,0,0,0.18); color: var(--text); padding: 10px 12px; border-radius: 12px; cursor: pointer; }
-.tabActive { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.tabs {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tab {
+  padding: 8px 16px;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+}
+
+.tab:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: var(--border);
+}
+
+.tab:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tabActive {
+  color: var(--accent);
+  background: rgba(124, 92, 255, 0.15);
+}
+
+.tabActive::after {
+  display: none;
+}
 
 .modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: grid; place-items: center; z-index: 100; }
 .modalCard { width: 460px; max-width: calc(100vw - 24px); }

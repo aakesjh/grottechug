@@ -89,6 +89,7 @@ export function ChugListPage() {
   const [sortKey, setSortKey] = useState<SortKey>({ kind: "none" });
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
+  const [showGuests, setShowGuests] = useState(false);
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
 
   const [draftSeconds, setDraftSeconds] = useState<Record<string, string>>({});
@@ -398,12 +399,27 @@ export function ChugListPage() {
     }
   }
 
-  return (
-    <div>
-      <h1>Chuggelista</h1>
+  const sessionCount = data?.columns.length ?? 0;
+  const memberCount = regularRows.length;
 
-      <div className="sheetBar">
-        <div className="sheetBar">
+  return (
+    <div className="chuglist">
+      {/* Hero header */}
+      <div className="chuglist__hero">
+        <h1 className="chuglist__title">Chuggelista</h1>
+        <div className="chuglist__pills">
+          <span className="chuglist__pill chuglist__pill--accent">
+            📋 {memberCount} deltakere
+          </span>
+          <span className="chuglist__pill chuglist__pill--cyan">
+            📅 {sessionCount} økter
+          </span>
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div className="chuglist__toolbar">
+        <div className="chuglist__toolbar-left">
           <div className="tabs">
             <button className={`tab ${semester === "2025H" ? "tabActive" : ""}`} onClick={() => setSemester("2025H")}>
               2025 Høst
@@ -415,30 +431,33 @@ export function ChugListPage() {
               Total
             </button>
           </div>
-        {isAdmin && <button className="btn" onClick={() => setNewDayOpen(true)}>+ Ny dag</button>}
+          <button className={`btn ${showGuests ? "" : "btnGhost"}`} onClick={() => setShowGuests(g => !g)}>
+            {showGuests ? "Skjul gjester" : "Vis gjester"}
+          </button>
+          {isAdmin && <button className="btn" onClick={() => setNewDayOpen(true)}>+ Ny dag</button>}
         </div>
 
-        <div className="u-flex-1" />
-
-        {editSession ? (
-          <>
-            <span className="pill">Redigerer: {fmtDDMMYYYY(editSession.dateISO)}</span>
-            <span className="pill">Ulagrede endringer: {dirtyCount}</span>
-            <button className="btn" onClick={saveAll} disabled={dirtyCount === 0}>Lagre</button>
-            <button
-              className="btn"
-              onClick={() => {
-                setEditSessionId(null);
-                setDirtyCells(new Set());
-                setDirtySessionNote(false);
-              }}
-            >
-              Lukk redigering
-            </button>
-          </>
-        ) : (
-          <span className="pill">Tips: Dobbeltklikk en dato for å redigere</span>
-        )}
+        <div className="chuglist__toolbar-right">
+          {editSession ? (
+            <>
+              <span className="chuglist__pill chuglist__pill--warn">✏️ {fmtDDMMYYYY(editSession.dateISO)}</span>
+              <span className="chuglist__pill">{dirtyCount} ulagret</span>
+              <button className="btn btnPrimary" onClick={saveAll} disabled={dirtyCount === 0}>Lagre</button>
+              <button
+                className="btn"
+                onClick={() => {
+                  setEditSessionId(null);
+                  setDirtyCells(new Set());
+                  setDirtySessionNote(false);
+                }}
+              >
+                Lukk
+              </button>
+            </>
+          ) : (
+            <span className="chuglist__hint">Dobbeltklikk en dato for å redigere</span>
+          )}
+        </div>
       </div>
 
       {isAdmin && newDayOpen && (
@@ -481,7 +500,7 @@ export function ChugListPage() {
       )}
 
       {isAdmin && editSession && data && (
-        <div className="card" style={{ marginTop: 14 }}>
+        <div className="card chuglist__editor-card">
           <div className="chuglist__editor-header">
             <h2>Spreadsheet – {fmtDDMMYYYY(editSession.dateISO)}</h2>
             <button 
@@ -621,7 +640,7 @@ export function ChugListPage() {
       )}
 
       {/* Table view */}
-      <div className="card" style={{ marginTop: 14 }}>
+      <div className="card chuglist__table-card">
         {!data ? (
           <p>Laster…</p>
         ) : (
@@ -629,25 +648,25 @@ export function ChugListPage() {
             <table className="chuglist__table">
               <thead>
                 <tr>
-                  <th className="sticky">Deltaker</th>
+                  <th className="sticky">#</th>
+                  <th className="sticky chuglist__name-col">Deltaker</th>
 
-                  <th style={{ cursor: "pointer" }} onClick={() => clickSort({ kind: "best" })}>
+                  <th className="chuglist__sortable" onClick={() => clickSort({ kind: "best" })}>
                     Beste {sortKey.kind === "best" ? (sortDir === "asc" ? "▲" : "▼") : ""}
                   </th>
 
-                  <th style={{ cursor: "pointer" }} onClick={() => clickSort({ kind: "avg" })}>
+                  <th className="chuglist__sortable" onClick={() => clickSort({ kind: "avg" })}>
                     Snitt {sortKey.kind === "avg" ? (sortDir === "asc" ? "▲" : "▼") : ""}
                   </th>
 
-                  <th style={{ color: "var(--muted)" }}>Historikk →</th>
+                  <th className="chuglist__history-label">Historikk →</th>
 
                   {data.columns.map(c => {
                     const hasDayNote = c.note && c.note.trim() !== "";
                     return (
                       <th
                         key={c.sessionId}
-                        className="cell" 
-                        style={{ cursor: "pointer" }} 
+                        className="cell chuglist__sortable"
                         onClick={() => clickSort({ kind: "date", sessionId: c.sessionId })}
                         onDoubleClick={() => {
                           if (isAdmin) {
@@ -689,16 +708,17 @@ export function ChugListPage() {
               </thead>
 
               <tbody>
-                {regularRows.map(r => (
-                  <tr key={r.participantId}>
-                    <td className="sticky">
+                {regularRows.map((r, idx) => (
+                  <tr key={r.participantId} className="chuglist__row">
+                    <td className="sticky chuglist__rank">{idx + 1}</td>
+                    <td className="sticky chuglist__name-col">
                       <button className="name-link" onClick={() => nav(`/person/${r.participantId}`)}>
                         {r.name}
                       </button>
                     </td>
-                    <td>{r.bestOverall == null ? "-" : `${r.bestOverall.toFixed(2)}s`}</td>
-                    <td>{r.avgOverall == null ? "-" : `${r.avgOverall.toFixed(2)}s`}</td>
-                    <td style={{ color: "var(--muted)" }} />
+                    <td className="chuglist__best">{r.bestOverall == null ? "-" : `${r.bestOverall.toFixed(2)}s`}</td>
+                    <td className="chuglist__avg">{r.avgOverall == null ? "-" : `${r.avgOverall.toFixed(2)}s`}</td>
+                    <td className="chuglist__spacer" />
                     {data.columns.map(c => {
                       const cell = data.cells?.[r.participantId]?.[c.sessionId];
                       const txt = cell?.seconds == null ? "" : `${cell.seconds.toFixed(2)}s`;
@@ -741,22 +761,23 @@ export function ChugListPage() {
                   </tr>
                 ))}
 
-                {guestRows.length > 0 && (
+                {showGuests && guestRows.length > 0 && (
                   <tr className="separatorRow">
-                    <td colSpan={4 + data.columns.length}>Gjester</td>
+                    <td colSpan={5 + data.columns.length}>Gjester</td>
                   </tr>
                 )}
 
-                {guestRows.map(r => (
-                  <tr key={r.participantId}>
-                    <td className="sticky">
+                {showGuests && guestRows.map((r, idx) => (
+                  <tr key={r.participantId} className="chuglist__row chuglist__row--guest">
+                    <td className="sticky chuglist__rank chuglist__rank--guest">{idx + 1}</td>
+                    <td className="sticky chuglist__name-col">
                       <button className="name-link" onClick={() => nav(`/person/${r.participantId}`)}>
                         {r.name}
                       </button>
                     </td>
-                    <td>{r.bestOverall == null ? "-" : `${r.bestOverall.toFixed(2)}s`}</td>
-                    <td>{r.avgOverall == null ? "-" : `${r.avgOverall.toFixed(2)}s`}</td>
-                    <td style={{ color: "var(--muted)" }} />
+                    <td className="chuglist__best">{r.bestOverall == null ? "-" : `${r.bestOverall.toFixed(2)}s`}</td>
+                    <td className="chuglist__avg">{r.avgOverall == null ? "-" : `${r.avgOverall.toFixed(2)}s`}</td>
+                    <td className="chuglist__spacer" />
                     {data.columns.map(c => {
                       const cell = data.cells?.[r.participantId]?.[c.sessionId];
                       const txt = cell?.seconds == null ? "" : `${cell.seconds.toFixed(2)}s`;

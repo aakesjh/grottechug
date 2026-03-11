@@ -38,6 +38,7 @@ export function GrottaPage() {
   const [showGuests, setShowGuests] = useState(false);
   const [guestSortMode, setGuestSortMode] = useState<GuestSortMode>("alpha");
   const [chugCountById, setChugCountById] = useState<Record<string, number>>({});
+  const [bestTimeById, setBestTimeById] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
     (async () => {
@@ -65,6 +66,12 @@ export function GrottaPage() {
       }
 
       setChugCountById(counts);
+
+      const bests: Record<string, number | null> = {};
+      for (const row of statsJson.rows ?? []) {
+        bests[row.participantId] = row.bestOverall;
+      }
+      setBestTimeById(bests);
     })();
   }, []);
 
@@ -90,42 +97,50 @@ export function GrottaPage() {
     return guests;
   }, [people, guestSortMode, chugCountById]);
 
-  const renderCard = (p: Person, showChugCount: boolean) => {
+  const renderCard = (p: Person) => {
     const chugCount = chugCountById[p.id] ?? 0;
+    const bestTime = bestTimeById[p.id];
 
     return (
       <button
         key={p.id}
-        className="card cardCard grotta__card"
+        className="grotta__card"
         onClick={() => nav(`/person/${p.id}`)}
         title={`Åpne profil: ${p.name}`}
       >
-        <div className="grotta__card-name">{p.name}</div>
-
         <div className="grotta__card-image-frame">
           {p.imageUrl ? (
             <img src={p.imageUrl} alt={p.name} className="grotta__card-image" />
           ) : (
             <div className="grotta__card-initials">{getInitials(p.name)}</div>
           )}
-        </div>
-
-        {showChugCount && (
-          <div className="grotta__card-chug-count">
-            <span>{chugCount} chugs</span>
+          <div className="grotta__card-overlay">
+            <div className="grotta__card-name">{p.name}</div>
+            {(chugCount > 0 || bestTime != null) && (
+              <div className="grotta__card-stats">
+                {chugCount > 0 && <span className="grotta__stat">{chugCount} chugs</span>}
+                {bestTime != null && <span className="grotta__stat grotta__stat--best">{bestTime.toFixed(2)}s</span>}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </button>
     );
   };
 
   return (
     <div className="grotta">
-      <h1>Grotta</h1>
-      <p>Grottamedlemmer. Trykk på et kort for profil.</p>
+      <div className="grotta__hero">
+        <h1 className="grotta__title">Grotta</h1>
+        <span className="grotta__count-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+          {regularCards.length} medlemmer
+        </span>
+      </div>
+      <p className="grotta__subtitle">Trykk på et kort for å se profil og statistikk.</p>
 
       <div className="grotta__grid">
-        {regularCards.map(p => renderCard(p, false))}
+        {regularCards.map(p => renderCard(p))}
         {!regularCards.length && (
           <div className="u-text-muted">Ingen grottamedlemmer registrert enda.</div>
         )}
@@ -133,10 +148,10 @@ export function GrottaPage() {
 
       <div className="grotta__toggle-guests">
         <button
-          className="btn grotta__toggle-btn"
+          className={`grotta__toggle-btn ${showGuests ? "grotta__toggle-btn--active" : ""}`}
           onClick={() => setShowGuests(!showGuests)}
         >
-          {showGuests ? "Skjul gjester" : "Vis gjester"}
+          {showGuests ? "Skjul gjester" : `Vis gjester (${guestCards.length})`}
         </button>
       </div>
 
@@ -161,7 +176,7 @@ export function GrottaPage() {
           </div>
 
           <div className="grotta__grid">
-            {guestCards.map(p => renderCard(p, true))}
+            {guestCards.map(p => renderCard(p))}
             {!guestCards.length && (
               <div className="u-text-muted">Ingen gjester registrert enda.</div>
             )}

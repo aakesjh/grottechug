@@ -1,8 +1,110 @@
 /* ==========================================================================
-   ChugList Page — Editor & Table
+   ChugList Page — Redesigned
    ========================================================================== */
 
-/* The spreadsheet table needs horizontal scroll */
+/* --- Page Wrapper --- */
+.chuglist {
+  padding-bottom: 60px;
+}
+
+/* --- Hero Header --- */
+.chuglist__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.chuglist__title {
+  margin: 0;
+  font-size: var(--font-3xl);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.chuglist__pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chuglist__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+}
+
+.chuglist__pill--accent {
+  background: rgba(124, 92, 255, 0.15);
+  color: var(--accent);
+  border-color: rgba(124, 92, 255, 0.25);
+}
+
+.chuglist__pill--cyan {
+  background: rgba(43, 210, 255, 0.12);
+  color: var(--accent2);
+  border-color: rgba(43, 210, 255, 0.22);
+}
+
+.chuglist__pill--warn {
+  background: rgba(255, 184, 108, 0.15);
+  color: var(--accent3);
+  border-color: rgba(255, 184, 108, 0.25);
+}
+
+.chuglist__hint {
+  color: var(--muted);
+  font-size: var(--font-sm);
+  opacity: 0.7;
+}
+
+/* --- Toolbar --- */
+.chuglist__toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  margin-bottom: 14px;
+}
+
+.chuglist__toolbar-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.chuglist__toolbar-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Tabs use global .tabs / .tab / .tabActive */
+
+/* --- Table Card --- */
+.chuglist__table-card {
+  margin-top: 0;
+}
+
+/* --- Editor Card --- */
+.chuglist__editor-card {
+  margin-bottom: 14px;
+  border: 1px solid rgba(255, 184, 108, 0.2);
+  background: rgba(255, 184, 108, 0.03);
+}
+
+/* --- Table --- */
 .chuglist__table {
   min-width: 900px;
   font-size: 12px;
@@ -10,13 +112,103 @@
 
 .chuglist__table th {
   font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .chuglist__table th,
 .chuglist__table td {
-  padding: 6px 5px;
+  padding: 8px 6px;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+.chuglist__table th:last-child,
+.chuglist__table td:last-child {
+  border-right: none;
+}
+
+/* --- Sortable headers --- */
+.chuglist__sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--transition-fast);
+}
+
+.chuglist__sortable:hover {
+  color: var(--accent2);
+}
+
+/* --- History label --- */
+.chuglist__history-label {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  opacity: 0.5;
+}
+
+/* --- Rank column --- */
+.chuglist__rank {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  width: 28px;
+  text-align: center;
+  opacity: 0.5;
+}
+
+.chuglist__rank--guest {
+  opacity: 0.35;
+}
+
+/* --- Name column --- */
+.chuglist__name-col {
+  min-width: 140px;
+}
+
+/* --- Best / Avg columns --- */
+.chuglist__best {
+  color: var(--accent2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chuglist__avg {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Spacer column --- */
+.chuglist__spacer {
+  width: 4px;
+  min-width: 4px;
+  padding: 0 !important;
+  border-bottom-color: transparent !important;
+}
+
+/* --- Row hover --- */
+.chuglist__row:hover td {
+  background: rgba(124, 92, 255, 0.06);
+}
+
+.chuglist__row--guest:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* --- Sticky column edge shadow --- */
+.chuglist__table td.sticky,
+.chuglist__table th.sticky {
+  border-right: none;
+}
+
+.chuglist__table .chuglist__name-col {
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
+  clip-path: inset(0 -16px 0 0);
+}
+
+/* --- Editor --- */
 .chuglist__editor-header {
   display: flex;
   justify-content: space-between;
@@ -36,9 +228,10 @@
 }
 
 .chuglist__editor-hint {
-  margin-top: 10px;
+  margin-top: 14px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--font-sm);
+  opacity: 0.6;
 }
 
 .chuglist__delete-btn {
@@ -126,4 +319,35 @@
   color: var(--muted);
   font-size: 13px;
   margin-top: 6px;
+}
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  .chuglist__hero {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .chuglist__title {
+    font-size: 1.6rem;
+  }
+
+  .chuglist__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chuglist__toolbar-right {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+
+  .chuglist .tabs {
+    width: 100%;
+  }
+
+  .chuglist .tab {
+    flex: 1;
+    text-align: center;
+  }
 }

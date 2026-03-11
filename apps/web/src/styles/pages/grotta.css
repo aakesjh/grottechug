@@ -6,52 +6,75 @@
   padding-bottom: 60px;
 }
 
+/* --- Hero Header --- */
+.grotta__hero {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.grotta__title {
+  margin: 0;
+  font-size: var(--font-3xl);
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.grotta__count-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(124, 92, 255, 0.15);
+  color: var(--accent);
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  border: 1px solid rgba(124, 92, 255, 0.25);
+}
+
+.grotta__subtitle {
+  color: var(--muted);
+  font-size: var(--font-base);
+  margin: 0 0 6px;
+}
+
+/* --- Grid --- */
 .grotta__grid {
   margin-top: 14px;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
+  gap: 12px;
 }
 
-@media (max-width: 768px) {
-  .grotta__grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .grotta__grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* --- Member Card --- */
+/* --- Member Card (overlay style) --- */
 .grotta__card {
   cursor: pointer;
-  padding: 12px;
+  padding: 0;
   text-align: left;
   border: 1px solid var(--border);
-  background: var(--overlay-subtle);
+  border-radius: var(--radius);
+  background: var(--panel);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+  color: inherit;
 }
 
-.grotta__card-name {
-  font-weight: 900;
-  font-size: 20px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--text);
-  text-align: center;
+.grotta__card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 92, 255, 0.45);
+  box-shadow: 0 12px 36px rgba(124, 92, 255, 0.15);
 }
 
 .grotta__card-image-frame {
-  border-radius: 16px;
+  position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   aspect-ratio: 3 / 4;
   display: grid;
   place-items: center;
@@ -63,24 +86,63 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.35s ease;
+}
+
+.grotta__card:hover .grotta__card-image {
+  transform: scale(1.06);
 }
 
 .grotta__card-initials {
   color: var(--muted);
   font-weight: 900;
-  font-size: 3.5rem;
-  opacity: 0.5;
+  font-size: 3rem;
+  opacity: 0.3;
 }
 
-.grotta__card-chug-count {
-  margin-top: auto;
+/* Gradient overlay at bottom of image */
+.grotta__card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px 12px 10px;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.5) 50%,
+    transparent 100%
+  );
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grotta__card-name {
+  font-weight: 800;
+  font-size: var(--font-md);
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.grotta__card-stats {
+  display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--muted);
-  font-size: var(--font-sm);
+  flex-wrap: wrap;
+}
+
+.grotta__stat {
+  font-size: var(--font-xs);
   font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.grotta__stat--best {
+  color: var(--accent2);
 }
 
 /* --- Guest Section --- */
@@ -90,8 +152,26 @@
 }
 
 .grotta__toggle-btn {
-  padding: 10px 20px;
-  font-size: 1rem;
+  padding: 10px 24px;
+  font-size: var(--font-base);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  transition: background var(--transition-base), border-color var(--transition-base);
+}
+
+.grotta__toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.grotta__toggle-btn--active {
+  background: rgba(124, 92, 255, 0.12);
+  border-color: rgba(124, 92, 255, 0.35);
+  color: var(--accent);
 }
 
 .grotta__guests-section {
@@ -135,4 +215,25 @@
 .grotta__sort-arrow {
   color: var(--muted);
   font-size: var(--font-xs);
+}
+
+/* --- Mobile Hero --- */
+@media (max-width: 768px) {
+  .grotta__hero {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .grotta__grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .grotta__card-initials {
+    font-size: 2.2rem;
+  }
+
+  .grotta__card-name {
+    font-size: var(--font-base);
+  }
 }
