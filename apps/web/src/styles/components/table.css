@@ -79,6 +79,19 @@ th.sticky {
   right: 4px;
 }
 
+/* --- Mobile: compact tables --- */
+@media (max-width: 768px) {
+  th,
+  td {
+    padding: 6px 5px;
+    font-size: 12px;
+  }
+
+  th {
+    font-size: 11px;
+  }
+}
+
 /* --- Tooltip --- */
 .tooltip {
   position: absolute;

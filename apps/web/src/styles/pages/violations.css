@@ -36,3 +36,9 @@
   color: #ef4444;
   border-color: rgba(239, 68, 68, 0.35);
 }
+
+@media (max-width: 768px) {
+  .violations__controls {
+    flex-wrap: wrap;
+  }
+}

@@ -897,13 +897,13 @@ export function SessionPage() {
                   textAnchor="end"
                   height={70}
                 />
-                <YAxis stroke="var(--muted)" tickFormatter={(v) => `${v}s`} />
+                <YAxis stroke="var(--muted)" tickFormatter={(v: number) => `${v}s`} />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.04)" }}
                   contentStyle={TOOLTIP_STYLE}
                   labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                   itemStyle={{ color: "#e2e8f0" }}
-                  formatter={(value) => {
+                  formatter={(value: number) => {
                     const numericValue = Number(value ?? 0);
                     return [
                       `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}s`,
@@ -942,13 +942,13 @@ export function SessionPage() {
                     textAnchor="end"
                     height={70}
                   />
-                  <YAxis stroke="var(--muted)" tickFormatter={(v) => `${v}s`} />
+                  <YAxis stroke="var(--muted)" tickFormatter={(v: number) => `${v}s`} />
                   <Tooltip
                     cursor={{ fill: "rgba(255,255,255,0.04)" }}
                     contentStyle={TOOLTIP_STYLE}
                     labelStyle={{ color: "#ffffff", fontWeight: 700 }}
                     itemStyle={{ color: "#e2e8f0" }}
-                    formatter={(value) => {
+                    formatter={(value: number) => {
                       const numericValue = Number(value ?? 0);
                       return [
                         `${numericValue > 0 ? "+" : ""}${numericValue.toFixed(2)}s`,
@@ -989,7 +989,7 @@ export function SessionPage() {
                     paddingAngle={3}
                     dataKey="value"
                     nameKey="label"
-                    label={({ name, value }) => `${name}: ${value}`}
+                    label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}
                   >
                     {pieData.map((entry, i) => (
                       <Cell

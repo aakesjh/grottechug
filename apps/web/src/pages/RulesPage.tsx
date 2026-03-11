@@ -59,7 +59,7 @@ export function RulesPage() {
 
       <div className="card u-mt-md">
         <div className="tableWrap">
-          <table style={{ minWidth: isAdmin ? 800 : 600 }}>
+          <table>
             <thead>
               <tr>
                 <th>Kode</th>

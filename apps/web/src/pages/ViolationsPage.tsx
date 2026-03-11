@@ -193,7 +193,7 @@ export function ViolationsPage() {
         <div className="card u-mt-md">
           <h2>Detaljer – {expandedName}</h2>
           <div className="tableWrap">
-            <table style={{ minWidth: 600 }}>
+            <table>
               <thead>
                 <tr>
                   <th>Dato</th>

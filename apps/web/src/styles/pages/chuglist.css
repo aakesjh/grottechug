@@ -5,6 +5,16 @@
 /* The spreadsheet table needs horizontal scroll */
 .chuglist__table {
   min-width: 900px;
+  font-size: 12px;
+}
+
+.chuglist__table th {
+  font-size: 11px;
+}
+
+.chuglist__table th,
+.chuglist__table td {
+  padding: 6px 5px;
 }
 
 .chuglist__editor-header {
