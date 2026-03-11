@@ -18,6 +18,7 @@ data/
 output/
 runs/
 node_modules/
+.claude/
 *.pt
 *.pth
 *.mp4
