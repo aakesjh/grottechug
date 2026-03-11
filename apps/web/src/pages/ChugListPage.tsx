@@ -400,7 +400,7 @@ export function ChugListPage() {
   }
 
   const sessionCount = data?.columns.length ?? 0;
-  const memberCount = regularRows.length;
+  const participantCount = regularRows.length + (showGuests ? guestRows.length : 0);
 
   return (
     <div className="chuglist">
@@ -409,7 +409,8 @@ export function ChugListPage() {
         <h1 className="chuglist__title">Chuggelista</h1>
         <div className="chuglist__pills">
           <span className="chuglist__pill chuglist__pill--accent">
-            📋 {memberCount} deltakere
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+            {participantCount} deltakere
           </span>
           <span className="chuglist__pill chuglist__pill--cyan">
             📅 {sessionCount} økter
