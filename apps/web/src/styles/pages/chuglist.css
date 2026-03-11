@@ -2,6 +2,11 @@
    ChugList Page — Editor & Table
    ========================================================================== */
 
+/* The spreadsheet table needs horizontal scroll */
+.chuglist__table {
+  min-width: 900px;
+}
+
 .chuglist__editor-header {
   display: flex;
   justify-content: space-between;

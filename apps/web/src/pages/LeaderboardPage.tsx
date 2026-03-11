@@ -180,7 +180,7 @@ export function LeaderboardPage() {
                     </td>
                     <td style={{ padding: "8px" }}>
                       <button 
-                        className="btn leaderboard__name-btn" 
+                        className="leaderboard__name-btn" 
                         onClick={() => nav(`/person/${r.participantId}`)}
                       >
                         {r.name}

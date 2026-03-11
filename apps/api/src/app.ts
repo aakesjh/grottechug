@@ -32,9 +32,11 @@ function clearAuthCookies(res: express.Response) {
     secure: appEnv.isProduction,
   };
 
-  res.clearCookie("better-auth.session_token", cookieOptions);
-  res.clearCookie("better-auth.session_data", cookieOptions);
-  res.clearCookie("better-auth.dont_remember", cookieOptions);
+  // In production, useSecureCookies prefixes names with __Secure-
+  const prefix = appEnv.isProduction ? "__Secure-" : "";
+  res.clearCookie(`${prefix}better-auth.session_token`, cookieOptions);
+  res.clearCookie(`${prefix}better-auth.session_data`, cookieOptions);
+  res.clearCookie(`${prefix}better-auth.dont_remember`, cookieOptions);
 }
 
 app.set("trust proxy", 1);

@@ -114,6 +114,11 @@
   table-layout: fixed;
 }
 
+.person__history-table th,
+.person__history-table td {
+  white-space: normal;
+}
+
 .person__history-table th {
   padding: 10px;
 }

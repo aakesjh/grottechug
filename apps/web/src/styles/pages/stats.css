@@ -106,3 +106,10 @@
   margin-bottom: 6px;
   gap: 16px;
 }
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  .stats__stat-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

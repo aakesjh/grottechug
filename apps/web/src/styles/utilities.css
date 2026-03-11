@@ -78,3 +78,10 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+  }
+}

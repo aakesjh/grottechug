@@ -9,8 +9,20 @@
 .grotta__grid {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .grotta__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .grotta__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* --- Member Card --- */

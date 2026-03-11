@@ -42,8 +42,10 @@ export function LoginPage() {
         return;
       }
 
-      // Wait for session to be fetched before navigating
-      await authClient.getSession();
+      // signIn.email() updates the internal session atom. Avoid calling
+      // getSession() here — on mobile cross-origin setups the cookie may
+      // not be sent back, causing getSession to return null and overwrite
+      // the session state that signIn just established.
       navigate(nextPath, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunne ikke logge inn");

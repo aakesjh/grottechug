@@ -24,6 +24,19 @@ function fmtDDMMYYYY(iso: string) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
+const RULE_COLORS: Record<string, string> = {
+  DNS: "#ef4444",
+  DNF: "#f97316",
+  MM: "#86efac",
+  W: "#3b82f6",
+  VW: "#1e3a8a",
+  P: "#ec4899",
+  ABSENCE: "#94a3b8",
+  VOMIT: "#84cc16",
+  KPR: "#06b6d4",
+  T: "#14b8a6",
+};
+
 export function PersonPage() {
   const { id } = useParams();
   const nav = useNavigate(); // NYTT: For navigering
@@ -373,8 +386,25 @@ export function PersonPage() {
                     <td style={{ padding: 10 }} className={isPB ? "person__pb-cell" : ""}>
                       {pt.seconds.toFixed(2)}s {isPB && "🌟"}
                     </td>
-                    <td style={{ padding: 10, color: pt.note ? "var(--danger)" : "var(--muted)" }}>
-                      {pt.note ?? "—"}
+                    <td style={{ padding: 10 }}>
+                      {pt.note ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                          {pt.note.split(", ").map((code, idx) => (
+                            <span
+                              key={idx}
+                              className="badge"
+                              style={{
+                                borderColor: RULE_COLORS[code.trim().toUpperCase()] || "var(--border)",
+                                color: RULE_COLORS[code.trim().toUpperCase()] || "var(--danger)",
+                              }}
+                            >
+                              {code.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ color: "var(--muted)" }}>—</span>
+                      )}
                     </td>
                   </tr>
                 );

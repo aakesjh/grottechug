@@ -303,7 +303,6 @@ export function JoinPage() {
               onChange={(e) => setNameInput(e.target.value)}
               placeholder="Skriv inn fornavnet ditt"
             />
-
           </div>
 
           {searching && normalizedInput && (
@@ -415,7 +414,7 @@ export function JoinPage() {
           )}
 
           <div>
-            <label className="join__label">Bilde</label>
+            <label className="join__label">Bilde (et morsomt om du har)</label>
             <input
               type="file"
               accept="image/*"

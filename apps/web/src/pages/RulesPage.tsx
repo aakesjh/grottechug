@@ -59,14 +59,14 @@ export function RulesPage() {
 
       <div className="card u-mt-md">
         <div className="tableWrap">
-          <table style={{ minWidth: 800 }}>
+          <table style={{ minWidth: isAdmin ? 800 : 600 }}>
             <thead>
               <tr>
                 <th>Kode</th>
                 <th>Regel</th>
                 <th>Kryss</th>
                 <th>Detaljer</th>
-                <th />
+                {isAdmin && <th />}
               </tr>
             </thead>
             <tbody>
@@ -76,13 +76,15 @@ export function RulesPage() {
                   <td><b>{r.label}</b></td>
                   <td>{r.crosses}</td>
                   <td className="u-text-muted">{r.details ?? ""}</td>
-                  <td className="u-text-right">
-                    <button className="btn" onClick={() => openEdit(r)}>Rediger</button>
-                  </td>
+                  {isAdmin && (
+                    <td className="u-text-right">
+                      <button className="btn btn--sm" onClick={() => openEdit(r)}>Rediger</button>
+                    </td>
+                  )}
                 </tr>
               ))}
               {!rules.length && (
-                <tr><td colSpan={5} className="u-text-muted">Ingen regler</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} className="u-text-muted">Ingen regler</td></tr>
               )}
             </tbody>
           </table>

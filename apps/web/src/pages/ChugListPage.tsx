@@ -626,7 +626,7 @@ export function ChugListPage() {
           <p>Laster…</p>
         ) : (
           <div className="tableWrap">
-            <table>
+            <table className="chuglist__table">
               <thead>
                 <tr>
                   <th className="sticky">Deltaker</th>

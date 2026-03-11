@@ -460,14 +460,19 @@
     border-left: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 1001;
     transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                visibility 0.3s;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    visibility: hidden;
+    pointer-events: none;
     padding-top: 70px;
   }
 
   .mobileDrawerOpen {
     transform: translateX(0);
+    visibility: visible;
+    pointer-events: auto;
   }
 
   .mobileDrawerLinks {
