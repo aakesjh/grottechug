@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm install --include=dev",
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "apps/web/dist",
   "functions": {
