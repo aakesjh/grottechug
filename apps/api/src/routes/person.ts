@@ -23,22 +23,40 @@ personRouter.get("/:id", async (req, res) => {
     orderBy: { session: { date: "asc" } }
   });
 
-  const points = attempts.map(a => ({
-    sessionId: a.sessionId, // NY! Vi trenger denne for lenken
-    dateISO: a.session.date.toISOString(),
-    seconds: a.seconds,
-    note: a.note ?? null
-  }));
+  const violations = await prisma.violation.findMany({
+    where: { participantId: id, sessionId: { in: sessionIds } },
+    select: { sessionId: true, ruleCode: true, reason: true, crosses: true },
+  });
+
+  // Group violations by sessionId
+  const violationsBySession = new Map<string, typeof violations>();
+  for (const v of violations) {
+    const list = violationsBySession.get(v.sessionId) ?? [];
+    list.push(v);
+    violationsBySession.set(v.sessionId, list);
+  }
+
+  const points = attempts.map(a => {
+    const sessionViolations = violationsBySession.get(a.sessionId) ?? [];
+    const violationNote = sessionViolations.map(v => v.ruleCode).join(", ") || null;
+    return {
+      sessionId: a.sessionId,
+      dateISO: a.session.date.toISOString(),
+      seconds: a.seconds,
+      note: violationNote,
+    };
+  });
 
   const times = points.map(x => x.seconds);
   const best = times.length ? Math.min(...times) : null;
   const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : null;
 
-  // NY LOGIKK: Inkluderer mm-chug og mm i beregningen for "bestClean"
+  // bestClean: attempts with no violations, or only MM violations
   const cleanTimes = points
     .filter(x => {
-      const n = x.note?.toLowerCase();
-      return !n || n === "" || n === "mm-chug" || n === "mm";
+      if (!x.note) return true;
+      const codes = x.note.split(", ").map(c => c.toUpperCase());
+      return codes.every(c => c === "MM");
     })
     .map(x => x.seconds);
     

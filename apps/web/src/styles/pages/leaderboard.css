@@ -172,3 +172,61 @@
 .leaderboard__table th:nth-child(4) {
   width: 110px;
 }
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  .leaderboard .row {
+    flex-direction: column;
+  }
+
+  .leaderboard .col {
+    width: 100%;
+  }
+
+  .podium__emoji {
+    font-size: 1.2rem;
+  }
+
+  .podium__name {
+    font-size: 0.75rem;
+  }
+
+  .podium__time {
+    font-size: 0.7rem;
+  }
+
+  .leaderboard__table {
+    font-size: var(--font-sm);
+  }
+
+  .leaderboard__rank {
+    padding: 8px 4px;
+  }
+
+  .leaderboard__time {
+    padding: 6px 4px;
+  }
+
+  .leaderboard__name-btn {
+    padding: 4px 6px;
+    font-size: var(--font-sm);
+  }
+
+  .leaderboard__date-btn {
+    font-size: 0.75rem;
+    padding: 4px;
+  }
+
+  .leaderboard__table th:nth-child(4),
+  .leaderboard__table td:nth-child(4) {
+    display: none;
+  }
+
+  .leaderboard__table th:first-child {
+    width: 36px;
+  }
+
+  .leaderboard__table th:nth-child(3) {
+    width: 60px;
+  }
+}

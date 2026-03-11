@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "../components/Avatar";
 import { apiFetch } from "../lib/api";
@@ -105,9 +105,6 @@ export function LeaderboardPage() {
   const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<Resp | null>(null);
   const [showGuests, setShowGuests] = useState<boolean>(false);
-  
-  const rightColRef = useRef<HTMLDivElement>(null);
-  const [lockedHeight, setLockedHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
@@ -120,16 +117,6 @@ export function LeaderboardPage() {
   const rows = data?.rows ?? [];
   const topRegular = useMemo(() => rows.filter(r => r.isRegular), [rows]);
   const tableRows = showGuests ? rows : topRegular;
-
-  // Låser høyden basert på 2026V én gang
-  useLayoutEffect(() => {
-    if (semester === "2026V" && !showGuests && rightColRef.current && topRegular.length > 0) {
-      const height = rightColRef.current.getBoundingClientRect().height;
-      if (height > 100) {
-        setLockedHeight(height);
-      }
-    }
-  }, [data, semester, showGuests, topRegular]);
 
   return (
     <div className="leaderboard">
@@ -155,9 +142,7 @@ export function LeaderboardPage() {
           className="col u-flex" 
           style={{ 
             flexDirection: "column", 
-            gap: 14, 
-            minHeight: lockedHeight,
-            height: lockedHeight
+            gap: 14,
           }}
         >
           <Podium title="Podium (kun grottamedlemmer)" rows={topRegular} showAvatar />
@@ -167,8 +152,7 @@ export function LeaderboardPage() {
         {/* Høyre kolonne - Listen */}
         <div 
           className="col card u-flex" 
-          ref={rightColRef}
-          style={{ flexDirection: "column", minHeight: lockedHeight }}
+          style={{ flexDirection: "column" }}
         >
           <div className="leaderboard__list-header">
             <h2 style={{ margin: 0 }}>Hele listen</h2>

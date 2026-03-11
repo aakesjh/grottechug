@@ -42,6 +42,8 @@ export function LoginPage() {
         return;
       }
 
+      // Wait for session to be fetched before navigating
+      await authClient.getSession();
       navigate(nextPath, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunne ikke logge inn");
