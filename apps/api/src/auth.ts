@@ -42,7 +42,8 @@ export const auth = betterAuth({
   advanced: {
     useSecureCookies: appEnv.isProduction,
     defaultCookieAttributes: {
-      sameSite: usesCrossOriginCookies() ? "none" : "lax",
+      // Browsers reject SameSite=None cookies without Secure, so keep local HTTP development on Lax.
+      sameSite: appEnv.isProduction && usesCrossOriginCookies() ? "none" : "lax",
       secure: appEnv.isProduction,
     },
   },

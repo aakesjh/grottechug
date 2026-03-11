@@ -1,5 +1,13 @@
 import "./env.js";
+import { webcrypto } from "node:crypto";
 import { prisma } from "./prisma.js";
+
+if (!globalThis.crypto) {
+  Object.defineProperty(globalThis, "crypto", {
+    value: webcrypto,
+    configurable: true,
+  });
+}
 
 type AdminSeed = {
   email: string;
@@ -35,32 +43,37 @@ async function seedAdmins() {
     return;
   }
 
-  process.env.AUTH_ALLOW_SIGNUP = "true";
   const { auth } = await import("./auth.js");
+  const context = await auth.$context;
 
   for (const admin of adminSeeds) {
+    const normalizedEmail = admin.email.toLowerCase();
     const existingUser = await prisma.user.findUnique({
-      where: { email: admin.email },
+      where: { email: normalizedEmail },
     });
 
+    const passwordHash = await context.password.hash(admin.password);
+
     if (!existingUser) {
-      const created = await auth.api.signUpEmail({
-        body: {
-          email: admin.email,
-          name: admin.name,
-          password: admin.password,
-        },
+      const created = await context.internalAdapter.createUser({
+        email: normalizedEmail,
+        name: admin.name,
+        emailVerified: true,
+        role: "admin",
       });
 
-      await prisma.user.update({
-        where: { id: created.user.id },
-        data: {
-          emailVerified: true,
-          role: "admin",
-        },
+      if (!created) {
+        throw new Error(`Failed to create admin user ${normalizedEmail}`);
+      }
+
+      await context.internalAdapter.linkAccount({
+        userId: created.id,
+        providerId: "credential",
+        accountId: created.id,
+        password: passwordHash,
       });
 
-      console.log(`Created admin user ${admin.email}`);
+      console.log(`Created admin user ${normalizedEmail}`);
       continue;
     }
 
@@ -73,7 +86,21 @@ async function seedAdmins() {
       },
     });
 
-    console.log(`Updated admin user ${admin.email}`);
+    const credentialAccount = (await context.internalAdapter.findAccounts(existingUser.id))
+      .find((account) => account.providerId === "credential" && account.password);
+
+    if (credentialAccount) {
+      await context.internalAdapter.updatePassword(existingUser.id, passwordHash);
+    } else {
+      await context.internalAdapter.linkAccount({
+        userId: existingUser.id,
+        providerId: "credential",
+        accountId: existingUser.id,
+        password: passwordHash,
+      });
+    }
+
+    console.log(`Updated admin user ${normalizedEmail}`);
   }
 }
 

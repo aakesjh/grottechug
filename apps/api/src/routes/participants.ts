@@ -60,6 +60,24 @@ participantsRouter.get("/", async (req, res) => {
   res.json(formattedPeople);
 });
 
+participantsRouter.get("/:id", async (req, res) => {
+  const participant = await prisma.participant.findUnique({
+    where: { id: String(req.params.id) },
+    select: {
+      id: true,
+      name: true,
+      isRegular: true,
+      imageUrl: true,
+    },
+  });
+
+  if (!participant) {
+    return res.status(404).json({ error: "Not found" });
+  }
+
+  res.json(participant);
+});
+
 /**
  * POST /api/participants/guest-upsert
  * body: { name: "Maria" }

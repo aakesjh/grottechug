@@ -1,16 +1,71 @@
+import { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { authClient } from "../auth/client";
 import { useAuthSession } from "../auth/useAuthSession";
+import { apiFetch } from "../lib/api";
 
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAdmin, isAuthenticated, isPending, user } = useAuthSession();
   const isHome = location.pathname === "/";
+  const [participantName, setParticipantName] = useState<string | null>(null);
+  const [participantImage, setParticipantImage] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // LØSNINGEN: Er vi på forsiden, er den ALLTID i hero-modus (låst). 
+  // LØSNINGEN: Er vi på forsiden, er den ALLTID i hero-modus (låst).
   // På andre sider bytter den til kompakt.
-  const isHeroMode = isHome; 
+  const isHeroMode = isHome;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!user?.participantId) {
+      setParticipantName(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    apiFetch(`/api/participants/${user.participantId}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Could not load participant");
+        }
+
+        return response.json() as Promise<{ name?: string; imageUrl?: string | null }>;
+      })
+      .then((participant) => {
+        if (!cancelled) {
+          setParticipantName(participant.name ?? null);
+          setParticipantImage(participant.imageUrl ?? null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setParticipantName(null);
+          setParticipantImage(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.participantId]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
   async function handleSignOut() {
     await authClient.signOut();
@@ -20,64 +75,145 @@ export function Navbar() {
   return (
     <>
       <div className={`navPlaceholder ${isHeroMode ? "hero" : "compact"}`} />
-      
+
       <nav className={`navWrap ${isHeroMode ? "heroMode" : "compactMode"}`}>
         <div className="navBar">
           <div className="container navInner">
-            
             <div className="navLogoContainer">
               <NavLink to="/">
-                <img 
-                  src="/grottalogo.png" 
-                  alt="Grotta Logo" 
-                  className="navLogo" 
+                <img
+                  src="/grottalogo.png"
+                  alt="Grotta Logo"
+                  className="navLogo"
                 />
               </NavLink>
             </div>
-            
+
             <div className="navControls">
               <div className="navLinks">
-                <NavLink to="/wheel" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/wheel"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Hjulet
                 </NavLink>
-                <NavLink to="/chug" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/chug"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Chuggelista
                 </NavLink>
-                <NavLink to="/violations" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/violations"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Kryssliste
                 </NavLink>
-                <NavLink to="/rules" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/rules"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Regler
                 </NavLink>
-                <NavLink to="/leaderboard" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/leaderboard"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Toppliste
                 </NavLink>
-                <NavLink to="/stats" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/stats"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Statistikk
                 </NavLink>
-                <NavLink to="/grotta" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
+                <NavLink
+                  to="/grotta"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
                   Grotta
                 </NavLink>
               </div>
+            </div>
 
-              <div className="navAuth">
-                {isPending ? (
-                  <span className="pill">Sjekker innlogging…</span>
-                ) : isAuthenticated ? (
-                  <>
-                    <span className="pill">{user?.name}</span>
-                    <span className="pill">{isAdmin ? "admin" : "member"}</span>
-                    <button className="btn" onClick={handleSignOut}>
+            {!isPending && isAuthenticated && (
+              <div className="profileMenu" ref={menuRef}>
+                <button
+                  className="profileBlob"
+                  onClick={() => setMenuOpen((v) => !v)}
+                >
+                  {participantImage ? (
+                    <img
+                      src={participantImage}
+                      alt={participantName ?? ""}
+                      className="profileImg"
+                    />
+                  ) : (
+                    <span className="profileInitial">
+                      {(participantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="profileBlobInfo">
+                    <span className="profileBlobName">{participantName ?? user?.name}</span>
+                    <span className={`profileBlobRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                      {isAdmin ? "Admin" : "Medlem"}
+                    </span>
+                  </span>
+                </button>
+
+                {menuOpen && (
+                  <div className="profileDropdown">
+                    <div
+                      className="profileDropdownHeader profileDropdownLink"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (user?.participantId) navigate(`/person/${user.participantId}`);
+                      }}
+                    >
+                      <span className="profileDropdownName">
+                        {participantName ?? user?.name}
+                      </span>
+                      <span className={`authRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                        {isAdmin ? "Admin" : "Medlem"}
+                      </span>
+                    </div>
+                    <div className="profileDropdownDivider" />
+                    {isAdmin && (
+                      <button
+                        className="profileDropdownItem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          navigate("/admin");
+                        }}
+                      >
+                        Admin
+                      </button>
+                    )}
+                    <button
+                      className="profileDropdownItem profileDropdownDanger"
+                      onClick={() => { setMenuOpen(false); handleSignOut(); }}
+                    >
                       Logg ut
                     </button>
-                  </>
-                ) : (
-                  <NavLink to="/login" className="btn">
-                    Login
-                  </NavLink>
+                  </div>
                 )}
               </div>
-            </div>
+            )}
+
           </div>
         </div>
       </nav>

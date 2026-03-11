@@ -11,6 +11,7 @@ import { ViolationsPage } from "../pages/ViolationsPage";
 import { HomePage } from "../pages/HomePage";
 import { SessionPage } from "../pages/SessionPage";
 import { LoginPage } from "../pages/LoginPage";
+import { AdminPage } from "../pages/AdminPage";
 
 export const router = createBrowserRouter([
   {
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: "violations", element: <ViolationsPage /> },
       { path: "session/:id", element: <SessionPage /> },
       { path: "login", element: <LoginPage /> },
+      { path: "admin", element: <AdminPage /> },
     ]
   }
 ]);
