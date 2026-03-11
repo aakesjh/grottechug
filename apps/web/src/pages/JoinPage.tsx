@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Cropper from "react-easy-crop";
+import { apiFetch } from "../lib/api";
 
 type Area = {
   x: number;
@@ -150,7 +151,7 @@ export function JoinPage() {
 
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/participants/search?query=${encodeURIComponent(q)}`);
+        const res = await apiFetch(`/api/participants/search?query=${encodeURIComponent(q)}`);
         const data: ParticipantSearchHit[] = await res.json();
 
         if (!alive) return;
@@ -251,7 +252,7 @@ export function JoinPage() {
       form.append("name", normalizedInput);
       form.append("image", fileToUpload);
 
-      const res = await fetch("/api/participant-submissions", {
+      const res = await apiFetch("/api/participant-submissions", {
         method: "POST",
         body: form,
       });
