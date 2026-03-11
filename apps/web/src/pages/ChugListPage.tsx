@@ -402,7 +402,7 @@ export function ChugListPage() {
         <button className="btn" onClick={() => setNewDayOpen(true)}>+ Ny dag</button>
         </div>
 
-        <div style={{ flex: 1 }} />
+        <div className="u-flex-1" />
 
         {editSession ? (
           <>
@@ -449,14 +449,14 @@ export function ChugListPage() {
               }}
             />
 
-            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>
+            <div className="chuglist__modal-semester-hint">
               Semester settes automatisk: <b style={{ color: "var(--text)" }}>{newDaySemester}</b>
             </div>
 
-            <div style={{ height: 10 }} />
+            <div className="u-spacer-sm" />
 
-            <div style={{ height: 14 }} />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <div className="u-spacer-sm" />
+            <div className="u-flex u-flex-end" style={{ gap: 10 }}>
               <button className="btn" onClick={() => setNewDayOpen(false)}>Avbryt</button>
               <button className="btn" onClick={createNewDay}>Opprett</button>
             </div>
@@ -466,11 +466,10 @@ export function ChugListPage() {
 
       {editSession && data && (
         <div className="card" style={{ marginTop: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h2 style={{ margin: 0 }}>Spreadsheet – {fmtDDMMYYYY(editSession.dateISO)}</h2>
+          <div className="chuglist__editor-header">
+            <h2>Spreadsheet – {fmtDDMMYYYY(editSession.dateISO)}</h2>
             <button 
-              className="btn" 
-              style={{ background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", borderColor: "rgba(239, 68, 68, 0.4)" }} 
+              className="btn chuglist__delete-btn" 
               onClick={() => deleteSession(editSession.sessionId, editSession.dateISO)}
             >
               Slett hele dagen
@@ -495,10 +494,9 @@ export function ChugListPage() {
               const activeViolations = draftViolations[r.participantId] ?? [];
               const isDirty = dirtyCells.has(cellKey(r.participantId, editSession.sessionId));
               return (
-                <div key={r.participantId} style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                <div key={r.participantId} className="chuglist__editor-row">
                   <button
-                    className="btn"
-                    style={{ minWidth: 190 }}
+                    className="btn chuglist__name-btn"
                     onClick={() => nav(`/person/${r.participantId}`)}
                   >
                     {r.name}{r.isRegular ? "" : " (gjest)"}
@@ -539,14 +537,7 @@ export function ChugListPage() {
                     return (
                       <button
                         key={code}
-                        className="btn"
-                        style={{
-                          padding: "5px 9px",
-                          fontSize: 11,
-                          background: active ? "rgba(239,68,68,0.22)" : "rgba(0,0,0,0.18)",
-                          borderColor: active ? "rgba(239,68,68,0.5)" : undefined,
-                          color: active ? "#ef4444" : "var(--muted)"
-                        }}
+                        className={`btn chuglist__perf-btn ${active ? "chuglist__perf-btn--active" : "chuglist__perf-btn--inactive"}`}
                         onClick={() => {
                           setDraftViolations(prev => {
                             const cur = prev[r.participantId] ?? [];
@@ -563,20 +554,13 @@ export function ChugListPage() {
                     );
                   })}
 
-                  <span style={{ color: "var(--border)", userSelect: "none" }}>|</span>
+                  <span className="chuglist__separator">|</span>
 
                   {(() => {
                     const active = activeViolations.includes("ABSENCE");
                     return (
                       <button
-                        className="btn"
-                        style={{
-                          padding: "5px 9px",
-                          fontSize: 11,
-                          background: active ? "rgba(234,179,8,0.25)" : "rgba(234,179,8,0.07)",
-                          borderColor: active ? "rgba(234,179,8,0.6)" : "rgba(234,179,8,0.3)",
-                          color: active ? "#eab308" : "rgba(234,179,8,0.6)"
-                        }}
+                        className={`btn chuglist__perf-btn ${active ? "chuglist__absence-btn--active" : "chuglist__absence-btn--inactive"}`}
                         onClick={() => {
                           setDraftViolations(prev => {
                             const cur = prev[r.participantId] ?? [];
@@ -594,8 +578,7 @@ export function ChugListPage() {
                   })()}
 
                   <input
-                    className="input"
-                    style={{ flex: 1, minWidth: 120 }}
+                    className="input chuglist__note-input"
                     placeholder="notat (valgfritt)"
                     value={draftNote[r.participantId] ?? ""}
                     onChange={e => {
@@ -615,7 +598,7 @@ export function ChugListPage() {
             })}
           </div>
 
-          <div style={{ marginTop: 10, color: "var(--muted)", fontSize: 13 }}>
+          <div className="chuglist__editor-hint">
             Enter = ned, Shift+Enter = opp, piltaster flytter, Esc lukker. Trykk <b>Lagre</b> når du er ferdig.
           </div>
         </div>
@@ -659,19 +642,12 @@ export function ChugListPage() {
                         
                         {/* NYTT: Klikkbart ikon for å åpne Session-siden */}
                         <span
+                          className="chuglist__session-icon"
                           onClick={(e) => {
-                            e.stopPropagation(); // Hindrer sortering når man trykker på ikonet
+                            e.stopPropagation();
                             nav(`/session/${c.sessionId}`);
                           }}
                           title="Se dagsrapport og statistikk"
-                          style={{ 
-                            marginLeft: "8px", 
-                            opacity: 0.6, 
-                            cursor: "pointer",
-                            fontSize: "14px"
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
-                          onMouseLeave={(e) => e.currentTarget.style.opacity = "0.6"}
                         >
                           📊
                         </span>
@@ -696,7 +672,7 @@ export function ChugListPage() {
                 {regularRows.map(r => (
                   <tr key={r.participantId}>
                     <td className="sticky">
-                      <button className="btn" style={{ padding: "6px 10px", width: "100%", textAlign: "left" }} onClick={() => nav(`/person/${r.participantId}`)}>
+                      <button className="btn chuglist__name-btn" onClick={() => nav(`/person/${r.participantId}`)}>
                         {r.name}
                       </button>
                     </td>
@@ -754,7 +730,7 @@ export function ChugListPage() {
                 {guestRows.map(r => (
                   <tr key={r.participantId}>
                     <td className="sticky">
-                      <button className="btn" style={{ padding: "6px 10px", width: "100%", textAlign: "left" }} onClick={() => nav(`/person/${r.participantId}`)}>
+                      <button className="btn chuglist__name-btn" onClick={() => nav(`/person/${r.participantId}`)}>
                         {r.name}
                       </button>
                     </td>

@@ -126,7 +126,7 @@ export function PersonPage() {
     );
   }, [data, compareData]);
 
-  if (!data) return <div className="card" style={{ textAlign: "center", padding: 40 }}>Laster data for profil...</div>;
+  if (!data) return <div className="card u-text-center" style={{ padding: 40 }}>Laster data for profil...</div>;
 
   const p = data.participant;
   const bestClean = data.stats.bestClean;
@@ -185,71 +185,49 @@ export function PersonPage() {
       <div className="row" style={{ marginTop: 14, flexWrap: "wrap", alignItems: "stretch" }}>
         
         <div className="col card" style={{ flex: "1 1 250px", maxWidth: "100%", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-            <h1 style={{ margin: 0 }}>{p.name}</h1>
+          <div className="person__header">
+            <h1 className="u-mb-0">{p.name}</h1>
             <span className="badge">{p.isRegular ? "fast" : "gjest"}</span>
           </div>
           
-          <div style={{
-            borderRadius: 18,
-            overflow: "hidden",
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(255,255,255,0.05)",
-            aspectRatio: "4 / 5",
-            maxWidth: 200,
-            flex: "0 1 auto",
-            maxHeight: 260,
-            margin: "0 auto", 
-            display: "grid",
-            placeItems: "center",
-            marginBottom: 14,
-            width: "100%"
-          }}>
+          <div className="person__photo-frame">
             {p.imageUrl ? (
-              <img src={p.imageUrl} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+              <img src={p.imageUrl} alt={p.name} className="person__photo" />
             ) : (
-              <div style={{ color: "var(--muted)", fontWeight: 800 }}>Ingen bilde</div>
+              <div className="person__no-photo">Ingen bilde</div>
             )}
           </div>
 
           <div className="hr" style={{ marginTop: 8, marginBottom: 12 }} />
 
-          <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
-            <h2 style={{ margin: 0 }}>Statistikk</h2>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
-              <span style={{ color: "var(--muted)" }}>Antall forsøk:</span> 
+          <div className="person__stats-list">
+            <h2 className="u-mb-0">Statistikk</h2>
+            <div className="person__stat-row">
+              <span className="u-text-muted">Antall forsøk:</span> 
               <b>{data.stats.attempts}</b>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
-              <span style={{ color: "var(--muted)" }}>Beste tid:</span> 
+            <div className="person__stat-row">
+              <span className="u-text-muted">Beste tid:</span> 
               <b>{data.stats.best == null ? "-" : `${data.stats.best.toFixed(2)}s`}</b>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
-              <span style={{ color: "var(--muted)" }}>Gjennomsnitt:</span> 
+            <div className="person__stat-row">
+              <span className="u-text-muted">Gjennomsnitt:</span> 
               <b>{data.stats.avg == null ? "-" : `${data.stats.avg.toFixed(2)}s`}</b>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.05rem" }}>
-              <span style={{ color: "var(--muted)" }}>Beste (uten anm):</span> 
-              <b style={{ color: "var(--accent)" }}>{bestClean == null ? "-" : `${bestClean.toFixed(2)}s`}</b>
+            <div className="person__stat-row">
+              <span className="u-text-muted">Beste (uten anm):</span> 
+              <b className="u-text-accent">{bestClean == null ? "-" : `${bestClean.toFixed(2)}s`}</b>
             </div>
           </div>
         </div>
 
         <div className="col card" style={{ flex: "2 1 500px", display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
-            <h2 style={{ margin: 0 }}>Utvikling</h2>
+          <div className="person__chart-header">
+            <h2 className="u-mb-0">Utvikling</h2>
             
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <div className="person__chart-controls">
               <select 
-                className="input" 
-                style={{ 
-                  width: "auto", 
-                  padding: "6px 10px", 
-                  background: "rgba(0,0,0,0.25)", 
-                  color: "var(--text)", 
-                  cursor: "pointer",
-                  border: "1px solid var(--border)"
-                }}
+                className="input person__compare-select"
                 value={compareId}
                 onChange={(e) => setCompareId(e.target.value)}
               >
@@ -267,7 +245,7 @@ export function PersonPage() {
             </div>
           </div>
 
-          <div style={{ width: "100%", height: 240, minHeight: 240, flex: 1 }}>
+          <div className="person__chart-area">
             <ResponsiveContainer>
               <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -318,37 +296,30 @@ export function PersonPage() {
           </div>
 
           <div className="hr" style={{ marginTop: 12, marginBottom: 12 }} />
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", 
-            gap: 16, 
-            textAlign: "center", 
-            paddingBottom: 4,
-            marginTop: "auto"
-          }}>
+          <div className="person__bottom-stats">
             {!compareData ? (
               <>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Endring siden start</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: changeSinceStart && changeSinceStart > 0 ? "var(--accent2)" : changeSinceStart && changeSinceStart < 0 ? "var(--danger)" : "var(--text)" }}>
+                  <div className="person__bottom-stat-label">Endring siden start</div>
+                  <div className="person__bottom-stat-value" style={{ color: changeSinceStart && changeSinceStart > 0 ? "var(--accent2)" : changeSinceStart && changeSinceStart < 0 ? "var(--danger)" : "var(--text)" }}>
                     {changeSinceStart == null ? "—" : changeSinceStart > 0 ? `Bedre (${changeSinceStart.toFixed(2)}s)` : `Tregere (${Math.abs(changeSinceStart).toFixed(2)}s)`}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Snitt siste 3 forsøk</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>
+                  <div className="person__bottom-stat-label">Snitt siste 3 forsøk</div>
+                  <div className="person__bottom-stat-value">
                     {last3Avg == null ? "—" : `${last3Avg.toFixed(2)}s`}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Projisert neste tid</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--accent)" }}>
+                  <div className="person__bottom-stat-label">Projisert neste tid</div>
+                  <div className="person__bottom-stat-value u-text-accent">
                     {projectedNext == null ? "—" : `${projectedNext.toFixed(2)}s`}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Total chuggetid</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>
+                  <div className="person__bottom-stat-label">Total chuggetid</div>
+                  <div className="person__bottom-stat-value">
                     {totalTime > 0 ? `${totalTime.toFixed(1)}s` : "—"}
                   </div>
                 </div>
@@ -356,16 +327,16 @@ export function PersonPage() {
             ) : (
               <>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Raskest i snitt (Totalt)</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>{headToHeadAvg}</div>
+                  <div className="person__bottom-stat-label">Raskest i snitt (Totalt)</div>
+                  <div className="person__bottom-stat-value">{headToHeadAvg}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Beste Clean Tid</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>{headToHeadBest}</div>
+                  <div className="person__bottom-stat-label">Beste Clean Tid</div>
+                  <div className="person__bottom-stat-value">{headToHeadBest}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "0.80rem", color: "var(--muted)", marginBottom: 4 }}>Mest konsekvent</div>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--text)" }}>{headToHeadConsistency}</div>
+                  <div className="person__bottom-stat-label">Mest konsekvent</div>
+                  <div className="person__bottom-stat-value">{headToHeadConsistency}</div>
                 </div>
               </>
             )}
@@ -373,10 +344,10 @@ export function PersonPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 14 }}>
+      <div className="card u-mt-md">
         <h2>Historikk</h2>
         <div className="tableWrap">
-          <table style={{ width: "100%", minWidth: 0, textAlign: "left", borderCollapse: "collapse", tableLayout: "fixed" }}>
+          <table className="person__history-table">
             <thead>
               <tr>
                 <th style={{ padding: 10, width: "120px" }}>Dato</th>
@@ -389,18 +360,16 @@ export function PersonPage() {
                 const isPB = !pt.note && bestClean !== null && pt.seconds === bestClean;
                 return (
                   <tr key={`${pt.dateISO}-${i}`}>
-                    {/* NYTT: Klikkbar dato */}
-                    <td style={{ padding: 10, color: "var(--muted)" }}>
+                    <td style={{ padding: 10 }}>
                       <button 
-                        className="btnGhost" 
-                        style={{ padding: "4px 8px", borderRadius: 6, cursor: "pointer", border: "none", color: "var(--accent)" }}
+                        className="btnGhost person__history-date-btn" 
                         onClick={() => nav(`/session/${pt.sessionId}`)}
                         title="Se detaljer for denne dagen"
                       >
                         {fmtDDMMYYYY(pt.dateISO)}
                       </button>
                     </td>
-                    <td style={{ padding: 10, fontWeight: isPB ? 900 : 500, color: isPB ? "var(--accent4)" : "inherit" }}>
+                    <td style={{ padding: 10 }} className={isPB ? "person__pb-cell" : ""}>
                       {pt.seconds.toFixed(2)}s {isPB && "🌟"}
                     </td>
                     <td style={{ padding: 10, color: pt.note ? "var(--danger)" : "var(--muted)" }}>
@@ -410,7 +379,7 @@ export function PersonPage() {
                 );
               })}
               {!data.points.length && (
-                <tr><td colSpan={3} style={{ color: "var(--muted)", padding: 20, textAlign: "center" }}>Ingen data</td></tr>
+                <tr><td colSpan={3} className="u-text-muted u-text-center" style={{ padding: 20 }}>Ingen data</td></tr>
               )}
             </tbody>
           </table>

@@ -16,76 +16,42 @@ export function HomePage() {
   }, []);
 
   return (
-    <div style={{ 
-      // 330px er høyden på navPlaceholder.hero. Dette gjør at innholdet fyller skjermen 100% perfekt uten at man KAN scrolle.
-      height: "42vh", 
-      width: "100%", 
-      display: "flex", 
-      flexDirection: "column", 
-      alignItems: "center", 
-      justifyContent: "center", 
-      textAlign: "center",
-      paddingLeft: "20px",
-      paddingRight: "20px",
-      boxSizing: "border-box"
-    }}>
-      
+    <div className="home">
       {/* Velkomst */}
-      <div style={{ maxWidth: "800px", width: "100%", marginBottom: "40px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-        
-        <h1 style={{ 
-          fontSize: "3.5rem", 
-          fontWeight: 900,
-          margin: "0 0 10px 0",
-          letterSpacing: "-1px"
-        }}>
-          Grottechug
-        </h1>
+      <div className="home__welcome">
+        <h1 className="home__title">Grottechug</h1>
 
-        <p style={{ 
-          fontSize: "1.2rem", 
-          color: "var(--muted)", 
-          lineHeight: "1.5",
-          marginBottom: "30px",
-          maxWidth: "600px" 
-        }}>
+        <p className="home__subtitle">
           Den offisielle plattformen for chugge-statistikk, hjulet og de harde fakta fra Grotta.
         </p>
-        
-        <div style={{ display: "flex", gap: "20px", justifyContent: "center", flexWrap: "wrap" }}>
-          <Link to="/wheel" className="btn btnPrimary" style={{ padding: "14px 28px", fontSize: "1.1rem" }}>
+
+        <div className="home__actions">
+          <Link to="/wheel" className="btn btnPrimary home__action-btn">
             Spinn Hjulet
           </Link>
-          <Link to="/leaderboard" className="btn" style={{ padding: "14px 28px", fontSize: "1.1rem" }}>
+          <Link to="/leaderboard" className="btn home__action-btn">
             Toppliste
           </Link>
         </div>
       </div>
 
       {/* Oversikt over funksjoner */}
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
-        gap: "20px",
-        width: "100%",
-        maxWidth: "1100px" 
-      }}>
-        <Link to="/wheel" className="card cardCard" style={{ padding: "20px", textDecoration: "none" }}>
-          <h2 style={{ color: "var(--accent2)", fontSize: "1.3rem", marginBottom: "8px" }}>Hjulet</h2>
-          <p style={{ fontSize: "0.95rem", margin: 0 }}>Trekk neste chugger på en rettferdig måte.</p>
+      <div className="home__features">
+        <Link to="/wheel" className="card cardCard home__feature-card">
+          <h2 className="home__feature-title u-text-accent2">Hjulet</h2>
+          <p className="home__feature-desc">Trekk neste chugger på en rettferdig måte.</p>
         </Link>
-        
-        <Link to="/stats" className="card cardCard" style={{ padding: "20px", textDecoration: "none" }}>
-          <h2 style={{ color: "var(--accent)", fontSize: "1.3rem", marginBottom: "8px" }}>Statistikk</h2>
-          <p style={{ fontSize: "0.95rem", margin: 0 }}>Følg med på utvikling og personlige rekorder.</p>
+
+        <Link to="/stats" className="card cardCard home__feature-card">
+          <h2 className="home__feature-title u-text-accent">Statistikk</h2>
+          <p className="home__feature-desc">Følg med på utvikling og personlige rekorder.</p>
         </Link>
-        
-        <Link to="/rules" className="card cardCard" style={{ padding: "20px", textDecoration: "none" }}>
-          <h2 style={{ color: "var(--danger)", fontSize: "1.3rem", marginBottom: "8px" }}>Regelverk</h2>
-          <p style={{ fontSize: "0.95rem", margin: 0 }}>Lær deg forskjellen på de ulike chugge-typene.</p>
+
+        <Link to="/rules" className="card cardCard home__feature-card">
+          <h2 className="home__feature-title u-text-danger">Regelverk</h2>
+          <p className="home__feature-desc">Lær deg forskjellen på de ulike chugge-typene.</p>
         </Link>
       </div>
-      
     </div>
   );
 }

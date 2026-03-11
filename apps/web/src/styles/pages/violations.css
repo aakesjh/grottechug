@@ -1,0 +1,38 @@
+/* ==========================================================================
+   Violations Page
+   ========================================================================== */
+
+.violations__controls {
+  display: flex;
+  gap: 8px;
+}
+
+.violations__rule-subheader {
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.violations__date-btn {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--transition-base), background var(--transition-base);
+  background: transparent;
+  text-align: left;
+}
+
+.violations__date-btn:hover {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.violations__delete-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.35);
+}

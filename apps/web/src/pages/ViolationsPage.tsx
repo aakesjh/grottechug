@@ -113,7 +113,7 @@ export function ViolationsPage() {
             Total
           </button>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="violations__controls">
           <button className="btn" onClick={() => setShowGuests(v => !v)}>
             {showGuests ? "Skjul gjester" : "Vis gjester"}
           </button>
@@ -123,7 +123,7 @@ export function ViolationsPage() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 14 }}>
+      <div className="card u-mt-md">
         {!detail ? (
           <p>Laster…</p>
         ) : (
@@ -138,7 +138,7 @@ export function ViolationsPage() {
                   {ruleCols.map(code => (
                     <th key={code} title={`${RULE_CROSSES[code]}× per ${RULE_LABELS[code] ?? code}`}>
                       <div>{RULE_LABELS[code] ?? code}</div>
-                      <div style={{ fontSize: 10, fontWeight: "normal", color: "var(--muted)", marginTop: 2 }}>×{RULE_CROSSES[code]}</div>
+                      <div className="violations__rule-subheader">×{RULE_CROSSES[code]}</div>
                     </th>
                   ))}
                 </tr>
@@ -147,7 +147,7 @@ export function ViolationsPage() {
                 {visibleRows.map((r, i) => (
                   <tr
                     key={r.participantId}
-                    style={{ cursor: showDetails ? "pointer" : undefined }}
+                    style={showDetails ? { cursor: "pointer" } : undefined}
                     className={expandedId === r.participantId ? "separatorRow" : undefined}
                     onClick={() => {
                       if (!showDetails) return;
@@ -156,7 +156,7 @@ export function ViolationsPage() {
                   >
                     <td>{i + 1}</td>
                     <td className="sticky">
-                      <button className="btn" style={{ padding: "6px 10px" }} onClick={e => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
+                      <button className="btn" style={{ padding: "6px 10px" }} onClick={(e) => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
                         {r.name}
                       </button>
                     </td>
@@ -165,15 +165,15 @@ export function ViolationsPage() {
                     {ruleCols.map(code => (
                       <td key={code}>
                         {r.byRule[code]
-                          ? <b style={{ color: "var(--danger, #ef4444)" }}>{r.byRule[code]}</b>
-                          : <span style={{ color: "var(--muted)" }}>–</span>}
+                          ? <b className="u-text-danger">{r.byRule[code]}</b>
+                          : <span className="u-text-muted">–</span>}
                       </td>
                     ))}
                   </tr>
                 ))}
                 {!visibleRows.length && (
                   <tr>
-                    <td colSpan={4 + ruleCols.length} style={{ color: "var(--muted)" }}>
+                    <td colSpan={4 + ruleCols.length} className="u-text-muted">
                       Ingen kryss registrert ennå
                     </td>
                   </tr>
@@ -185,7 +185,7 @@ export function ViolationsPage() {
       </div>
 
       {showDetails && expandedId && (
-        <div className="card" style={{ marginTop: 14 }}>
+        <div className="card u-mt-md">
           <h2>Detaljer – {expandedName}</h2>
           <div className="tableWrap">
             <table style={{ minWidth: 600 }}>
@@ -201,33 +201,15 @@ export function ViolationsPage() {
               <tbody>
                 {expandedViolations.length === 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ color: "var(--muted)" }}>Ingen kryss</td>
+                    <td colSpan={5} className="u-text-muted">Ingen kryss</td>
                   </tr>
                 ) : expandedViolations.map(v => (
                   <tr key={v.id}>
                     <td>
                       {/* NYTT: Subtil Ghost-knapp for å navigere til dagsrapporten */}
                       <button
-                        className="btnGhost"
-                        style={{
-                          padding: "4px 8px",
-                          borderRadius: "6px",
-                          border: "none",
-                          color: "var(--muted)",
-                          cursor: "pointer",
-                          transition: "color 0.2s, background 0.2s",
-                          background: "transparent",
-                          textAlign: "left"
-                        }}
+                        className="btn violations__date-btn"
                         onClick={() => nav(`/session/${v.sessionId}`)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = "var(--accent)";
-                          e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "var(--muted)";
-                          e.currentTarget.style.background = "transparent";
-                        }}
                         title="Se dagsrapport og statistikk"
                       >
                         {fmtDate(v.dateISO)}
@@ -235,12 +217,11 @@ export function ViolationsPage() {
                     </td>
                     <td><span className="badge">{v.ruleCode}</span></td>
                     <td>{v.crosses}</td>
-                    <td style={{ color: "var(--muted)" }}>{v.reason ?? "–"}</td>
+                    <td className="u-text-muted">{v.reason ?? "–"}</td>
                     <td>
                       <button
-                        className="btn btnDanger"
-                        style={{ padding: "4px 10px", fontSize: 12, color: "#ef4444", borderColor: "rgba(239,68,68,0.35)" }}
-                        onClick={e => { e.stopPropagation(); deleteViolation(v.id); }}
+                        className="btn btnDanger violations__delete-btn"
+                        onClick={(e) => { e.stopPropagation(); deleteViolation(v.id); }}
                       >
                         Slett
                       </button>

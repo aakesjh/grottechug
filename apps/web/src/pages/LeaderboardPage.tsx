@@ -36,15 +36,15 @@ function Podium({
   const top3 = rows.slice(0, 3);
 
   return (
-    <div className="card" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+    <div className="card podium__card">
       <h2 style={{ marginTop: 0 }}>{title}</h2>
 
       {!top3.length ? (
-        <div style={{ color: "var(--muted)", flex: 1 }}>
+        <div className="u-text-muted" style={{ flex: 1 }}>
           Ingen data funnet.
         </div>
       ) : (
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flex: 1, paddingBottom: 10 }}>
+        <div className="podium" style={{ flex: 1, paddingBottom: 10 }}>
           {[1, 0, 2].map(pos => {
             const r = top3[pos];
             const rank = pos === 0 ? 1 : pos === 1 ? 2 : 3;
@@ -68,44 +68,24 @@ function Podium({
                 key={pos}
                 onClick={() => r && nav(`/person/${r.participantId}`)}
                 disabled={!r}
-                style={{
-                  flex: 1,
-                  border: "none",
-                  background: "transparent",
-                  padding: 0,
-                  cursor: r ? "pointer" : "default",
-                  textAlign: "center",
-                  minWidth: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center"
-                }}
+                className={`podium__button ${r ? "podium__button--clickable" : ""}`}
               >
-                <div style={{ fontSize: "1.6rem", marginBottom: 6, lineHeight: 1 }}>{label}</div>
+                <div className="podium__emoji">{label}</div>
                 <div
+                  className={`podium__frame ${!r ? "podium__frame--empty" : ""}`}
                   style={{
                     height,
-                    width: "100%",
-                    borderRadius: 18,
-                    border: r ? `3px solid ${theme.border}` : "2px dashed rgba(255,255,255,0.14)",
-                    boxShadow: r ? `0 4px 15px ${theme.glow}` : "none",
+                    ...(r ? { border: `3px solid ${theme.border}`, boxShadow: `0 4px 15px ${theme.glow}` } : {}),
                     ...bgStyle,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    overflow: "hidden",
-                    position: "relative",
                   }}
                 >
                   {r && showAvatar && !hasBgImage && <Avatar name={r.name} size={height * 0.4} />}
-                  {!r && <div style={{ color: "var(--muted)" }}>—</div>}
+                  {!r && <div className="u-text-muted">—</div>}
                 </div>
                 {r ? (
-                  <div style={{ marginTop: 8, width: "100%", textAlign: "center", color: "var(--text)" }}>
-                    <div style={{ fontWeight: 700, fontSize: "0.85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {r.name}
-                    </div>
-                    <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>{r.bestClean.toFixed(2)}s</div>
+                  <div className="podium__info">
+                    <div className="podium__name">{r.name}</div>
+                    <div className="podium__time">{r.bestClean.toFixed(2)}s</div>
                   </div>
                 ) : (
                   <div style={{ marginTop: 8, fontSize: "0.85rem", color: "transparent" }}>&nbsp;</div>
@@ -151,11 +131,11 @@ export function LeaderboardPage() {
   }, [data, semester, showGuests, topRegular]);
 
   return (
-    <div style={{ paddingBottom: 60 }}>
+    <div className="leaderboard">
       <h1>Toppliste</h1>
       <p>Rangert etter beste tid uten anmerkning.</p>
 
-      <div className="tabs" style={{ marginTop: 10 }}>
+      <div className="tabs u-mt-sm">
         {["2025H", "2026V", "all"].map((s) => (
           <button 
             key={s}
@@ -167,13 +147,12 @@ export function LeaderboardPage() {
         ))}
       </div>
 
-      <div className="row" style={{ marginTop: 14, alignItems: "stretch" }}>
+      <div className="row u-mt-sm" style={{ alignItems: "stretch" }}>
         
         {/* Venstre kolonne - Podium */}
         <div 
-          className="col" 
+          className="col u-flex" 
           style={{ 
-            display: "flex", 
             flexDirection: "column", 
             gap: 14, 
             minHeight: lockedHeight,
@@ -186,84 +165,47 @@ export function LeaderboardPage() {
 
         {/* Høyre kolonne - Listen */}
         <div 
-          className="col card" 
+          className="col card u-flex" 
           ref={rightColRef}
-          style={{ 
-            display: "flex", 
-            flexDirection: "column",
-            minHeight: lockedHeight,
-          }}
+          style={{ flexDirection: "column", minHeight: lockedHeight }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div className="leaderboard__list-header">
             <h2 style={{ margin: 0 }}>Hele listen</h2>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: "14px" }}>
+            <label className="leaderboard__guest-toggle">
               <input type="checkbox" checked={showGuests} onChange={(e) => setShowGuests(e.target.checked)} />
               Vis gjester
             </label>
           </div>
 
           <div className="tableWrap" style={{ border: "none", overflow: "visible" }}>
-            <table style={{ 
-              width: "100%", 
-              minWidth: "0", 
-              textAlign: "left", 
-              borderCollapse: "collapse",
-              tableLayout: "auto" 
-            }}>
+            <table className="leaderboard__table">
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                  <th style={{ padding: "10px 8px", width: "50px", textAlign: "center", background: "transparent" }}>#</th>
-                  <th style={{ padding: "10px 8px", background: "transparent" }}>Navn</th>
-                  <th style={{ padding: "10px 8px", width: "80px", background: "transparent" }}>Tid</th>
-                  <th style={{ padding: "10px 8px", width: "110px", background: "transparent" }}>Dato</th>
+                  <th>#</th>
+                  <th>Navn</th>
+                  <th>Tid</th>
+                  <th>Dato</th>
                 </tr>
               </thead>
               <tbody>
                 {tableRows.map((r: any, i) => (
                   <tr key={`${r.participantId}-${i}`} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "12px 8px", textAlign: "center", fontWeight: 900 }}>
+                    <td className="leaderboard__rank">
                       {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : i + 1}
                     </td>
                     <td style={{ padding: "8px" }}>
                       <button 
-                        className="btn" 
-                        style={{ 
-                          padding: "6px 12px", 
-                          fontSize: "15px",
-                          fontWeight: 500,
-                          whiteSpace: "normal", 
-                          textAlign: "left" 
-                        }} 
+                        className="btn leaderboard__name-btn" 
                         onClick={() => nav(`/person/${r.participantId}`)}
                       >
                         {r.name}
                       </button>
                     </td>
-                    <td style={{ padding: "8px", fontWeight: 600 }}>{r.bestClean.toFixed(2)}s</td>
+                    <td className="leaderboard__time">{r.bestClean.toFixed(2)}s</td>
                     <td style={{ padding: "8px" }}>
-                      {/* NYTT: Diskret lenke til Session-siden */}
                       <button
-                        className="btnGhost"
-                        style={{
-                          padding: "6px 8px",
-                          borderRadius: "8px",
-                          border: "none",
-                          color: "var(--muted)",
-                          fontSize: "13px",
-                          cursor: "pointer",
-                          transition: "color 0.2s, background 0.2s",
-                          background: "transparent",
-                          textAlign: "left"
-                        }}
+                        className="leaderboard__date-btn"
                         onClick={() => nav(`/session/${r.sessionId}`)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = "var(--accent)";
-                          e.currentTarget.style.background = "rgba(255,255,255,0.05)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "var(--muted)";
-                          e.currentTarget.style.background = "transparent";
-                        }}
                         title="Se dagsrapport for denne kvelden"
                       >
                         {fmtDDMMYYYY(r.dateISO)}

@@ -17,16 +17,8 @@ export function Avatar({ name, imageUrl, size = 56 }: Props) {
   if (!imageUrl || broken) {
     return (
       <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: 5,
-          display: "grid",
-          placeItems: "center",
-          border: "1px solid var(--border)",
-          background: "rgba(255,255,255,0.06)",
-          fontWeight: 900
-        }}
+        className="avatar"
+        style={{ width: size, height: size }}
         aria-label={name}
         title={name}
       >
@@ -41,12 +33,7 @@ export function Avatar({ name, imageUrl, size = 56 }: Props) {
       alt={name}
       width={size}
       height={size}
-      style={{
-        borderRadius: 10,
-        objectFit: "cover",
-        border: "1px solid var(--border)",
-        display: "block"
-      }}
+      className="avatar__img"
       onError={() => setBroken(true)}
     />
   );

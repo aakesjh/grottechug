@@ -120,36 +120,6 @@ function getRuleLabel(code: string) {
   return labels[code] || code;
 }
 
-const personLinkStyle: React.CSSProperties = {
-  background: "transparent",
-  border: "none",
-  padding: 0,
-  margin: 0,
-  color: "white",
-  font: "inherit",
-  fontWeight: 900,
-  cursor: "pointer",
-  borderRadius: 8,
-  transition: "all 0.18s ease",
-  textDecoration: "underline",
-  textDecorationColor: "transparent",
-  textUnderlineOffset: "0.18em",
-};
-
-const tablePersonLinkStyle: React.CSSProperties = {
-  padding: 0,
-  borderRadius: 6,
-  border: "none",
-  background: "transparent",
-  cursor: "pointer",
-  fontWeight: "bold",
-  color: "var(--text)",
-  textDecoration: "underline",
-  textDecorationColor: "transparent",
-  textUnderlineOffset: "0.18em",
-  transition: "all 0.18s ease",
-};
-
 const CustomBarLabel = (props: any) => {
   const { x, y, width, violations, note } = props;
   const hasViolations = Array.isArray(violations) && violations.length > 0;
@@ -416,7 +386,7 @@ export function SessionPage() {
 
   if (loading) {
     return (
-      <div className="container" style={{ paddingTop: 100, textAlign: "center" }}>
+      <div className="container u-text-center" style={{ paddingTop: 100 }}>
         Laster dagens resultater...
       </div>
     );
@@ -424,7 +394,7 @@ export function SessionPage() {
 
   if (!sessionStats) {
     return (
-      <div className="container" style={{ paddingTop: 100, textAlign: "center" }}>
+      <div className="container u-text-center" style={{ paddingTop: 100 }}>
         Fant ikke denne chugge-dagen.
       </div>
     );
@@ -493,41 +463,23 @@ export function SessionPage() {
     <button
       type="button"
       onClick={() => nav(`/person/${personId}`)}
-      style={personLinkStyle}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.textDecorationColor = "rgba(255,255,255,0.8)";
-        e.currentTarget.style.opacity = "0.88";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.textDecorationColor = "transparent";
-        e.currentTarget.style.opacity = "1";
-      }}
+      className="session__person-link"
     >
       {name}
     </button>
   );
 
   return (
-    <div className="container" style={{ paddingBottom: 60 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
+    <div className="container session">
+      <div className="session__nav">
         <button className="btn" onClick={() => nav("/chug")}>
           ← Tilbake til oversikt
         </button>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="session__nav-group">
           {sessionStats.prevSessionId && (
             <button
-              className="btn"
-              style={{ background: "rgba(255,255,255,0.05)" }}
+              className="btn session__nav-btn"
               onClick={() => nav(`/session/${sessionStats.prevSessionId}`)}
             >
               « Forrige dag
@@ -536,8 +488,7 @@ export function SessionPage() {
 
           {sessionStats.nextSessionId && (
             <button
-              className="btn"
-              style={{ background: "rgba(255,255,255,0.05)" }}
+              className="btn session__nav-btn"
               onClick={() => nav(`/session/${sessionStats.nextSessionId}`)}
             >
               Neste dag »
@@ -546,42 +497,18 @@ export function SessionPage() {
         </div>
       </div>
 
-      <div
-        className="card"
-        style={{
-          marginBottom: 24,
-          padding: 24,
-          background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))",
-        }}
-      >
-        <h1 style={{ fontSize: "2.4rem", marginBottom: 8 }}>
+      <div className="card session__header">
+        <h1 className="session__title">
           Resultater: {fmtDate(sessionStats.dateISO)}
         </h1>
         {sessionStats.note && (
-          <div
-            style={{
-              fontSize: "1.05rem",
-              color: "var(--accent2)",
-              fontStyle: "italic",
-              background: "rgba(255,255,255,0.05)",
-              padding: "10px 15px",
-              borderRadius: 12,
-              display: "inline-block",
-            }}
-          >
+          <div className="session__note">
             "{sessionStats.note}"
           </div>
         )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
+      <div className="session__stat-grid">
         <div
           className="card"
           style={{
@@ -769,14 +696,7 @@ export function SessionPage() {
         )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 16,
-          marginBottom: 24,
-        }}
-      >
+      <div className="session__award-grid">
         {bestProjected && bestProjected.diffProjected! < 0 && (
           <div
             className="card"
@@ -959,20 +879,13 @@ export function SessionPage() {
         )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-          gap: 16,
-          marginBottom: 20,
-        }}
-      >
+      <div className="session__chart-grid">
         <div className="card" style={{ padding: 20 }}>
           <h2 style={{ marginBottom: 12 }}>Forventning vs. realitet</h2>
-          <div style={{ color: "var(--muted)", fontSize: "0.95rem", marginBottom: 12 }}>
+          <div className="session__chart-desc">
             Negativ verdi betyr raskere enn forventet.
           </div>
-          <div style={{ width: "100%", height: 300 }}>
+          <div className="session__chart-area">
             <ResponsiveContainer>
               <BarChart data={validProjected} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -1011,10 +924,10 @@ export function SessionPage() {
         {pbData.length > 0 && (
           <div className="card" style={{ padding: 20 }}>
             <h2 style={{ marginBottom: 12 }}>Avvik fra personlig rekord</h2>
-            <div style={{ color: "var(--muted)", fontSize: "0.95rem", marginBottom: 12 }}>
+            <div className="session__chart-desc">
               Negativ verdi betyr ny personlig rekord.
             </div>
-            <div style={{ width: "100%", height: 300 }}>
+            <div className="session__chart-area">
               <ResponsiveContainer>
                 <BarChart data={pbData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -1049,22 +962,15 @@ export function SessionPage() {
         )}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-          gap: 16,
-          marginBottom: 20,
-        }}
-      >
+      <div className="session__chart-grid">
         <div className="card" style={{ padding: 20 }}>
           <h2 style={{ marginBottom: 12 }}>Type kryss i dag</h2>
           {pieData.length === 0 ? (
-            <div style={{ textAlign: "center", paddingTop: 90, color: "var(--muted)" }}>
+            <div className="u-text-center u-text-muted" style={{ paddingTop: 90 }}>
               Ingen kryss i dag! 🎉
             </div>
           ) : (
-            <div style={{ width: "100%", height: 300 }}>
+            <div className="session__chart-area">
               <ResponsiveContainer>
                 <PieChart>
                   <Pie
@@ -1104,10 +1010,10 @@ export function SessionPage() {
 
         <div className="card" style={{ padding: 20 }}>
           <h2 style={{ marginBottom: 12 }}>Avstand opp til dagens raskeste</h2>
-          <div style={{ color: "var(--muted)", fontSize: "0.95rem", marginBottom: 12 }}>
+          <div className="session__chart-desc">
             Viser hvor mange sekunder hver deltaker var bak dagens beste tid.
           </div>
-          <div style={{ width: "100%", height: 300 }}>
+          <div className="session__chart-area">
             <ResponsiveContainer>
               <BarChart data={gapToWinnerData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -1143,12 +1049,12 @@ export function SessionPage() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 20, marginBottom: 20 }}>
+      <div className="card u-mb-md" style={{ padding: 20 }}>
         <h2 style={{ marginBottom: 12 }}>Tidsfordeling</h2>
-        <div style={{ color: "var(--muted)", fontSize: "0.95rem", marginBottom: 12 }}>
+        <div className="session__chart-desc">
           Røde og gule prikker markerer henholdsvis kryss og notat.
         </div>
-        <div style={{ width: "100%", height: 420 }}>
+        <div className="session__chart-area--lg">
           <ResponsiveContainer>
             <BarChart data={sessionStats.attempts} margin={{ top: 20, right: 10, bottom: 20, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -1197,12 +1103,12 @@ export function SessionPage() {
       <div className="card">
         <h2>Kryss og anmerkninger</h2>
         {groupedViolations.length === 0 ? (
-          <p style={{ textAlign: "center", color: "var(--muted)", padding: 20 }}>
+          <p className="u-text-center u-text-muted" style={{ padding: 20 }}>
             En helt ren dag! 🎉
           </p>
         ) : (
           <div className="tableWrap" style={{ border: "none" }}>
-            <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }}>
+            <table className="session__violations-table">
               <thead>
                 <tr>
                   <th style={{ padding: 10 }}>Navn</th>
@@ -1220,22 +1126,14 @@ export function SessionPage() {
                     <td style={{ padding: 10 }}>
                       <button
                         type="button"
-                        style={tablePersonLinkStyle}
+                        className="session__table-person-link"
                         onClick={() => nav(`/person/${v.participantId}`)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.textDecorationColor = "rgba(255,255,255,0.75)";
-                          e.currentTarget.style.opacity = "0.88";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.textDecorationColor = "transparent";
-                          e.currentTarget.style.opacity = "1";
-                        }}
                       >
                         {v.name}
                       </button>
                     </td>
                     <td style={{ padding: 10 }}>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <div className="u-flex u-flex-wrap" style={{ gap: 6 }}>
                         {v.codes.map((code, idx) => (
                           <span
                             key={idx}

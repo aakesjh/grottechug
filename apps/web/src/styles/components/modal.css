@@ -1,0 +1,17 @@
+/* ==========================================================================
+   Modal Component
+   ========================================================================== */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-dark);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+
+.modalCard {
+  width: 460px;
+  max-width: calc(100vw - 24px);
+}

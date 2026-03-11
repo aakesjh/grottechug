@@ -1,0 +1,321 @@
+/* ==========================================================================
+   Navbar Component
+   Dynamic navbar with hero/compact modes, hamburger, mobile drawer.
+   ========================================================================== */
+
+/* --- Navbar Wrapper --- */
+.navWrap {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: all var(--transition-smooth);
+}
+
+.navBar {
+  background: rgba(11, 16, 32, 0.95);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-smooth);
+}
+
+.navInner {
+  display: flex;
+  transition: all var(--transition-smooth);
+}
+
+.navLogo {
+  display: block;
+  transition: all var(--transition-smooth);
+}
+
+.navLogo:hover {
+  transform: scale(1.03) rotate(-1deg);
+}
+
+/* --- Hero Mode (home page, not scrolled) --- */
+.heroMode .navBar {
+  padding: 10px 0;
+  background: rgba(11, 16, 32, 0.7);
+}
+
+.heroMode .navInner {
+  flex-direction: column;
+  align-items: center;
+}
+
+.heroMode .navLogo {
+  height: 200px;
+  width: auto;
+  filter: drop-shadow(0 0 20px rgba(124, 92, 255, 0.4));
+}
+
+.heroMode .navLinks {
+  justify-content: center;
+  width: 100%;
+}
+
+/* --- Compact Mode (other pages, or scrolled) --- */
+.compactMode .navBar {
+  padding: 3px 0;
+}
+
+.compactMode .navInner {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.compactMode .navLogo {
+  height: 100px;
+  width: auto;
+  filter: drop-shadow(0 0 8px rgba(124, 92, 255, 0.2));
+}
+
+.compactMode .navLinks {
+  justify-content: flex-end;
+}
+
+/* --- Nav Placeholder (prevents content jump) --- */
+.navPlaceholder {
+  width: 100%;
+  transition: height var(--transition-smooth);
+}
+
+.navPlaceholder.hero {
+  height: 330px;
+}
+
+.navPlaceholder.compact {
+  height: 120px;
+}
+
+/* --- Nav Links --- */
+.navLinks {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--overlay-subtle);
+  color: var(--text);
+  transition: var(--transition-fast);
+  font-size: var(--font-base);
+  font-weight: 500;
+}
+
+.navLink:hover {
+  transform: translateY(-1px);
+  background: var(--overlay-light);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.navLinkActive {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: white;
+}
+
+/* --- Hamburger Button (hidden on desktop) --- */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  z-index: 1010;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-base);
+}
+
+.hamburger:hover {
+  background: var(--overlay-light);
+}
+
+.hamburgerLine {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Animate to X when open */
+.hamburgerOpen .hamburgerLine:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburgerOpen .hamburgerLine:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerOpen .hamburgerLine:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* --- Mobile Overlay --- */
+.mobileOverlay {
+  display: none;
+}
+
+/* --- Mobile Drawer --- */
+.mobileDrawer {
+  display: none;
+}
+
+/* --- Tablet Breakpoint (below 850px) --- */
+@media (max-width: 850px) {
+  .compactMode .navInner {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .compactMode .navLinks {
+    justify-content: center;
+  }
+
+  .navPlaceholder.compact {
+    height: 160px;
+  }
+}
+
+/* --- Mobile Breakpoint (below 768px) --- */
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .navLinks {
+    display: none !important;
+  }
+
+  .compactMode .navInner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+  }
+
+  .compactMode .navLogo {
+    height: 60px;
+  }
+
+  .navPlaceholder.compact {
+    height: 80px;
+  }
+
+  .compactMode .navBar {
+    padding: 5px 0;
+  }
+
+  .heroMode .navLogo {
+    height: 120px;
+  }
+
+  .navPlaceholder.hero {
+    height: 200px;
+  }
+
+  .heroMode .navInner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Mobile overlay */
+  .mobileOverlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Mobile drawer */
+  .mobileDrawer {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 280px;
+    max-width: 80vw;
+    height: 100vh;
+    height: 100dvh;
+    background: rgba(11, 16, 32, 0.98);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 1001;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobileDrawerOpen {
+    transform: translateX(0);
+  }
+
+  .mobileDrawerLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 80px 20px 40px;
+  }
+
+  .mobileDrawerLinks .navLink {
+    font-size: 1rem;
+    padding: 14px 16px;
+    border-radius: 12px;
+    min-height: 44px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .mobileDrawerLinks .navLink:active {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* --- Extra Small Screens (below 375px) --- */
+@media (max-width: 375px) {
+  .heroMode .navLogo {
+    height: 90px;
+  }
+
+  .navPlaceholder.hero {
+    height: 160px;
+  }
+
+  .compactMode .navLogo {
+    height: 50px;
+  }
+
+  .navPlaceholder.compact {
+    height: 70px;
+  }
+
+  .mobileDrawerLinks .navLink {
+    font-size: 0.9375rem;
+    padding: 12px 14px;
+  }
+}

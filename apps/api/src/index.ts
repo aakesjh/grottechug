@@ -13,6 +13,7 @@ import { leaderboardRouter } from "./routes/leaderboard";
 import { analyticsRouter } from "./routes/analytics";
 import { crossesRouter } from "./routes/crosses";
 import { violationsRouter } from "./routes/violations";
+import { participantSubmissionsRouter } from "./routes/participantSubmissionRouter";
 
 const app = express();
 app.use(cors());
@@ -32,6 +33,7 @@ app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/analytics", analyticsRouter);
 app.use("/api/crosses", crossesRouter);
 app.use("/api/violations", violationsRouter);
+app.use("/api/participant-submissions", participantSubmissionsRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 4000;
 

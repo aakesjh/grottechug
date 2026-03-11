@@ -281,26 +281,24 @@ export function StatsDashboardPage() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white", minWidth: 200 }}>
-          <strong style={{ display: "block", marginBottom: 8, paddingBottom: 6, borderBottom: "1px solid rgba(255,255,255,0.1)", fontSize: "1.1rem" }}>
-            {label}
-          </strong>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ color: "var(--muted)" }}>Gjennomsnitt:</span>
-            <strong style={{ color: "var(--accent)" }}>{data.avg?.toFixed(2)}s</strong>
+        <div className="chart-tooltip" style={{ minWidth: 200 }}>
+          <strong className="chart-tooltip__title">{label}</strong>
+          <div className="chart-tooltip__row">
+            <span className="u-text-muted">Gjennomsnitt:</span>
+            <strong className="u-text-accent">{data.avg?.toFixed(2)}s</strong>
           </div>
           {data.fastestPerson && (
-             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, gap: 16 }}>
-               <span style={{ color: "var(--muted)" }}>Raskest:</span>
-               <span style={{ textAlign: "right" }}>
+             <div className="chart-tooltip__row">
+               <span className="u-text-muted">Raskest:</span>
+               <span className="u-text-right">
                  <strong style={{ color: getColor(data.fastestPerson) }}>{data.fastestPerson}</strong> ({data.fastestTime?.toFixed(2)}s)
                </span>
              </div>
           )}
           {data.slowestPerson && (
-             <div style={{ display: "flex", justifyContent: "space-between", gap: 16 }}>
-               <span style={{ color: "var(--muted)" }}>Tregest:</span>
-               <span style={{ textAlign: "right" }}>
+             <div className="chart-tooltip__row">
+               <span className="u-text-muted">Tregest:</span>
+               <span className="u-text-right">
                  <strong style={{ color: getColor(data.slowestPerson) }}>{data.slowestPerson}</strong> ({data.slowestTime?.toFixed(2)}s)
                </span>
              </div>
@@ -314,9 +312,9 @@ export function StatsDashboardPage() {
   const CustomActivityTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
-          <div style={{ marginBottom: 6, color: "var(--muted)" }}>Dato: {label}</div>
-          <div style={{ color: "#ffffff", fontWeight: 600 }}>Antall chugs: {payload[0].value}</div>
+        <div className="chart-tooltip">
+          <div className="u-text-muted u-mb-xs">Dato: {label}</div>
+          <div className="u-text-bold">Antall chugs: {payload[0].value}</div>
         </div>
       );
     }
@@ -327,9 +325,9 @@ export function StatsDashboardPage() {
     if (active && payload && payload.length) {
       const fullLabel = noteBars.find((n: any) => n.type === label)?.label;
       return (
-        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
-          <div style={{ marginBottom: 6, color: "var(--muted)" }}>{fullLabel || label}</div>
-          <div style={{ color: "#ffffff", fontWeight: 600 }}>Antall: {payload[0].value}</div>
+        <div className="chart-tooltip">
+          <div className="u-text-muted u-mb-xs">{fullLabel || label}</div>
+          <div className="u-text-bold">Antall: {payload[0].value}</div>
         </div>
       );
     }
@@ -339,9 +337,9 @@ export function StatsDashboardPage() {
   const CustomPunishmentTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
-          <div style={{ marginBottom: 6, color: "var(--muted)" }}>{label}</div>
-          <div style={{ color: "#ffffff", fontWeight: 600 }}>Straffeprosent: {payload[0].value.toFixed(1)}%</div>
+        <div className="chart-tooltip">
+          <div className="u-text-muted u-mb-xs">{label}</div>
+          <div className="u-text-bold">Straffeprosent: {payload[0].value.toFixed(1)}%</div>
         </div>
       );
     }
@@ -351,9 +349,9 @@ export function StatsDashboardPage() {
   const CustomWetRateTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
-          <div style={{ marginBottom: 6, color: "var(--muted)" }}>{label}</div>
-          <div style={{ color: "#ffffff", fontWeight: 600 }}>Wet-rate: {payload[0].value.toFixed(1)}%</div>
+        <div className="chart-tooltip">
+          <div className="u-text-muted u-mb-xs">{label}</div>
+          <div className="u-text-bold">Wet-rate: {payload[0].value.toFixed(1)}%</div>
         </div>
       );
     }
@@ -364,15 +362,15 @@ export function StatsDashboardPage() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div style={{ background: "rgba(18,26,51,0.95)", padding: "12px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
+        <div className="chart-tooltip">
           <div style={{ marginBottom: 6, color: getColor(label), fontWeight: "bold", fontSize: "1.1rem" }}>{label}</div>
-          <div style={{ color: "#ffffff", fontWeight: 600, marginBottom: 8 }}>
+          <div className="u-text-bold" style={{ marginBottom: 8 }}>
             Forbedring: <span style={{ color: data.improvementPct > 0 ? "#10b981" : "#ef4444" }}>{data.improvementPct > 0 ? "+" : ""}{data.improvementPct.toFixed(1)}%</span>
           </div>
-          <div style={{ color: "var(--muted)", fontSize: "0.85rem", display: "flex", justifyContent: "space-between", gap: 20 }}>
+          <div className="chart-tooltip__row u-text-muted u-text-sm">
             <span>Snitt 2 første:</span> <span>{data.firstAvg.toFixed(2)}s</span>
           </div>
-          <div style={{ color: "var(--muted)", fontSize: "0.85rem", display: "flex", justifyContent: "space-between", gap: 20 }}>
+          <div className="chart-tooltip__row u-text-muted u-text-sm">
             <span>Snitt 2 siste:</span> <span>{data.lastAvg.toFixed(2)}s</span>
           </div>
         </div>
@@ -386,68 +384,59 @@ export function StatsDashboardPage() {
       <h1>Dashbord & Statistikk</h1>
       <p>Diverse nyttige og unyttige statistikker.</p>
 
-      <div className="tabs" style={{ marginTop: 10, marginBottom: 20 }}>
+      <div className="tabs u-mt-sm u-mb-md">
         <button className={`tab ${semester === "2025H" ? "tabActive" : ""}`} onClick={() => setSemester("2025H")}>2025 Høst</button>
         <button className={`tab ${semester === "2026V" ? "tabActive" : ""}`} onClick={() => setSemester("2026V")}>2026 Vår</button>
         <button className={`tab ${semester === "all" ? "tabActive" : ""}`} onClick={() => setSemester("all")}>Total</button>
       </div>
 
       {!data || !tableData ? (
-        <div className="card" style={{ textAlign: "center", padding: 40 }}>Laster statistikk...</div>
+        <div className="card u-text-center u-p-xl">Laster statistikk...</div>
       ) : (
         <>
           {/* DE STATS-BOKSENE ØVERST */}
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", 
-            gap: 14, 
-            marginBottom: 20 
-          }}>
-            <div className="card" style={{ textAlign: "center", padding: "20px 10px" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 6 }}>Totale Chugs</div>
-              <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>{data.overview.attempts}</div>
+          <div className="stats__stat-grid">
+            <div className="card stat-box">
+              <div className="stat-box__label">Totale Chugs</div>
+              <div className="stat-box__value">{data.overview.attempts}</div>
             </div>
-            <div className="card" style={{ textAlign: "center", padding: "20px 10px" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 6 }}>Aktive Dager</div>
-              <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>{data.overview.sessions}</div>
+            <div className="card stat-box">
+              <div className="stat-box__label">Aktive Dager</div>
+              <div className="stat-box__value">{data.overview.sessions}</div>
             </div>
-            <div className="card" style={{ textAlign: "center", padding: "20px 10px" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 6 }}>Snitt per dag</div>
-              <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text)", lineHeight: 1 }}>{chugsPerSession.toFixed(1)}</div>
+            <div className="card stat-box">
+              <div className="stat-box__label">Snitt per dag</div>
+              <div className="stat-box__value">{chugsPerSession.toFixed(1)}</div>
             </div>
-            <div className="card" style={{ textAlign: "center", padding: "20px 10px" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--muted)", marginBottom: 6 }}>Total Wet-Rate</div>
-              <div style={{ fontSize: "2rem", fontWeight: 900, color: overallWetRate > 20 ? "var(--danger)" : "var(--accent2)", lineHeight: 1 }}>
+            <div className="card stat-box">
+              <div className="stat-box__label">Total Wet-Rate</div>
+              <div className="stat-box__value" style={{ color: overallWetRate > 20 ? "var(--danger)" : "var(--accent2)" }}>
                 {overallWetRate.toFixed(1)}%
               </div>
             </div>
             
             {fastestPerson && (
-              <div className="card" style={{ textAlign: "center", padding: "20px 10px", border: "1px solid color-mix(in srgb, #10b981 40%, transparent)" }}>
-                <div style={{ fontSize: "0.85rem", color: "#10b981", marginBottom: 6 }}>⚡ Raskest i snitt</div>
-                <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {fastestPerson.name}
-                </div>
-                <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>{fastestPerson.avg?.toFixed(2)}s</div>
+              <div className="card stat-box stat-box--fastest">
+                <div className="stat-box__label">⚡ Raskest i snitt</div>
+                <div className="stat-box__name">{fastestPerson.name}</div>
+                <div className="stat-box__sub-value">{fastestPerson.avg?.toFixed(2)}s</div>
               </div>
             )}
 
             {slowestPerson && (
-              <div className="card" style={{ textAlign: "center", padding: "20px 10px", border: "1px solid color-mix(in srgb, var(--danger) 40%, transparent)" }}>
-                <div style={{ fontSize: "0.85rem", color: "var(--danger)", marginBottom: 6 }}>🐢 Tregest i snitt</div>
-                <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {slowestPerson.name}
-                </div>
-                <div style={{ fontSize: "0.9rem", color: "var(--muted)" }}>{slowestPerson.avg?.toFixed(2)}s</div>
+              <div className="card stat-box stat-box--slowest">
+                <div className="stat-box__label">🐢 Tregest i snitt</div>
+                <div className="stat-box__name">{slowestPerson.name}</div>
+                <div className="stat-box__sub-value">{slowestPerson.avg?.toFixed(2)}s</div>
               </div>
             )}
           </div>
 
           {/* RAD 1: Tid og Kvantitet vs Kvalitet */}
-          <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
+          <div className="row u-mt-sm" style={{ flexWrap: "wrap" }}>
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Raskest/snitt/treigest per dag</h2>
-              <div style={{ width: "100%", height: 300 }}>
+              <div className="stats__chart-area">
                 <ResponsiveContainer>
                   <LineChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -468,12 +457,12 @@ export function StatsDashboardPage() {
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Kvantitet vs Kvalitet</h2>
               
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
-                <div style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
+              <div className="stats__scatter-header">
+                <div className="stats__chart-desc" style={{ marginBottom: 0 }}>
                   Nederst til høyre = Mange forsøk og rask.
                 </div>
                 
-                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", color: "var(--text)", fontSize: "0.85rem" }}>
+                <label className="stats__scatter-toggle">
                   <input
                     type="checkbox"
                     checked={showScatterGuests}
@@ -483,7 +472,7 @@ export function StatsDashboardPage() {
                 </label>
               </div>
 
-              <div style={{ width: "100%", height: 280 }}>
+              <div className="stats__chart-area--sm">
                 {hasParticipantStats ? (
                   <ResponsiveContainer>
                     <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: -20 }}>
@@ -496,7 +485,7 @@ export function StatsDashboardPage() {
                           if (active && payload && payload.length) {
                             const p = payload[0].payload;
                             return (
-                              <div style={{ background: "rgba(18,26,51,0.95)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border)", color: "white" }}>
+                              <div className="chart-tooltip">
                                 <strong style={{ display: "block", marginBottom: 4, color: getColor(p.name) }}>
                                   {p.name} {!p.isRegular && <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(gjest)</span>}
                                 </strong>
@@ -516,18 +505,18 @@ export function StatsDashboardPage() {
                     </ScatterChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--muted)" }}>Ingen data tilgjengelig</div>
+                  <div className="stats__no-data">Ingen data tilgjengelig</div>
                 )}
               </div>
             </div>
           </div>
 
           {/* RAD 2: Wet-rate og Anmerkninger */}
-          <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
+          <div className="row u-mt-sm" style={{ flexWrap: "wrap" }}>
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Søle-prosent (Wet-rate) per dag</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Basert på MM, W, VW, P og T-kryss.</div>
-              <div style={{ width: "100%", height: 300 }}>
+              <div className="stats__chart-desc">Basert på MM, W, VW, P og T-kryss.</div>
+              <div className="stats__chart-area">
                 <ResponsiveContainer>
                   <AreaChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -546,8 +535,8 @@ export function StatsDashboardPage() {
 
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Anmerkningstyper Totalt</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Fordeling av alle registrerte anmerkninger.</div>
-              <div style={{ width: "100%", height: 300 }}>
+              <div className="stats__chart-desc">Fordeling av alle registrerte anmerkninger.</div>
+              <div className="stats__chart-area">
                 <ResponsiveContainer>
                   <BarChart data={noteBars} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -566,13 +555,13 @@ export function StatsDashboardPage() {
           </div>
 
           {/* RAD 3: Forbedring og Aktivitet (Her ble Forbedring byttet inn) */}
-          <div className="row" style={{ marginTop: 14, flexWrap: "wrap" }}>
+          <div className="row u-mt-sm" style={{ flexWrap: "wrap" }}>
             
             {/* Prosentvis forbedring */}
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Største Forbedring (%)</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Snitt av to første chugs vs to siste (krever ≥ 4 chugs).</div>
-              <div style={{ width: "100%", height: 280 }}>
+              <div className="stats__chart-desc">Snitt av to første chugs vs to siste (krever ≥ 4 chugs).</div>
+              <div className="stats__chart-area--sm">
                 {improvementData.length > 0 ? (
                   <ResponsiveContainer>
                     <BarChart data={improvementData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
@@ -588,7 +577,7 @@ export function StatsDashboardPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--muted)", textAlign: "center" }}>
+                  <div className="stats__no-data">
                     Ikke nok data.<br/>(Trenger deltakere med ≥ 4 chugs)
                   </div>
                 )}
@@ -597,8 +586,8 @@ export function StatsDashboardPage() {
 
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Aktivitet per dag</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Totalt antall chugs registrert hver dato.</div>
-              <div style={{ width: "100%", height: 280 }}>
+              <div className="stats__chart-desc">Totalt antall chugs registrert hver dato.</div>
+              <div className="stats__chart-area--sm">
                 <ResponsiveContainer>
                   <BarChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -613,13 +602,13 @@ export function StatsDashboardPage() {
           </div>
 
           {/* RAD 4: Lavest Wet-rate og Syndebukker (Her ble Syndebukkene byttet inn) */}
-          <div className="row" style={{ marginTop: 14, flexWrap: "wrap", marginBottom: 40 }}>
+          <div className="row u-mt-sm u-mb-xl" style={{ flexWrap: "wrap" }}>
             
             {/* Lavest Wet-Rate */}
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Mest kontroll på chuggen (lavest wet-rate)</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Krever minst 5 registrerte chugs for å kvalifisere.</div>
-              <div style={{ width: "100%", height: 280 }}>
+              <div className="stats__chart-desc">Krever minst 5 registrerte chugs for å kvalifisere.</div>
+              <div className="stats__chart-area--sm">
                 {lowestWetRateData.length > 0 ? (
                   <ResponsiveContainer>
                     <BarChart data={lowestWetRateData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
@@ -635,7 +624,7 @@ export function StatsDashboardPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--muted)", textAlign: "center" }}>
+                  <div className="stats__no-data">
                     Ikke nok data.<br/>(Trenger deltakere med ≥ 5 chugs)
                   </div>
                 )}
@@ -645,8 +634,8 @@ export function StatsDashboardPage() {
             {/* Syndebukkene */}
             <div className="col card" style={{ flex: "1 1 400px" }}>
               <h2>Syndebukkene (høyest wet-rate)</h2>
-              <div style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: 10 }}>Andel runder som får en anmerkning (min. 3 forsøk).</div>
-              <div style={{ width: "100%", height: 280 }}>
+              <div className="stats__chart-desc">Andel runder som får en anmerkning (min. 3 forsøk).</div>
+              <div className="stats__chart-area--sm">
                 {hasParticipantStats ? (
                   <ResponsiveContainer>
                     <BarChart data={noteRateData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
@@ -662,7 +651,7 @@ export function StatsDashboardPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ height: "100%", display: "grid", placeItems: "center", color: "var(--muted)" }}>Ingen data tilgjengelig</div>
+                  <div className="stats__no-data">Ingen data tilgjengelig</div>
                 )}
               </div>
             </div>
