@@ -2,6 +2,14 @@
    Violations Page
    ========================================================================== */
 
+.violations__card {
+  padding: 0;
+}
+
+.violations__tableWrap {
+  overflow-x: auto;
+}
+
 .violations__controls {
   display: flex;
   gap: 8px;
@@ -37,8 +45,129 @@
   border-color: rgba(239, 68, 68, 0.35);
 }
 
+/* Name + badge inline layout */
+.violations__name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.violations__badge-inline {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+/* Summary pills - hidden on desktop (rule columns shown instead) */
+.violations__col-summary {
+  display: none;
+}
+
+.violations__summary-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.violations__summary-pill {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill, 20px);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.violations__summary-pill b {
+  color: inherit;
+}
+
+/* Chevron (mobile expand indicator) - hidden on desktop */
+.violations__col-chevron {
+  display: none;
+}
+
+.violations__chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.violations__chevron--open {
+  transform: rotate(90deg);
+}
+
+/* Mobile detail row - hidden on desktop */
+.violations__mobile-detail-row {
+  display: none;
+}
+
+.violations__mobile-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 4px;
+  align-items: center;
+}
+
+.violations__mobile-pill {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill, 20px);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.violations__mobile-pill b {
+  color: inherit;
+}
+
+/* --- Mobile --- */
 @media (max-width: 768px) {
   .violations__controls {
     flex-wrap: wrap;
+  }
+
+  /* Hide columns not needed on mobile */
+  .violations__col-rank,
+  .violations__col-rule {
+    display: none;
+  }
+
+  /* Show summary column on mobile */
+  .violations__col-summary {
+    display: table-cell;
+  }
+
+  /* Show the chevron column */
+  .violations__col-chevron {
+    display: table-cell;
+    width: 30px;
+    text-align: center;
+  }
+
+  /* Show the mobile detail sub-row */
+  .violations__mobile-detail-row {
+    display: table-row;
+  }
+
+  .violations__mobile-detail-row td {
+    padding: 0 10px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Remove bottom border from the parent row when expanded */
+  .violations__row-expanded td {
+    border-bottom: none;
+  }
+
+  .violations__table {
+    width: 100%;
+  }
+
+  .violations__tableWrap {
+    overflow-x: hidden;
   }
 }

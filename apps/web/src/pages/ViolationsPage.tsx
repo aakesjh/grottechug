@@ -38,6 +38,11 @@ const RULE_LABELS: Record<string, string> = {
 const RULE_CROSSES: Record<string, number> = {
   DNS: 3, DNF: 2, MM: 0.5, W: 1, VW: 2, P: 1, ABSENCE: 2, VOMIT: 4, KPR: 1
 };
+const RULE_COLORS: Record<string, string> = {
+  MM: "#10b981", W: "#3b82f6", VW: "#6366f1", P: "#ef4444", T: "#14b8a6",
+  DNS: "#f59e0b", DNF: "#f97316", VOMIT: "#ec4899", KPR: "#8b5cf6",
+  ABSENCE: "#94a3b8"
+};
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
@@ -50,8 +55,8 @@ export function ViolationsPage() {
   const [semester, setSemester] = useState<Semester>("all");
   const [detail, setDetail] = useState<DetailResp | null>(null);
   const [violations, setViolations] = useState<ViolationEntry[]>([]);
-  const [showDetails, setShowDetails] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [mobileExpanded, setMobileExpanded] = useState<Set<string>>(new Set());
   const [showGuests, setShowGuests] = useState(false);
 
   async function loadDetail() {
@@ -67,13 +72,10 @@ export function ViolationsPage() {
 
   useEffect(() => {
     setExpandedId(null);
+    setMobileExpanded(new Set());
     loadDetail();
-    if (showDetails) loadViolations();
+    loadViolations();
   }, [semester]);
-
-  useEffect(() => {
-    if (showDetails) loadViolations();
-  }, [showDetails]);
 
   async function deleteViolation(id: string) {
     if (!isAdmin) return;
@@ -90,7 +92,6 @@ export function ViolationsPage() {
   const usedRules = new Set(visibleRows.flatMap(r => Object.keys(r.byRule)));
   const ruleCols = RULE_ORDER.filter(r => usedRules.has(r));
 
-  const expandedViolations = violations.filter(v => v.participantId === expandedId);
   const expandedName = detail?.rows.find(r => r.participantId === expandedId)?.name;
 
   return (
@@ -122,63 +123,139 @@ export function ViolationsPage() {
           <button className={`btn ${showGuests ? "" : "btnGhost"}`} onClick={() => setShowGuests(v => !v)}>
             {showGuests ? "Skjul gjester" : "Vis gjester"}
           </button>
-          <button className={`btn ${showDetails ? "" : "btnGhost"}`} onClick={() => setShowDetails(v => !v)}>
-            {showDetails ? "Skjul detaljer" : "Vis detaljer"}
-          </button>
         </div>
       </div>
 
-      <div className="card u-mt-md">
+      <div className="card u-mt-md violations__card">
         {!detail ? (
           <p>Laster…</p>
         ) : (
-          <div className="tableWrap">
-            <table>
+          <div className="tableWrap violations__tableWrap">
+            <table className="violations__table">
               <thead>
                 <tr>
-                  <th>#</th>
+                  <th className="violations__col-rank">#</th>
                   <th className="sticky">Deltaker</th>
-                  <th>Status</th>
-                  <th>Total kryss</th>
+                  <th className="violations__col-summary">Oversikt</th>
+                  <th>Total</th>
                   {ruleCols.map(code => (
-                    <th key={code} title={`${RULE_CROSSES[code]}× per ${RULE_LABELS[code] ?? code}`}>
+                    <th key={code} className="violations__col-rule" title={`${RULE_CROSSES[code]}× per ${RULE_LABELS[code] ?? code}`}>
                       <div>{RULE_LABELS[code] ?? code}</div>
                       <div className="violations__rule-subheader">×{RULE_CROSSES[code]}</div>
                     </th>
                   ))}
+                  <th className="violations__col-chevron"></th>
                 </tr>
               </thead>
               <tbody>
-                {visibleRows.map((r, i) => (
-                  <tr
-                    key={r.participantId}
-                    style={showDetails ? { cursor: "pointer" } : undefined}
-                    className={expandedId === r.participantId ? "separatorRow" : undefined}
-                    onClick={() => {
-                      if (!showDetails) return;
-                      setExpandedId(prev => prev === r.participantId ? null : r.participantId);
-                    }}
-                  >
-                    <td>{i + 1}</td>
-                    <td className="sticky">
-                      <button className="name-link" onClick={(e) => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
-                        {r.name}
-                      </button>
-                    </td>
-                    <td><span className="badge">{r.isRegular ? "fast" : "gjest"}</span></td>
-                    <td><b>{Math.floor(r.total)}</b></td> 
-                    {ruleCols.map(code => (
-                      <td key={code}>
-                        {r.byRule[code]
-                          ? <b className="u-text-danger">{r.byRule[code]}</b>
-                          : <span className="u-text-muted">–</span>}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {visibleRows.map((r, i) => {
+                  const isMobileExpanded = mobileExpanded.has(r.participantId);
+                  const isExpanded = expandedId === r.participantId;
+                  const rowViolations = isExpanded
+                    ? violations.filter(v => v.participantId === r.participantId)
+                    : [];
+                  return (
+                    <>
+                      <tr
+                        key={r.participantId}
+                        style={{ cursor: "pointer" }}
+                        className={`${expandedId === r.participantId ? "separatorRow" : ""} ${isMobileExpanded ? "violations__row-expanded" : ""}`}
+                        onClick={() => {
+                          setExpandedId(prev => prev === r.participantId ? null : r.participantId);
+                          setMobileExpanded(prev => {
+                            const next = new Set(prev);
+                            if (next.has(r.participantId)) next.delete(r.participantId);
+                            else next.add(r.participantId);
+                            return next;
+                          });
+                        }}
+                      >
+                        <td className="violations__col-rank">{i + 1}</td>
+                        <td className="sticky">
+                          <span className="violations__name-cell">
+                            <button className="name-link" onClick={(e) => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
+                              {r.name}
+                            </button>
+                            {!r.isRegular && <span className="badge violations__badge-inline">gjest</span>}
+                          </span>
+                        </td>
+                        <td className="violations__col-summary">
+                          <span className="violations__summary-pills">
+                            {ruleCols.filter(code => r.byRule[code]).map(code => (
+                              <span key={code} className="violations__summary-pill" style={{ borderColor: RULE_COLORS[code], color: RULE_COLORS[code] }}>
+                                {RULE_LABELS[code] ?? code} <b>{r.byRule[code]}</b>
+                              </span>
+                            ))}
+                          </span>
+                        </td>
+                        <td><b>{Math.floor(r.total)}</b></td> 
+                        {ruleCols.map(code => (
+                          <td key={code} className="violations__col-rule">
+                            {r.byRule[code]
+                              ? <b style={{ color: RULE_COLORS[code] }}>{r.byRule[code]}</b>
+                              : <span className="u-text-muted">–</span>}
+                          </td>
+                        ))}
+                        <td className="violations__col-chevron">
+                          <span className={`violations__chevron ${isMobileExpanded ? "violations__chevron--open" : ""}`}>▸</span>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr key={`${r.participantId}-violations`} className="violations__inline-detail-row">
+                          <td colSpan={4 + ruleCols.length + 1} style={{ padding: 0 }}>
+                            <div className="violations__inline-detail">
+                              <table className="violations__detail-table">
+                                <thead>
+                                  <tr>
+                                    <th>Dato</th>
+                                    <th>Kode</th>
+                                    <th>Kryss</th>
+                                    <th>Notat</th>
+                                    {isAdmin && <th></th>}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {rowViolations.length === 0 ? (
+                                    <tr><td colSpan={isAdmin ? 5 : 4} className="u-text-muted">Ingen kryss</td></tr>
+                                  ) : rowViolations.map(v => (
+                                    <tr key={v.id}>
+                                      <td>
+                                        <button
+                                          className="btn violations__date-btn"
+                                          onClick={(e) => { e.stopPropagation(); nav(`/session/${v.sessionId}`); }}
+                                          title="Se dagsrapport og statistikk"
+                                        >
+                                          {fmtDate(v.dateISO)}
+                                        </button>
+                                      </td>
+                                      <td><span className="badge" style={{ borderColor: RULE_COLORS[v.ruleCode], color: RULE_COLORS[v.ruleCode] }}>{v.ruleCode}</span></td>
+                                      <td>{v.crosses}</td>
+                                      <td className="u-text-muted">{v.reason ?? "–"}</td>
+                                      {isAdmin && (
+                                        <td>
+                                          <button
+                                            className="btn btnDanger"
+                                            style={{ padding: "4px 10px", fontSize: 12, color: "#ef4444", borderColor: "rgba(239,68,68,0.35)" }}
+                                            onClick={e => { e.stopPropagation(); deleteViolation(v.id); }}
+                                          >
+                                            Slett
+                                          </button>
+                                        </td>
+                                      )}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })}
                 {!visibleRows.length && (
                   <tr>
-                    <td colSpan={4 + ruleCols.length} className="u-text-muted">
+                    <td colSpan={4 + ruleCols.length + 1} className="u-text-muted">
                       Ingen kryss registrert ennå
                     </td>
                   </tr>
@@ -188,59 +265,6 @@ export function ViolationsPage() {
           </div>
         )}
       </div>
-
-      {showDetails && expandedId && (
-        <div className="card u-mt-md">
-          <h2>Detaljer – {expandedName}</h2>
-          <div className="tableWrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Dato</th>
-                  <th>Kode</th>
-                  <th>Kryss</th>
-                  <th>Notat</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {expandedViolations.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="u-text-muted">Ingen kryss</td>
-                  </tr>
-                ) : expandedViolations.map(v => (
-                  <tr key={v.id}>
-                    <td>
-                      {/* NYTT: Subtil Ghost-knapp for å navigere til dagsrapporten */}
-                      <button
-                        className="btn violations__date-btn"
-                        onClick={() => nav(`/session/${v.sessionId}`)}
-                        title="Se dagsrapport og statistikk"
-                      >
-                        {fmtDate(v.dateISO)}
-                      </button>
-                    </td>
-                    <td><span className="badge">{v.ruleCode}</span></td>
-                    <td>{v.crosses}</td>
-                    <td className="u-text-muted">{v.reason ?? "–"}</td>
-                    <td>
-                      {isAdmin ? (
-                        <button
-                          className="btn btnDanger"
-                          style={{ padding: "4px 10px", fontSize: 12, color: "#ef4444", borderColor: "rgba(239,68,68,0.35)" }}
-                          onClick={e => { e.stopPropagation(); deleteViolation(v.id); }}
-                        >
-                          Slett
-                        </button>
-                      ) : null}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
