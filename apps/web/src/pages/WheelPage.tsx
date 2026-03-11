@@ -219,7 +219,6 @@ export function WheelPage() {
     // Targeted-fase variabler (settes når API returnerer)
     let targetStartTime = 0;
     let targetStartAngle = 0;
-    let targetStartSpeed = 0;
     let targetEndAngle = 0;
     let targetDuration = 0;
 
