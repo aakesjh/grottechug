@@ -63,6 +63,12 @@ a { color: inherit; text-decoration: none; }
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.navControls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .navLogo {
   display: block;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -86,9 +92,20 @@ a { color: inherit; text-decoration: none; }
   width: auto;
   filter: drop-shadow(0 0 20px rgba(124, 92, 255, 0.4));
 }
+.heroMode .navControls {
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
 .heroMode .navLinks {
   justify-content: center;
-  width: 100%;
+}
+
+.profileMenu {
+  position: fixed;
+  top: 18px;
+  right: 28px;
+  z-index: 1001;
 }
 
 /* 2. COMPACT MODE (Andre sider, eller scrollet) */
@@ -109,6 +126,170 @@ a { color: inherit; text-decoration: none; }
 .compactMode .navLinks {
   justify-content: flex-end;
 }
+.compactMode .navControls {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.navAuth {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* --- Profile blob & dropdown --- */
+
+.profileBlob {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  padding: 4px 16px 4px 4px;
+  overflow: hidden;
+  transition: 150ms ease;
+  flex-shrink: 0;
+}
+
+.profileBlob:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profileImg {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.profileInitial {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #fff;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.profileBlobInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.profileBlobName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profileBlobRole {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profileDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 180px;
+  background: rgba(14, 20, 38, 0.97);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  z-index: 2000;
+  animation: dropIn 120ms ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.profileDropdownHeader {
+  padding: 10px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profileDropdownLink {
+  cursor: pointer;
+  border-radius: 10px;
+  transition: 100ms ease;
+}
+
+.profileDropdownLink:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profileDropdownName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profileDropdownDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 2px 6px;
+}
+
+.profileDropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: 100ms ease;
+}
+
+.profileDropdownItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profileDropdownDanger:hover {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--danger);
+}
+
+.authRole {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.authRoleAdmin {
+  color: var(--accent);
+}
+
+.authRoleMember {
+  color: var(--accent2);
+}
 
 /* 3. PLACEHOLDER
   Dette fikser avstanden på de andre sidene dine!
@@ -118,7 +299,7 @@ a { color: inherit; text-decoration: none; }
   transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .navPlaceholder.hero {
-  height: 330px; /* Matcher Hero-navbaren */
+  height: 300px; /* Matcher Hero-navbaren uten ekstra luft fra auth-knappen */
 }
 .navPlaceholder.compact {
   height: 120px; /* FIKS FOR AVSTAND: 80px logo + padding + 20-30px luft ned til innholdet */
@@ -162,7 +343,13 @@ a { color: inherit; text-decoration: none; }
     flex-direction: column;
     gap: 15px;
   }
+  .compactMode .navControls {
+    justify-content: center;
+  }
   .compactMode .navLinks {
+    justify-content: center;
+  }
+  .navAuth {
     justify-content: center;
   }
   .navPlaceholder.compact {

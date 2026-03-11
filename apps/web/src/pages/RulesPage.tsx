@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { useAuthSession } from "../auth/useAuthSession";
+import { apiFetch } from "../lib/api";
 
 type Rule = { code: string; label: string; crosses: number; details?: string | null };
 
 export function RulesPage() {
+  const { isAdmin } = useAuthSession();
   const [rules, setRules] = useState<Rule[]>([]);
   const [editing, setEditing] = useState<Rule | null>(null);
 
@@ -11,7 +14,7 @@ export function RulesPage() {
   const [details, setDetails] = useState("");
 
   async function load() {
-    const res = await fetch("/api/rules");
+    const res = await apiFetch("/api/rules");
     const data: Rule[] = await res.json();
     setRules(data);
   }
@@ -19,6 +22,8 @@ export function RulesPage() {
   useEffect(() => { load(); }, []);
 
   function openEdit(r: Rule) {
+    if (!isAdmin) return;
+
     setEditing(r);
     setLabel(r.label);
     setCrosses(String(r.crosses));
@@ -26,14 +31,14 @@ export function RulesPage() {
   }
 
   async function save() {
-    if (!editing) return;
+    if (!editing || !isAdmin) return;
     const c = Number(crosses.replace(",", "."));
     if (!Number.isFinite(c)) {
       alert("Kryss må være et tall");
       return;
     }
 
-    await fetch(`/api/rules/${editing.code}`, {
+    await apiFetch(`/api/rules/${editing.code}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -50,7 +55,7 @@ export function RulesPage() {
   return (
     <div>
       <h1>Regler</h1>
-      <p>Her kan du redigere label, kryss og detaljer direkte i databasen.</p>
+      <p>Her kan du se regelverket.</p>
 
       <div className="card u-mt-md">
         <div className="tableWrap">

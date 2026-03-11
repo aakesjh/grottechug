@@ -1,3 +1,8 @@
+import { useEffect, useRef, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { authClient } from "../auth/client";
+import { useAuthSession } from "../auth/useAuthSession";
+import { apiFetch } from "../lib/api";
 import { NavLink, useLocation } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 
@@ -5,17 +10,71 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAdmin, isAuthenticated, isPending, user } = useAuthSession();
   const isHome = location.pathname === "/";
+  const [participantName, setParticipantName] = useState<string | null>(null);
+  const [participantImage, setParticipantImage] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // LØSNINGEN: Er vi på forsiden, er den ALLTID i hero-modus (låst).
+  // På andre sider bytter den til kompakt.
+  const isHeroMode = isHome;
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+    let cancelled = false;
+
+    if (!user?.participantId) {
+      setParticipantName(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    apiFetch(`/api/participants/${user.participantId}`)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Could not load participant");
+        }
+
+        return response.json() as Promise<{ name?: string; imageUrl?: string | null }>;
+      })
+      .then((participant) => {
+        if (!cancelled) {
+          setParticipantName(participant.name ?? null);
+          setParticipantImage(participant.imageUrl ?? null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setParticipantName(null);
+          setParticipantImage(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
     };
+  }, [user?.participantId]);
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
 
+  async function handleSignOut() {
+    await authClient.signOut();
+    navigate("/");
+  }
   // Close mobile menu on route change
   useEffect(() => {
     setMenuOpen(false);
@@ -44,6 +103,82 @@ export function Navbar() {
 
   const isHeroMode = isHome;
 
+  return (
+    <>
+      <div className={`navPlaceholder ${isHeroMode ? "hero" : "compact"}`} />
+
+      <nav className={`navWrap ${isHeroMode ? "heroMode" : "compactMode"}`}>
+        <div className="navBar">
+          <div className="container navInner">
+            <div className="navLogoContainer">
+              <NavLink to="/">
+                <img
+                  src="/grottalogo.png"
+                  alt="Grotta Logo"
+                  className="navLogo"
+                />
+              </NavLink>
+            </div>
+
+            <div className="navControls">
+              <div className="navLinks">
+                <NavLink
+                  to="/wheel"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Hjulet
+                </NavLink>
+                <NavLink
+                  to="/chug"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Chuggelista
+                </NavLink>
+                <NavLink
+                  to="/violations"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Kryssliste
+                </NavLink>
+                <NavLink
+                  to="/rules"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Regler
+                </NavLink>
+                <NavLink
+                  to="/leaderboard"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Toppliste
+                </NavLink>
+                <NavLink
+                  to="/stats"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Statistikk
+                </NavLink>
+                <NavLink
+                  to="/grotta"
+                  className={({ isActive }) =>
+                    `navLink ${isActive ? "navLinkActive" : ""}`
+                  }
+                >
+                  Grotta
+                </NavLink>
+              </div>
   const navLinks = (
     <>
       <NavLink to="/wheel" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`}>
@@ -87,6 +222,71 @@ export function Navbar() {
                 />
               </NavLink>
             </div>
+
+            {!isPending && isAuthenticated && (
+              <div className="profileMenu" ref={menuRef}>
+                <button
+                  className="profileBlob"
+                  onClick={() => setMenuOpen((v) => !v)}
+                >
+                  {participantImage ? (
+                    <img
+                      src={participantImage}
+                      alt={participantName ?? ""}
+                      className="profileImg"
+                    />
+                  ) : (
+                    <span className="profileInitial">
+                      {(participantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="profileBlobInfo">
+                    <span className="profileBlobName">{participantName ?? user?.name}</span>
+                    <span className={`profileBlobRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                      {isAdmin ? "Admin" : "Medlem"}
+                    </span>
+                  </span>
+                </button>
+
+                {menuOpen && (
+                  <div className="profileDropdown">
+                    <div
+                      className="profileDropdownHeader profileDropdownLink"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        if (user?.participantId) navigate(`/person/${user.participantId}`);
+                      }}
+                    >
+                      <span className="profileDropdownName">
+                        {participantName ?? user?.name}
+                      </span>
+                      <span className={`authRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                        {isAdmin ? "Admin" : "Medlem"}
+                      </span>
+                    </div>
+                    <div className="profileDropdownDivider" />
+                    {isAdmin && (
+                      <button
+                        className="profileDropdownItem"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          navigate("/admin");
+                        }}
+                      >
+                        Admin
+                      </button>
+                    )}
+                    <button
+                      className="profileDropdownItem profileDropdownDanger"
+                      onClick={() => { setMenuOpen(false); handleSignOut(); }}
+                    >
+                      Logg ut
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
 
             {/* Hamburger button - visible on mobile only */}
             <button
