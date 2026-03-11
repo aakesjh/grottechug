@@ -15,10 +15,17 @@ export function RulesPage() {
   const [rules, setRules] = useState<Rule[]>([]);
   const [editing, setEditing] = useState<Rule | null>(null);
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const [label, setLabel] = useState("");
   const [crosses, setCrosses] = useState("");
   const [details, setDetails] = useState("");
+
+  const [newCode, setNewCode] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [newCrosses, setNewCrosses] = useState("");
+  const [newDetails, setNewDetails] = useState("");
 
   async function load() {
     const res = await apiFetch("/api/rules");
@@ -59,12 +66,39 @@ export function RulesPage() {
     load();
   }
 
+  async function createRule() {
+    if (!isAdmin) return;
+    const code = newCode.trim().toUpperCase();
+    if (!code || !newLabel.trim()) { alert("Kode og navn er påkrevd"); return; }
+    const c = Number(newCrosses.replace(",", "."));
+    if (!Number.isFinite(c)) { alert("Kryss må være et tall"); return; }
+
+    await apiFetch("/api/rules", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, label: newLabel.trim(), crosses: c, details: newDetails })
+    });
+
+    setNewCode(""); setNewLabel(""); setNewCrosses(""); setNewDetails("");
+    load();
+  }
+
+  const colCount = isAdmin ? 6 : 5;
+
   return (
     <div>
       <h1>Regler</h1>
       <p>Her kan du se regelverket.</p>
 
-      <div className="card u-mt-md rules__card">
+      {isAdmin && (
+        <div className="u-mt-md u-text-right">
+          <button className={`btn ${editMode ? "" : "btnGhost"}`} onClick={() => setEditMode(v => !v)}>
+            {editMode ? "Ferdig" : "Rediger"}
+          </button>
+        </div>
+      )}
+
+      <div className={`card ${isAdmin ? 'u-mt-sm' : 'u-mt-md'} rules__card`}>
         <div className="tableWrap rules__tableWrap">
           <table className="rules__table">
             <thead>
@@ -94,10 +128,13 @@ export function RulesPage() {
                       <td><b>{r.label}</b></td>
                       <td className="rules__col-crosses">{r.crosses}</td>
                       <td className="rules__col-details u-text-muted">{r.details ?? ""}</td>
-                      {isAdmin && (
+                      {isAdmin && editMode && (
                         <td className="rules__col-details u-text-right">
-                          <button className="btn btn--sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }}>Rediger</button>
+                          <button className="rules__edit-btn" onClick={(e) => { e.stopPropagation(); openEdit(r); }} title="Rediger">✎</button>
                         </td>
+                      )}
+                      {isAdmin && !editMode && (
+                        <td className="rules__col-details"></td>
                       )}
                       <td className="rules__col-chevron">
                         <span className={`rules__chevron ${isOpen ? "rules__chevron--open" : ""}`}>▸</span>
@@ -105,7 +142,7 @@ export function RulesPage() {
                     </tr>
                     {isOpen && (
                       <tr key={`${r.code}-detail`} className="rules__expand-row">
-                        <td colSpan={isAdmin ? 6 : 5}>
+                        <td colSpan={colCount}>
                           <div className="rules__expand-content">
                             <div className="rules__expand-item">
                               <span className="u-text-muted">Kryss:</span> <b>{r.crosses}</b>
@@ -115,8 +152,8 @@ export function RulesPage() {
                                 <span className="u-text-muted">Detaljer:</span> {r.details}
                               </div>
                             )}
-                            {isAdmin && (
-                              <button className="btn btn--sm u-mt-xs" onClick={() => openEdit(r)}>Rediger</button>
+                            {isAdmin && editMode && (
+                              <button className="rules__edit-btn" onClick={() => openEdit(r)} title="Rediger">✎</button>
                             )}
                           </div>
                         </td>
@@ -126,7 +163,45 @@ export function RulesPage() {
                 );
               })}
               {!rules.length && (
-                <tr><td colSpan={isAdmin ? 6 : 5} className="u-text-muted">Ingen regler</td></tr>
+                <tr><td colSpan={colCount} className="u-text-muted">Ingen regler</td></tr>
+              )}
+              {isAdmin && editMode && !showAddForm && (
+                <tr className="rules__add-row">
+                  <td colSpan={colCount}>
+                    <button className="rules__add-btn" onClick={() => setShowAddForm(true)}>+</button>
+                  </td>
+                </tr>
+              )}
+              {isAdmin && editMode && showAddForm && (
+                <tr className="rules__add-row">
+                  <td colSpan={colCount}>
+                    <div className="rules__add-form">
+                      <h3 className="u-mb-xs">Legg til ny regel</h3>
+                      <div className="rules__add-fields">
+                        <div>
+                          <label className="u-text-muted u-text-sm">Kode</label>
+                          <input className="input" placeholder="F.eks. W" value={newCode} onChange={e => setNewCode(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="u-text-muted u-text-sm">Navn</label>
+                          <input className="input" placeholder="Wet" value={newLabel} onChange={e => setNewLabel(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="u-text-muted u-text-sm">Kryss</label>
+                          <input className="input" placeholder="1" value={newCrosses} onChange={e => setNewCrosses(e.target.value)} />
+                        </div>
+                        <div style={{ flex: 2 }}>
+                          <label className="u-text-muted u-text-sm">Detaljer</label>
+                          <input className="input" placeholder="Valgfritt" value={newDetails} onChange={e => setNewDetails(e.target.value)} />
+                        </div>
+                      </div>
+                      <div className="rules__add-actions u-mt-sm">
+                        <button className="btn" onClick={createRule}>Opprett</button>
+                        <button className="btn btnGhost" onClick={() => setShowAddForm(false)}>Avbryt</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

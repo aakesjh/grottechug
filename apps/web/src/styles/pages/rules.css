@@ -50,6 +50,75 @@
   gap: 10px;
 }
 
+.rules__add-row td {
+  padding: 0;
+}
+
+.rules__add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color var(--transition-base), background var(--transition-base);
+}
+
+.rules__add-btn:hover {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rules__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color var(--transition-base), background var(--transition-base);
+}
+
+.rules__edit-btn:hover {
+  color: var(--accent);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.rules__add-form {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.rules__add-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rules__add-fields > div {
+  flex: 1;
+  min-width: 100px;
+}
+
+.rules__add-fields .input {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.rules__add-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* --- Mobile --- */
 @media (max-width: 768px) {
   .rules__col-details,
