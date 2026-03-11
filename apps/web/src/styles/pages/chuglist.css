@@ -164,7 +164,8 @@
 
 /* --- Name column --- */
 .chuglist__name-col {
-  min-width: 140px;
+  min-width: 100px;
+  max-width: 160px;
 }
 
 /* --- Best / Avg columns --- */
@@ -291,7 +292,7 @@
 }
 
 .chuglist__name-btn {
-  min-width: 190px;
+  min-width: 100px;
 }
 
 /* --- Shared name link (used in table + editor) --- */
@@ -349,5 +350,21 @@
   .chuglist .tab {
     flex: 1;
     text-align: center;
+  }
+
+  .chuglist__name-col {
+    min-width: 70px;
+    max-width: 110px;
+  }
+
+  .chuglist__name-btn {
+    min-width: 70px;
+  }
+
+  .name-link {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+    display: inline-block;
   }
 }
