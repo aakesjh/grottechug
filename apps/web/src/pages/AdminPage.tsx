@@ -559,7 +559,7 @@ function HistoryTab() {
 
 export function AdminPage() {
   const location = useLocation();
-  const { isAdmin, isAuthenticated, isPending, user } = useAuthSession();
+  const { isAdmin, isAuthenticated, isPending } = useAuthSession();
   const nextPath = `${location.pathname}${location.search}${location.hash}`;
   const [activeTab, setActiveTab] = useState<Tab>("pending");
 
