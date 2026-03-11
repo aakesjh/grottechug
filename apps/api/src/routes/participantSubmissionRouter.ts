@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import { put } from "@vercel/blob";
 import { prisma } from "../prisma.js";
 
 export const participantSubmissionsRouter = Router();
@@ -13,11 +14,14 @@ function normalizeName(name: string) {
   return name.trim().replace(/\s+/g, " ");
 }
 
-// Bytt denne med faktisk blob-upload
-async function uploadImageToStorage(file: Express.Multer.File): Promise<string> {
-  // TODO: Vercel Blob / R2 / Supabase Storage
-  // return uploadedUrl;
-  throw new Error("uploadImageToStorage is not implemented");
+async function uploadImageToStorage(file: Express.Multer.File, name: string): Promise<string> {
+  const safeName = name.toLowerCase().replace(/\s+/g, "-");
+  const blob = await put(`people/${safeName}.jpeg`, file.buffer, {
+    access: "public",
+    contentType: file.mimetype,
+    addRandomSuffix: false,
+  });
+  return blob.url;
 }
 
 /**
@@ -54,7 +58,7 @@ participantSubmissionsRouter.post("/", upload.single("image"), async (req, res) 
       return res.status(409).json({ error: "Participant with this name already exists" });
     }
 
-    const imageUrl = await uploadImageToStorage(file);
+    const imageUrl = await uploadImageToStorage(file, name);
 
     const submission = await prisma.participantSubmission.create({
       data: {

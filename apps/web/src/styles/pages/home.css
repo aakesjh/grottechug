@@ -3,7 +3,7 @@
    ========================================================================== */
 
 .home {
-  height: 42vh;
+  min-height: 42vh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -72,4 +72,58 @@
 .home__feature-desc {
   font-size: 0.95rem;
   margin: 0;
+}
+
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+@media (max-width: 768px) {
+  .home {
+    min-height: auto;
+    padding: 24px 16px;
+    justify-content: flex-start;
+  }
+
+  .home__welcome {
+    margin-bottom: 24px;
+  }
+
+  .home__title {
+    font-size: 2.2rem;
+  }
+
+  .home__subtitle {
+    font-size: var(--font-base);
+    margin-bottom: 20px;
+  }
+
+  .home__actions {
+    gap: 12px;
+    width: 100%;
+  }
+
+  .home__action-btn {
+    padding: 12px 20px;
+    font-size: 0.95rem;
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+
+  .home__features {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .home__feature-card {
+    padding: 16px;
+  }
+
+  .home__feature-title {
+    font-size: var(--font-lg);
+  }
+
+  .home__feature-desc {
+    font-size: var(--font-sm);
+  }
 }

@@ -365,14 +365,16 @@ export function WheelPage() {
     });
   }
 
-  const wheelSize = isExpanded ? Math.min(windowSize.w * 0.95, windowSize.h * 0.8, 850) : 360;
+  const wheelSize = isExpanded
+    ? Math.min(windowSize.w * 0.95, windowSize.h * 0.8, 850)
+    : Math.min(windowSize.w - 48, 360);
 
   return (
     <div>
       <h1 style={{ display: isExpanded ? "none" : "block" }}>Hjulet</h1>
 
-      <div className="row" style={{ marginTop: 14 }}>
-        <div className="col card" style={{ maxWidth: 460, display: isExpanded ? "none" : "block" }}>
+      <div className="wheel-page__row" style={{ marginTop: 14 }}>
+        <div className="wheel-page__sidebar card" style={{ display: isExpanded ? "none" : "block" }}>
           {isAdmin ? (
             <>
               <h2 style={{ fontSize: 18, marginBottom: 12 }}>Legg til gjest</h2>
@@ -458,7 +460,7 @@ export function WheelPage() {
         </div>
 
         <div
-          className={`col card wheel-page__canvas-area ${isExpanded ? "wheel-page__canvas-area--expanded" : ""}`}
+          className={`wheel-page__canvas-col card wheel-page__canvas-area ${isExpanded ? "wheel-page__canvas-area--expanded" : ""}`}
           style={isExpanded ? undefined : { position: "relative" }}
         >
           <button

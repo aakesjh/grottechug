@@ -4,12 +4,13 @@ import { useEffect } from "react";
 export function HomePage() {
   
   useEffect(() => {
-    // Vi låser scrolling på BÅDE body og html for å overstyre global.css
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) {
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.overflow = "hidden";
+    }
     
     return () => {
-      // Setter tilbake til scroll når man forlater forsiden
       document.documentElement.style.overflow = "scroll"; 
       document.body.style.overflow = "auto";
     };

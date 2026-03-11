@@ -2,8 +2,22 @@
    Wheel Page
    ========================================================================== */
 
+/* --- Page Layout --- */
+.wheel-page__row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
 .wheel-page__sidebar {
+  flex: 1;
+  min-width: 0;
   max-width: 460px;
+}
+
+.wheel-page__canvas-col {
+  flex: 1;
+  min-width: 0;
 }
 
 .wheel-page__guest-row {
@@ -207,4 +221,58 @@
 .wheel-page__search-loading {
   color: var(--muted);
   font-size: var(--font-sm);
+}
+
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+@media (max-width: 768px) {
+  .wheel-page__row {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  .wheel-page__sidebar {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .wheel-page__canvas-col {
+    width: 100%;
+  }
+
+  .wheel-page__canvas-area {
+    padding: 12px 0;
+  }
+
+  .wheel-page__canvas-content {
+    gap: 12px;
+  }
+
+  .wheel-page__winner-area {
+    min-height: 80px;
+  }
+
+  .wheel-page__winner-name--normal {
+    font-size: 1.6rem;
+  }
+
+  .wheel-page__winner-stats--normal {
+    font-size: 0.82rem;
+    padding: 6px 12px;
+  }
+
+  .wheel-page__stats-detail {
+    gap: 10px;
+  }
+
+  .wheel-page__fullscreen-btn {
+    top: 8px;
+    right: 8px;
+  }
+
+  .wheel-page__wheel-click canvas {
+    max-width: 100%;
+    height: auto;
+  }
 }
