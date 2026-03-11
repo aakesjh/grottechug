@@ -2,8 +2,85 @@
    Rules Page
    ========================================================================== */
 
+.rules__card {
+  padding: 0;
+}
+
+.rules__tableWrap {
+  overflow-x: auto;
+}
+
+.rules__row {
+  cursor: pointer;
+}
+
+/* Chevron - hidden on desktop */
+.rules__col-chevron {
+  display: none;
+}
+
+.rules__chevron {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.rules__chevron--open {
+  transform: rotate(90deg);
+}
+
+/* Expand row - hidden on desktop */
+.rules__expand-row {
+  display: none;
+}
+
+.rules__expand-content {
+  padding: 8px 12px 12px;
+}
+
+.rules__expand-item {
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
 .rules__modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+  .rules__col-details,
+  .rules__col-crosses {
+    display: none;
+  }
+
+  .rules__col-chevron {
+    display: table-cell;
+    width: 30px;
+    text-align: center;
+  }
+
+  .rules__expand-row {
+    display: table-row;
+  }
+
+  .rules__expand-row td {
+    padding: 0 10px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rules__row--expanded td {
+    border-bottom: none;
+  }
+
+  .rules__tableWrap {
+    overflow-x: hidden;
+  }
+
+  .rules__table {
+    width: 100%;
+  }
 }

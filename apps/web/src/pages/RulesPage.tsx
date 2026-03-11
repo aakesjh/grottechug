@@ -4,10 +4,17 @@ import { apiFetch } from "../lib/api";
 
 type Rule = { code: string; label: string; crosses: number; details?: string | null };
 
+const RULE_COLORS: Record<string, string> = {
+  MM: "#10b981", W: "#3b82f6", VW: "#6366f1", P: "#ef4444", T: "#14b8a6",
+  DNS: "#f59e0b", DNF: "#f97316", VOMIT: "#ec4899", KPR: "#8b5cf6",
+  ABSENCE: "#94a3b8"
+};
+
 export function RulesPage() {
   const { isAdmin } = useAuthSession();
   const [rules, setRules] = useState<Rule[]>([]);
   const [editing, setEditing] = useState<Rule | null>(null);
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
 
   const [label, setLabel] = useState("");
   const [crosses, setCrosses] = useState("");
@@ -57,34 +64,69 @@ export function RulesPage() {
       <h1>Regler</h1>
       <p>Her kan du se regelverket.</p>
 
-      <div className="card u-mt-md">
-        <div className="tableWrap">
-          <table>
+      <div className="card u-mt-md rules__card">
+        <div className="tableWrap rules__tableWrap">
+          <table className="rules__table">
             <thead>
               <tr>
                 <th>Kode</th>
                 <th>Regel</th>
-                <th>Kryss</th>
-                <th>Detaljer</th>
-                {isAdmin && <th />}
+                <th className="rules__col-crosses">Kryss</th>
+                <th className="rules__col-details">Detaljer</th>
+                {isAdmin && <th className="rules__col-details" />}
+                <th className="rules__col-chevron"></th>
               </tr>
             </thead>
             <tbody>
-              {rules.map(r => (
-                <tr key={r.code}>
-                  <td><span className="badge">{r.code}</span></td>
-                  <td><b>{r.label}</b></td>
-                  <td>{r.crosses}</td>
-                  <td className="u-text-muted">{r.details ?? ""}</td>
-                  {isAdmin && (
-                    <td className="u-text-right">
-                      <button className="btn btn--sm" onClick={() => openEdit(r)}>Rediger</button>
-                    </td>
-                  )}
-                </tr>
-              ))}
+              {rules.map(r => {
+                const color = RULE_COLORS[r.code] || "var(--muted)";
+                const isOpen = expandedCode === r.code;
+                return (
+                  <>
+                    <tr
+                      key={r.code}
+                      className={`rules__row ${isOpen ? "rules__row--expanded" : ""}`}
+                      onClick={() => setExpandedCode(prev => prev === r.code ? null : r.code)}
+                    >
+                      <td>
+                        <span className="badge" style={{ borderColor: color, color }}>{r.code}</span>
+                      </td>
+                      <td><b>{r.label}</b></td>
+                      <td className="rules__col-crosses">{r.crosses}</td>
+                      <td className="rules__col-details u-text-muted">{r.details ?? ""}</td>
+                      {isAdmin && (
+                        <td className="rules__col-details u-text-right">
+                          <button className="btn btn--sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }}>Rediger</button>
+                        </td>
+                      )}
+                      <td className="rules__col-chevron">
+                        <span className={`rules__chevron ${isOpen ? "rules__chevron--open" : ""}`}>▸</span>
+                      </td>
+                    </tr>
+                    {isOpen && (
+                      <tr key={`${r.code}-detail`} className="rules__expand-row">
+                        <td colSpan={isAdmin ? 6 : 5}>
+                          <div className="rules__expand-content">
+                            <div className="rules__expand-item">
+                              <span className="u-text-muted">Kryss:</span> <b>{r.crosses}</b>
+                            </div>
+                            {r.details && (
+                              <div className="rules__expand-item">
+                                <span className="u-text-muted">Detaljer:</span> {r.details}
+                              </div>
+                            )}
+                            {isAdmin && (
+                              <button className="btn btn--sm u-mt-xs" onClick={() => openEdit(r)}>Rediger</button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                );
+              })}
               {!rules.length && (
-                <tr><td colSpan={isAdmin ? 5 : 4} className="u-text-muted">Ingen regler</td></tr>
+                <tr><td colSpan={isAdmin ? 6 : 5} className="u-text-muted">Ingen regler</td></tr>
               )}
             </tbody>
           </table>
