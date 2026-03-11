@@ -92,7 +92,6 @@ export function ViolationsPage() {
   const usedRules = new Set(visibleRows.flatMap(r => Object.keys(r.byRule)));
   const ruleCols = RULE_ORDER.filter(r => usedRules.has(r));
 
-  const expandedName = detail?.rows.find(r => r.participantId === expandedId)?.name;
 
   return (
     <div>
