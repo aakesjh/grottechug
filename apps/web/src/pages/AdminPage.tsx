@@ -528,6 +528,8 @@ function HistoryTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState<"approved" | "rejected">("approved");
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -544,6 +546,24 @@ function HistoryTab() {
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function deleteSubmission(id: string) {
+    setBusy((b) => ({ ...b, [id]: true }));
+    setError("");
+    try {
+      const res = await apiFetch(`/api/participant-submissions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Kunne ikke slette");
+      }
+      setSubmissions((s) => s.filter((x) => x.id !== id));
+      setDeleteConfirm(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy((b) => ({ ...b, [id]: false }));
+    }
+  }
 
   return (
     <div className="admin__grid">
@@ -597,6 +617,29 @@ function HistoryTab() {
                   <strong>Notat:</strong> {sub.adminNote}
                 </div>
               )}
+              <div className="admin__actions">
+                {deleteConfirm === sub.id ? (
+                  <>
+                    <button
+                      className="btn btnDanger"
+                      disabled={busy[sub.id]}
+                      onClick={() => deleteSubmission(sub.id)}
+                    >
+                      Bekreft slett
+                    </button>
+                    <button className="btn" onClick={() => setDeleteConfirm(null)}>
+                      Avbryt
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn btnDanger"
+                    onClick={() => setDeleteConfirm(sub.id)}
+                  >
+                    Fjern fra historikk
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

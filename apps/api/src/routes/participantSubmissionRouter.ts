@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { put } from "@vercel/blob";
 import { prisma } from "../prisma.js";
+import { requireAdmin } from "../auth-middleware.js";
 
 export const participantSubmissionsRouter = Router();
 
@@ -193,5 +194,30 @@ participantSubmissionsRouter.post("/:id/reject", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not reject submission" });
+  }
+});
+
+/**
+ * DELETE /api/participant-submissions/:id
+ * Admin only — removes a submission from history
+ */
+participantSubmissionsRouter.delete("/:id", requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const submission = await prisma.participantSubmission.findUnique({
+      where: { id },
+    });
+
+    if (!submission) {
+      return res.status(404).json({ error: "Submission not found" });
+    }
+
+    await prisma.participantSubmission.delete({ where: { id } });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not delete submission" });
   }
 });
