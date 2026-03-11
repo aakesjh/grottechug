@@ -1,9 +1,18 @@
 /* ==========================================================================
-   Admin Page — Submission review cards
+   Admin Page — Layout, navigation, submission cards, participant list
    ========================================================================== */
 
+.admin {
+  padding-top: 16px;
+  padding-bottom: 48px;
+  display: grid;
+  gap: 16px;
+}
+
+/* --- Header --- */
+
 .admin__header {
-  margin-bottom: 20px;
+  margin-bottom: 4px;
 }
 
 .admin__header h1 {
@@ -14,8 +23,47 @@
   color: var(--muted);
 }
 
+/* --- Tab navigation --- */
+
+.admin__nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin__nav-btn {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-base);
+  transition: 120ms ease;
+}
+
+.admin__nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.admin__nav-btn--active {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--text);
+}
+
+/* --- Content area --- */
+
+.admin__content {
+  min-height: 200px;
+}
+
+/* --- Shared --- */
+
 .admin__error {
-  margin-bottom: 16px;
+  margin-bottom: 8px;
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #fecaca;
@@ -28,18 +76,38 @@
   gap: 16px;
 }
 
+/* --- Submission cards (pending + history) --- */
+
+.admin__submission-card,
+.admin__history-card {
+  padding: 16px;
+}
+
 .admin__card-layout {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 110px 1fr;
   gap: 16px;
   align-items: start;
 }
 
+@media (max-width: 500px) {
+  .admin__card-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .admin__card-img {
+    width: 100%;
+    max-width: 200px;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
 .admin__card-img {
-  width: 120px;
-  height: 120px;
+  width: 110px;
+  height: 110px;
   object-fit: cover;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid var(--border);
 }
 
@@ -49,7 +117,7 @@
 }
 
 .admin__card-date {
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: var(--muted);
 }
 
@@ -57,16 +125,24 @@
   display: block;
   margin-bottom: 6px;
   font-weight: 700;
+  font-size: var(--font-sm);
+  color: var(--muted);
 }
 
 .admin__textarea {
   width: 100%;
   resize: vertical;
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.25);
   color: var(--text);
+  outline: none;
+}
+
+.admin__textarea:focus {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .admin__actions {
@@ -79,4 +155,172 @@
   background: rgba(239, 68, 68, 0.12);
   border: 1px solid rgba(239, 68, 68, 0.35);
   color: #fecaca;
+}
+
+.admin__reject-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* --- History extras --- */
+
+.admin__original-name {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.admin__status-badge {
+  font-size: var(--font-xs);
+  padding: 4px 10px;
+}
+
+.admin__status-badge--approved {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #86efac;
+}
+
+.admin__status-badge--rejected {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+}
+
+.admin__note {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+/* --- Participant management --- */
+
+.admin__participant-count {
+  font-size: var(--font-sm);
+  color: var(--muted);
+}
+
+.admin__participant-list {
+  display: grid;
+  gap: 2px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.admin__participant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--panel);
+  transition: background 100ms ease;
+}
+
+.admin__participant-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.admin__participant-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin__participant-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.admin__participant-initials {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  font-weight: 800;
+  font-size: var(--font-base);
+  flex-shrink: 0;
+}
+
+.admin__participant-name {
+  display: block;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin__participant-meta {
+  display: block;
+  font-size: var(--font-xs);
+  color: var(--muted);
+}
+
+.admin__participant-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin__participant-actions .btn {
+  padding: 6px 12px;
+  font-size: var(--font-sm);
+}
+
+.admin__upload-btn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* --- Crop modal --- */
+
+.admin__crop-modal {
+  width: 420px;
+  display: grid;
+  gap: 14px;
+}
+
+.admin__crop-area {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.admin__zoom-label {
+  display: grid;
+  gap: 6px;
+  font-size: var(--font-sm);
+  color: var(--muted);
+}
+
+.admin__zoom-slider {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.admin__preview-wrap {
+  display: grid;
+  place-items: center;
+}
+
+.admin__preview-img {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--border);
 }

@@ -161,7 +161,7 @@ export function ViolationsPage() {
                   >
                     <td>{i + 1}</td>
                     <td className="sticky">
-                      <button className="btn" style={{ padding: "6px 10px" }} onClick={(e) => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
+                      <button className="name-link" onClick={(e) => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
                         {r.name}
                       </button>
                     </td>

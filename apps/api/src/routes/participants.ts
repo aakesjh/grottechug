@@ -1,8 +1,15 @@
 import { Router } from "express";
+import multer from "multer";
+import { put } from "@vercel/blob";
 import { requireAdmin } from "../auth-middleware.js";
 import { prisma } from "../prisma.js";
 
 export const participantsRouter = Router();
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+});
 
 /**
  * SEARCH (må ligge før /:id routes)
@@ -96,6 +103,48 @@ participantsRouter.post("/guest-upsert", requireAdmin, async (req, res) => {
   });
 
   res.json(p);
+});
+
+/**
+ * POST /api/participants/:id/image
+ * multipart/form-data: image
+ */
+participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), async (req, res) => {
+  try {
+    const id = String(req.params.id);
+    const file = req.file;
+
+    if (!file || !file.mimetype.startsWith("image/")) {
+      return res.status(400).json({ error: "Missing or invalid image" });
+    }
+
+    const participant = await prisma.participant.findUnique({
+      where: { id },
+      select: { id: true, name: true },
+    });
+
+    if (!participant) {
+      return res.status(404).json({ error: "Participant not found" });
+    }
+
+    const safeName = participant.name.toLowerCase().replace(/\s+/g, "-");
+    const blob = await put(`people/${safeName}.jpeg`, file.buffer, {
+      access: "public",
+      contentType: file.mimetype,
+      addRandomSuffix: false,
+    });
+
+    const updated = await prisma.participant.update({
+      where: { id },
+      data: { imageUrl: blob.url },
+      select: { id: true, name: true, isRegular: true, imageUrl: true },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not update image" });
+  }
 });
 
 /**

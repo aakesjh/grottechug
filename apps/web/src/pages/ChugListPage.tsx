@@ -512,7 +512,7 @@ export function ChugListPage() {
               return (
                 <div key={r.participantId} className="chuglist__editor-row">
                   <button
-                    className="btn chuglist__name-btn"
+                    className="name-link chuglist__name-btn"
                     onClick={() => nav(`/person/${r.participantId}`)}
                   >
                     {r.name}{r.isRegular ? "" : " (gjest)"}
@@ -692,7 +692,7 @@ export function ChugListPage() {
                 {regularRows.map(r => (
                   <tr key={r.participantId}>
                     <td className="sticky">
-                      <button className="btn chuglist__name-btn" onClick={() => nav(`/person/${r.participantId}`)}>
+                      <button className="name-link" onClick={() => nav(`/person/${r.participantId}`)}>
                         {r.name}
                       </button>
                     </td>
@@ -750,7 +750,7 @@ export function ChugListPage() {
                 {guestRows.map(r => (
                   <tr key={r.participantId}>
                     <td className="sticky">
-                      <button className="btn chuglist__name-btn" onClick={() => nav(`/person/${r.participantId}`)}>
+                      <button className="name-link" onClick={() => nav(`/person/${r.participantId}`)}>
                         {r.name}
                       </button>
                     </td>

@@ -86,6 +86,26 @@
   min-width: 190px;
 }
 
+/* --- Shared name link (used in table + editor) --- */
+.name-link {
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  padding: 4px 2px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 120ms ease, background 120ms ease;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.name-link:hover {
+  color: var(--accent2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* --- Modal helpers --- */
 .chuglist__modal-semester-hint {
   color: var(--muted);
