@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { prisma } from "../prisma";
+import { prisma } from "../prisma.js";
 
 export const participantSubmissionsRouter = Router();
 

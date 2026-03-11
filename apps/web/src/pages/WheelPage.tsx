@@ -371,20 +371,6 @@ export function WheelPage() {
     <div>
       <h1 style={{ display: isExpanded ? "none" : "block" }}>Hjulet</h1>
 
-      <div className="row u-mt-sm">
-        <div className="col card wheel-page__sidebar" style={{ display: isExpanded ? "none" : "block" }}>
-          <h2 style={{ fontSize: 18, marginBottom: 12 }}>Legg til gjest</h2>
-          <div className="wheel-page__guest-row">
-            <input
-              className="input"
-              value={guestQuery}
-              onChange={e => setGuestQuery(e.target.value)}
-              placeholder="Søk eller skriv nytt navn…"
-            />
-            <button className="btn" onClick={() => addGuestByName(guestQuery)} disabled={!guestQuery.trim()}>
-              Legg til
-            </button>
-          </div>
       <div className="row" style={{ marginTop: 14 }}>
         <div className="col card" style={{ maxWidth: 460, display: isExpanded ? "none" : "block" }}>
           {isAdmin ? (
@@ -401,6 +387,8 @@ export function WheelPage() {
                   Legg til
                 </button>
               </div>
+            </>
+          ) : null}
 
           {guestQuery.trim() && (
             <div className="wheel-page__suggestions">

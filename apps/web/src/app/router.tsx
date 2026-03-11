@@ -12,6 +12,7 @@ import { HomePage } from "../pages/HomePage";
 import { SessionPage } from "../pages/SessionPage";
 import { LoginPage } from "../pages/LoginPage";
 import { AdminPage } from "../pages/AdminPage";
+import { JoinPage } from "../pages/JoinPage";
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +31,7 @@ export const router = createBrowserRouter([
       { path: "session/:id", element: <SessionPage /> },
       { path: "login", element: <LoginPage /> },
       { path: "admin", element: <AdminPage /> },
+      { path: "join", element: <JoinPage /> }
     ]
   }
 ]);

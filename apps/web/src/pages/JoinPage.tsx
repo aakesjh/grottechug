@@ -86,7 +86,7 @@ function getInitials(name: string) {
 
 export function JoinPage() {
   const [nameInput, setNameInput] = useState("");
-  const [rawFile, setRawFile] = useState<File | null>(null);
+  const [, setRawFile] = useState<File | null>(null);
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(null);
 
   const [crop, setCrop] = useState({ x: 0, y: 0 });

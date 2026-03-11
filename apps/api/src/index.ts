@@ -1,19 +1,5 @@
 import express from "express";
 import cors from "cors";
-
-import { participantsRouter } from "./routes/participants";
-import { wheelRouter } from "./routes/wheel";
-import { rulesRouter } from "./routes/rules";
-import { statsRouter } from "./routes/stats";
-import { importRouter } from "./routes/import";
-import { sessionsRouter } from "./routes/sessions";
-import { attemptsRouter } from "./routes/attempts";
-import { personRouter } from "./routes/person";
-import { leaderboardRouter } from "./routes/leaderboard";
-import { analyticsRouter } from "./routes/analytics";
-import { crossesRouter } from "./routes/crosses";
-import { violationsRouter } from "./routes/violations";
-import { participantSubmissionsRouter } from "./routes/participantSubmissionRouter";
 import { toNodeHandler } from "better-auth/node";
 
 import { auth, getRequestSession, isTrustedOrigin } from "./auth.js";
@@ -30,6 +16,7 @@ import { leaderboardRouter } from "./routes/leaderboard.js";
 import { analyticsRouter } from "./routes/analytics.js";
 import { crossesRouter } from "./routes/crosses.js";
 import { violationsRouter } from "./routes/violations.js";
+import { participantSubmissionsRouter } from "./routes/participantSubmissionRouter.js";
 
 assertProductionEnv();
 
