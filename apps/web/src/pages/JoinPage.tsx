@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Cropper from "react-easy-crop";
+import { Link } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 
 type Area = {
@@ -285,6 +286,9 @@ export function JoinPage() {
           <p className="join__done-text">
             Registreringen din er sendt inn og venter på godkjenning fra en admin. Du får tilgang så snart den er godkjent.
           </p>
+          <p className="join__done-text">
+            I mellomtiden kan du <Link to="/howto" className="join__howto-link">lese hvordan man chugger →</Link>
+          </p>
         </div>
       </div>
     );
@@ -517,7 +521,10 @@ export function JoinPage() {
           </button>
 
           <div className="join__footer-hint">
-            En admin godkjenner registreringen din. Purr på Åke eller Morten før chuggen settes i 15:15 på fredag. 
+            En admin godkjenner registreringen din. Purr på Åke eller Morten før chuggen settes i gang 15:15 på fredag.
+          </div>
+          <div className="join__footer-hint">
+            Usikker på hvordan man chugger? <Link to="/howto" className="join__howto-link">Sjekk guiden vår →</Link>
           </div>
         </form>
       </div>

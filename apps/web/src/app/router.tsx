@@ -13,6 +13,7 @@ import { SessionPage } from "../pages/SessionPage";
 import { LoginPage } from "../pages/LoginPage";
 import { AdminPage } from "../pages/AdminPage";
 import { JoinPage } from "../pages/JoinPage";
+import { HowToPage } from "../pages/HowToPage";
 
 export const router = createBrowserRouter([
   {
@@ -31,7 +32,8 @@ export const router = createBrowserRouter([
       { path: "session/:id", element: <SessionPage /> },
       { path: "login", element: <LoginPage /> },
       { path: "admin", element: <AdminPage /> },
-      { path: "join", element: <JoinPage /> }
+      { path: "join", element: <JoinPage /> },
+      { path: "howto", element: <HowToPage /> }
     ]
   }
 ]);

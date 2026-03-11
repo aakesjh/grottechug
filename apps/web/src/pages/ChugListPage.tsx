@@ -665,7 +665,7 @@ export function ChugListPage() {
                     Snitt {sortKey.kind === "avg" ? (sortDir === "asc" ? "▲" : "▼") : ""}
                   </th>
 
-                  <th className="chuglist__history-label">Historikk →</th>
+                  <th className="chuglist__history-label"></th>
 
                   {data.columns.map(c => {
                     const hasDayNote = c.note && c.note.trim() !== "";

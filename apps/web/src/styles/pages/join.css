@@ -255,6 +255,17 @@
   opacity: 0.6;
 }
 
+.join__howto-link {
+  color: var(--accent2);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.join__howto-link:hover {
+  color: var(--accent);
+}
+
 /* --- Identity check panel --- */
 .join__identity-panel {
   display: grid;
