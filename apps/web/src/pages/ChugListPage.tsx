@@ -694,7 +694,7 @@ export function ChugListPage() {
                           }}
                           title="Se dagsrapport og statistikk"
                         >
-                          ⚡
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="18" y="3" width="4" height="18" /><rect x="10" y="8" width="4" height="13" /><rect x="2" y="13" width="4" height="8" /></svg>
                         </span>
                         
                         {/* GUL PRIKK FOR DAGSNOTAT */}
