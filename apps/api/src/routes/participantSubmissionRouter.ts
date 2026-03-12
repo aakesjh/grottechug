@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { put } from "@vercel/blob";
 import { prisma } from "../prisma.js";
+import { appEnv } from "../env.js";
 import { requireAdmin } from "../auth-middleware.js";
 
 export const participantSubmissionsRouter = Router();
@@ -21,6 +22,7 @@ async function uploadImageToStorage(file: Express.Multer.File, name: string): Pr
     access: "public",
     contentType: file.mimetype,
     addRandomSuffix: false,
+    token: appEnv.blobReadWriteToken,
   });
   return blob.url;
 }

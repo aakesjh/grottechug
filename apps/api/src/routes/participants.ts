@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { put } from "@vercel/blob";
 import { requireAdmin } from "../auth-middleware.js";
+import { appEnv } from "../env.js";
 import { prisma } from "../prisma.js";
 
 export const participantsRouter = Router();
@@ -132,6 +133,7 @@ participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), asyn
       access: "public",
       contentType: file.mimetype,
       addRandomSuffix: false,
+      token: appEnv.blobReadWriteToken,
     });
 
     const updated = await prisma.participant.update({

@@ -33,6 +33,7 @@ export const appEnv = {
   frontendOrigin: normalizeOptionalUrl(process.env.FRONTEND_ORIGIN),
   allowSignUp: process.env.AUTH_ALLOW_SIGNUP === "true",
   trustedOriginsFromEnv: parseTrustedOrigins(process.env.BETTER_AUTH_TRUSTED_ORIGINS),
+  blobReadWriteToken: process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "",
 };
 
 process.env.DATABASE_URL = appEnv.databaseUrl;
@@ -124,6 +125,10 @@ export function assertProductionEnv() {
 
   if (!appEnv.frontendOrigin) {
     throw new Error("FRONTEND_ORIGIN must be set in production");
+  }
+
+  if (!appEnv.blobReadWriteToken) {
+    throw new Error("BLOB_READ_WRITE_TOKEN must be set in production");
   }
 
   requireHttps("BETTER_AUTH_URL", appEnv.betterAuthUrl);
