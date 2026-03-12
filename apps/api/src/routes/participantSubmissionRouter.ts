@@ -22,6 +22,7 @@ async function uploadImageToStorage(file: Express.Multer.File, name: string): Pr
     access: "public",
     contentType: file.mimetype,
     addRandomSuffix: false,
+    allowOverwrite: true,
     token: appEnv.blobReadWriteToken,
   });
   return blob.url;
