@@ -25,7 +25,7 @@ td {
 th {
   position: sticky;
   top: 0;
-  background: color-mix(in srgb, var(--bg) 40%, rgba(18, 26, 51, 0.95));
+  background: color-mix(in srgb, var(--surface-elevated) 88%, var(--bg) 12%);
   z-index: 1;
   text-align: left;
   color: var(--muted);
@@ -38,12 +38,12 @@ th.sticky {
   position: sticky;
   left: 0;
   z-index: 2;
-  background: color-mix(in srgb, var(--bg) 40%, rgba(18, 26, 51, 0.95));
+  background: color-mix(in srgb, var(--surface-elevated) 88%, var(--bg) 12%);
 }
 
 .separatorRow td {
   background: var(--overlay-subtle);
-  color: rgba(233, 237, 255, 0.80);
+  color: color-mix(in srgb, var(--text) 82%, transparent);
   font-weight: 700;
 }
 
@@ -64,7 +64,7 @@ th.sticky {
   width: 6px;
   height: 6px;
   border-radius: var(--radius-pill);
-  box-shadow: 0 0 0 2px rgba(11, 16, 32, 0.8);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--bg) 82%, transparent);
   pointer-events: none;
   z-index: 1;
 }
@@ -98,9 +98,9 @@ th.sticky {
   top: calc(100% + 6px);
   right: 0;
   background: var(--tooltip-bg-solid);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--border);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  color: rgba(233, 237, 255, 0.95);
+  color: var(--text);
   padding: 10px 12px;
   border-radius: 10px;
   font-size: var(--font-sm);
@@ -123,7 +123,7 @@ th.sticky {
   border-width: 6px;
   border-style: solid;
   border-color: transparent transparent var(--tooltip-bg-solid) transparent;
-  filter: drop-shadow(0 -1px 0 rgba(255, 255, 255, 0.14));
+  filter: drop-shadow(0 -1px 0 var(--border));
 }
 
 .cell:hover .tooltip {

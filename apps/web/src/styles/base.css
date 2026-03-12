@@ -19,9 +19,8 @@ body {
 body {
   margin: 0;
   font-family: var(--font-family);
-  background:
-    linear-gradient(rgba(11, 16, 32, 0.85), rgba(11, 16, 32, 0.85)),
-    url('/gnottene.png');
+  background: var(--page-backdrop);
+  background-color: var(--bg);
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;

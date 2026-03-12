@@ -42,21 +42,21 @@
 }
 
 .chuglist__pill--accent {
-  background: rgba(124, 92, 255, 0.15);
+  background: var(--accent-subtle);
   color: var(--accent);
-  border-color: rgba(124, 92, 255, 0.25);
+  border-color: var(--accent-border);
 }
 
 .chuglist__pill--cyan {
-  background: rgba(43, 210, 255, 0.12);
+  background: var(--accent2-subtle);
   color: var(--accent2);
-  border-color: rgba(43, 210, 255, 0.22);
+  border-color: var(--accent2-border);
 }
 
 .chuglist__pill--warn {
-  background: rgba(255, 184, 108, 0.15);
+  background: var(--accent3-subtle);
   color: var(--accent3);
-  border-color: rgba(255, 184, 108, 0.25);
+  border-color: var(--accent3-border);
 }
 
 .chuglist__hint {
@@ -100,8 +100,8 @@
 /* --- Editor Card --- */
 .chuglist__editor-card {
   margin-bottom: 14px;
-  border: 1px solid rgba(255, 184, 108, 0.2);
-  background: rgba(255, 184, 108, 0.03);
+  border: 1px solid var(--accent3-border);
+  background: color-mix(in srgb, var(--accent3) 5%, transparent);
 }
 
 /* --- Table --- */
@@ -192,7 +192,7 @@
 
 /* --- Row hover --- */
 .chuglist__row:hover td {
-  background: rgba(124, 92, 255, 0.06);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .chuglist__row--guest:hover td {

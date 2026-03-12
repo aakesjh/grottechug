@@ -1,0 +1,52 @@
+/* ==========================================================================
+   Footer Component
+   Minimal, sleek site footer.
+   ========================================================================== */
+
+.siteFooter {
+  margin-top: 80px;
+  border-top: 1px solid var(--footer-border);
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--bg) 24%, transparent));
+  padding: 28px 0;
+}
+
+.footerInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.footerContact {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footerLink {
+  color: var(--muted);
+  font-size: var(--font-sm);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  letter-spacing: 0.2px;
+}
+
+.footerLink:hover {
+  color: var(--accent2);
+}
+
+.footerDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  flex-shrink: 0;
+}
+
+.footerBrand {
+  font-size: var(--font-xs);
+  color: color-mix(in srgb, var(--muted) 45%, transparent);
+  letter-spacing: 0.5px;
+}

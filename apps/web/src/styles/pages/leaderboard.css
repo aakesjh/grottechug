@@ -259,8 +259,8 @@
 .leaderboard__guest-badge {
   font-size: var(--font-xs);
   color: var(--accent3);
-  background: rgba(255, 184, 108, 0.12);
-  border: 1px solid rgba(255, 184, 108, 0.25);
+  background: var(--accent3-subtle);
+  border: 1px solid var(--accent3-border);
   padding: 1px 6px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
@@ -285,7 +285,7 @@
 .leaderboard__time-bar {
   height: 100%;
   border-radius: 4px;
-  background: linear-gradient(90deg, rgba(124, 92, 255, 0.18), rgba(43, 210, 255, 0.12));
+  background: linear-gradient(90deg, var(--accent-subtle-strong), var(--accent2-subtle));
   transition: width 0.5s ease;
 }
 

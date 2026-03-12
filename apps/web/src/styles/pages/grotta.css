@@ -25,13 +25,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(124, 92, 255, 0.15);
+  background: var(--accent-subtle);
   color: var(--accent);
   padding: 4px 14px;
   border-radius: var(--radius-pill);
   font-size: var(--font-sm);
   font-weight: 700;
-  border: 1px solid rgba(124, 92, 255, 0.25);
+  border: 1px solid var(--accent-border);
 }
 
 .grotta__subtitle {
@@ -67,8 +67,8 @@
 
 .grotta__card:hover {
   transform: translateY(-4px);
-  border-color: rgba(124, 92, 255, 0.45);
-  box-shadow: 0 12px 36px rgba(124, 92, 255, 0.15);
+  border-color: var(--accent-border-strong);
+  box-shadow: 0 12px 36px var(--accent-glow);
 }
 
 .grotta__card-image-frame {
@@ -169,8 +169,8 @@
 }
 
 .grotta__toggle-btn--active {
-  background: rgba(124, 92, 255, 0.12);
-  border-color: rgba(124, 92, 255, 0.35);
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
   color: var(--accent);
 }
 

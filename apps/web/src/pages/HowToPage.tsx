@@ -5,27 +5,27 @@ function CupPourSVG() {
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Beer can — tilted */}
       <g transform="rotate(-40 60 50)">
-        <rect x="38" y="20" width="44" height="64" rx="6" fill="rgba(255,184,108,0.18)" stroke="var(--accent3)" strokeWidth="2" />
+        <rect x="38" y="20" width="44" height="64" rx="6" fill="color-mix(in srgb, var(--accent3) 18%, transparent)" stroke="var(--accent3)" strokeWidth="2" />
         {/* Can top rim */}
-        <ellipse cx="60" cy="22" rx="22" ry="5" fill="rgba(255,184,108,0.12)" stroke="var(--accent3)" strokeWidth="1.5" />
+        <ellipse cx="60" cy="22" rx="22" ry="5" fill="color-mix(in srgb, var(--accent3) 12%, transparent)" stroke="var(--accent3)" strokeWidth="1.5" />
         {/* Can bottom rim */}
-        <ellipse cx="60" cy="82" rx="22" ry="5" fill="rgba(255,184,108,0.08)" stroke="var(--accent3)" strokeWidth="1" />
+        <ellipse cx="60" cy="82" rx="22" ry="5" fill="color-mix(in srgb, var(--accent3) 8%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
         {/* Can tab */}
-        <ellipse cx="60" cy="18" rx="6" ry="2.5" fill="rgba(255,184,108,0.3)" stroke="var(--accent3)" strokeWidth="1" />
+        <ellipse cx="60" cy="18" rx="6" ry="2.5" fill="color-mix(in srgb, var(--accent3) 30%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
         {/* Can label stripe */}
-        <rect x="38" y="40" width="44" height="14" fill="rgba(255,184,108,0.1)" />
+        <rect x="38" y="40" width="44" height="14" fill="color-mix(in srgb, var(--accent3) 10%, transparent)" />
       </g>
       {/* Pour stream */}
       <path d="M78 54 Q88 80 100 96" stroke="var(--accent3)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 4" opacity="0.7" />
       <path d="M80 58 Q90 82 103 94" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 5" opacity="0.5" />
       {/* Foam / splash */}
-      <circle cx="96" cy="88" r="2.5" fill="rgba(255,184,108,0.4)" />
-      <circle cx="103" cy="84" r="1.8" fill="rgba(255,184,108,0.3)" />
-      <circle cx="100" cy="92" r="2" fill="rgba(255,184,108,0.35)" />
+      <circle cx="96" cy="88" r="2.5" fill="color-mix(in srgb, var(--accent3) 40%, transparent)" />
+      <circle cx="103" cy="84" r="1.8" fill="color-mix(in srgb, var(--accent3) 30%, transparent)" />
+      <circle cx="100" cy="92" r="2" fill="color-mix(in srgb, var(--accent3) 35%, transparent)" />
       {/* Cup */}
-      <path d="M85 100 L89 160 L131 160 L135 100 Z" fill="rgba(124,92,255,0.12)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M85 100 L89 160 L131 160 L135 100 Z" fill="color-mix(in srgb, var(--accent) 12%, transparent)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
       {/* Liquid in cup */}
-      <path d="M89 122 L91 158 L129 158 L131 122 Z" fill="rgba(255,184,108,0.25)" />
+      <path d="M89 122 L91 158 L129 158 L131 122 Z" fill="color-mix(in srgb, var(--accent3) 25%, transparent)" />
       {/* 0.5L label */}
       <text x="110" y="146" textAnchor="middle" fill="var(--muted)" fontSize="11" fontWeight="600">0.5L</text>
       {/* Carbonation fizz */}
@@ -44,11 +44,11 @@ function KneelSVG() {
       <rect x="20" y="78" width="6" height="60" rx="2" fill="rgba(255,255,255,0.06)" />
       <rect x="174" y="78" width="6" height="60" rx="2" fill="rgba(255,255,255,0.06)" />
       {/* Cup on counter */}
-      <path d="M120 48 L122 70 L148 70 L150 48 Z" fill="rgba(124,92,255,0.12)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M122 55 L123 69 L147 69 L148 55 Z" fill="rgba(255,184,108,0.2)" />
+      <path d="M120 48 L122 70 L148 70 L150 48 Z" fill="color-mix(in srgb, var(--accent) 12%, transparent)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M122 55 L123 69 L147 69 L148 55 Z" fill="color-mix(in srgb, var(--accent3) 20%, transparent)" />
       {/* Person — sideways, one knee down */}
       {/* Head */}
-      <circle cx="85" cy="98" r="11" fill="rgba(43,210,255,0.15)" stroke="var(--accent2)" strokeWidth="2" />
+      <circle cx="85" cy="98" r="11" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
       {/* Body — angled slightly forward */}
       <line x1="85" y1="109" x2="90" y2="140" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
       {/* Front arm reaching to counter */}
@@ -72,12 +72,12 @@ function DrinkSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Person head — tilted back */}
-      <circle cx="110" cy="38" r="13" fill="rgba(43,210,255,0.15)" stroke="var(--accent2)" strokeWidth="2" />
+      <circle cx="110" cy="38" r="13" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
       {/* Mouth open */}
       <ellipse cx="116" cy="42" rx="3.5" ry="3" fill="rgba(255,255,255,0.15)" />
       {/* Cup tilted to mouth */}
-      <path d="M120 20 L128 48 L146 42 L140 14 Z" fill="rgba(124,92,255,0.15)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M125 28 L128 46 L143 41 L141 24 Z" fill="rgba(255,184,108,0.25)" />
+      <path d="M120 20 L128 48 L146 42 L140 14 Z" fill="color-mix(in srgb, var(--accent) 15%, transparent)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M125 28 L128 46 L143 41 L141 24 Z" fill="color-mix(in srgb, var(--accent3) 25%, transparent)" />
       {/* Pour into mouth */}
       <path d="M122 44 Q118 44 116 43" stroke="var(--accent3)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
       {/* Arms holding cup */}
@@ -86,7 +86,7 @@ function DrinkSVG() {
       {/* Body — slightly forward */}
       <line x1="110" y1="51" x2="105" y2="100" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
       {/* Timer icon */}
-      <circle cx="38" cy="70" r="20" fill="rgba(124,92,255,0.1)" stroke="var(--accent)" strokeWidth="1.5" />
+      <circle cx="38" cy="70" r="20" fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth="1.5" />
       <line x1="38" y1="70" x2="38" y2="58" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
       <line x1="38" y1="70" x2="48" y2="70" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
       <text x="38" y="100" textAnchor="middle" fill="var(--accent)" fontSize="10" fontWeight="700">START</text>
@@ -107,10 +107,10 @@ function KeepInsideSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
       {/* Person head (bigger to show cheeks) */}
-      <circle cx="105" cy="38" r="18" fill="rgba(43,210,255,0.15)" stroke="var(--accent2)" strokeWidth="2" />
+      <circle cx="105" cy="38" r="18" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
       {/* Puffed cheeks */}
-      <ellipse cx="90" cy="42" rx="6" ry="5" fill="rgba(255,184,108,0.2)" stroke="var(--accent3)" strokeWidth="1" />
-      <ellipse cx="120" cy="42" rx="6" ry="5" fill="rgba(255,184,108,0.2)" stroke="var(--accent3)" strokeWidth="1" />
+      <ellipse cx="90" cy="42" rx="6" ry="5" fill="color-mix(in srgb, var(--accent3) 20%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
+      <ellipse cx="120" cy="42" rx="6" ry="5" fill="color-mix(in srgb, var(--accent3) 20%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
       {/* Eyes (determined) */}
       <circle cx="98" cy="34" r="2" fill="var(--text)" />
       <circle cx="112" cy="34" r="2" fill="var(--text)" />
@@ -124,7 +124,7 @@ function KeepInsideSVG() {
       {/* Body */}
       <line x1="105" y1="56" x2="100" y2="100" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
       {/* Cup still held */}
-      <path d="M130 65 L132 88 L148 88 L150 65 Z" fill="rgba(124,92,255,0.1)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M130 65 L132 88 L148 88 L150 65 Z" fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
       <line x1="105" y1="70" x2="135" y2="72" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
       {/* Other arm */}
       <line x1="105" y1="70" x2="85" y2="82" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
@@ -151,7 +151,7 @@ function CupDownSVG() {
       <line x1="115" y1="60" x2="122" y2="50" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
       <line x1="105" y1="58" x2="105" y2="46" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
       {/* Cup on counter */}
-      <path d="M90 68 L92 90 L118 90 L120 68 Z" fill="rgba(124,92,255,0.15)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M90 68 L92 90 L118 90 L120 68 Z" fill="color-mix(in srgb, var(--accent) 15%, transparent)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
       {/* Empty cup shine */}
       <line x1="97" y1="72" x2="97" y2="82" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
       {/* Timer — STOP */}
@@ -159,7 +159,7 @@ function CupDownSVG() {
       <rect x="152" y="122" width="16" height="16" rx="3" fill="var(--danger)" opacity="0.4" />
       <text x="160" y="160" textAnchor="middle" fill="var(--danger)" fontSize="10" fontWeight="700">STOPP</text>
       {/* Person celebrating */}
-      <circle cx="50" cy="115" r="10" fill="rgba(43,210,255,0.15)" stroke="var(--accent2)" strokeWidth="2" />
+      <circle cx="50" cy="115" r="10" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
       <line x1="50" y1="125" x2="50" y2="155" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
       {/* Arms up celebration */}
       <line x1="50" y1="132" x2="35" y2="118" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />

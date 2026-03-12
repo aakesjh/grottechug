@@ -13,9 +13,9 @@
 }
 
 .navBar {
-  background: rgba(11, 16, 32, 0.95);
+  background: var(--nav-bg);
   backdrop-filter: blur(15px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--theme-toggle-border);
   transition: all var(--transition-smooth);
 }
 
@@ -36,7 +36,7 @@
 /* --- Hero Mode (home page, not scrolled) --- */
 .heroMode .navBar {
   padding: 10px 0;
-  background: rgba(11, 16, 32, 0.7);
+  background: var(--nav-hero-bg);
 }
 
 .heroMode .navInner {
@@ -47,7 +47,7 @@
 .heroMode .navLogo {
   height: 200px;
   width: auto;
-  filter: drop-shadow(0 0 20px rgba(124, 92, 255, 0.4));
+  filter: drop-shadow(0 0 20px var(--logo-glow-strong));
 }
 
 .heroMode .navControls {
@@ -76,7 +76,7 @@
 .compactMode .navLogo {
   height: 100px;
   width: auto;
-  filter: drop-shadow(0 0 8px rgba(124, 92, 255, 0.2));
+  filter: drop-shadow(0 0 8px var(--logo-glow-soft));
 }
 
 .compactMode .navLinks {
@@ -108,6 +108,16 @@
   right: 24px;
   z-index: 1001;
   flex-shrink: 0;
+}
+
+.profileMenu--themeOnly {
+  display: flex;
+  align-items: center;
+}
+
+.profileMenuThemeToggle {
+  display: flex;
+  align-items: center;
 }
 
 /* --- Profile Blob & Dropdown --- */
@@ -180,7 +190,7 @@
   top: calc(100% + 8px);
   right: 0;
   min-width: 180px;
-  background: rgba(14, 20, 38, 0.97);
+  background: var(--dropdown-bg);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -198,8 +208,16 @@
 .profileDropdownHeader {
   padding: 10px 12px 8px;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profileDropdownHeaderMain {
+  display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
 
 .profileDropdownLink {
@@ -216,6 +234,16 @@
   font-size: var(--font-base);
   font-weight: 600;
   color: var(--text);
+}
+
+.profileDropdownThemeToggleWrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.profileDropdownThemeToggle {
+  flex-shrink: 0;
 }
 
 .profileDropdownDivider {
@@ -371,6 +399,12 @@
     top: auto;
     right: auto;
   }
+
+  .heroMode .profileMenu--themeOnly {
+    position: fixed;
+    top: 27px;
+    right: 24px;
+  }
 }
 
 /* --- Mobile / Hamburger Breakpoint (below 985px) --- */
@@ -442,7 +476,7 @@
     max-width: 80vw;
     height: 100vh;
     height: 100dvh;
-    background: rgba(11, 16, 32, 0.98);
+    background: var(--nav-drawer-bg);
     backdrop-filter: blur(20px);
     border-left: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 1001;
@@ -497,10 +531,46 @@
   .mobileDrawerProfileInfo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 12px;
     padding: 8px 0;
     cursor: pointer;
     border-radius: 12px;
+  }
+
+  .mobileDrawerProfileInfo--static {
+    cursor: default;
+  }
+
+  .mobileDrawerProfileMeta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .mobileDrawerThemeInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .mobileDrawerThemeLabel {
+    font-size: var(--font-base);
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .mobileDrawerThemeToggleWrap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .mobileDrawerThemeToggle {
+    flex-shrink: 0;
   }
 
   .mobileDrawerFooter {

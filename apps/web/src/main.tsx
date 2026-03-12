@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./app/App";
+import { ThemeProvider } from "./theme/ThemeProvider";
 
 /* --- Design tokens & base --- */
 import "./styles/variables.css";
@@ -13,6 +14,8 @@ import "./styles/components/table.css";
 import "./styles/components/forms.css";
 import "./styles/components/modal.css";
 import "./styles/components/avatar.css";
+import "./styles/components/footer.css";
+import "./styles/components/theme-toggle.css";
 
 /* --- Pages --- */
 import "./styles/pages/home.css";
@@ -33,6 +36,8 @@ import "./styles/utilities.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 );

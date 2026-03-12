@@ -33,13 +33,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(124, 92, 255, 0.15);
+  background: var(--accent-subtle);
   color: var(--accent);
   padding: 4px 14px;
   border-radius: var(--radius-pill);
   font-size: var(--font-sm);
   font-weight: 700;
-  border: 1px solid rgba(124, 92, 255, 0.25);
+  border: 1px solid var(--accent-border);
 }
 
 /* --- Page Layout --- */
@@ -95,7 +95,7 @@
   font-size: var(--font-xs);
   font-weight: 700;
   color: var(--accent);
-  background: rgba(124, 92, 255, 0.13);
+  background: var(--accent-subtle);
   padding: 1px 8px;
   border-radius: var(--radius-pill);
 }
@@ -244,7 +244,7 @@
 .wheel-page__guest-badge {
   font-size: var(--font-xs);
   color: var(--accent3);
-  background: rgba(255, 184, 108, 0.12);
+  background: var(--accent3-subtle);
   padding: 1px 8px;
   border-radius: var(--radius-pill);
   font-weight: 700;
@@ -292,8 +292,8 @@
 }
 
 .wheel-page__history-item--latest {
-  background: rgba(124, 92, 255, 0.12);
-  border-color: rgba(124, 92, 255, 0.3);
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
 }
 
 .wheel-page__history-number {

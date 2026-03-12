@@ -177,23 +177,23 @@
 }
 
 .person__badge--earned[data-category="milestone"] {
-  border-color: rgba(255, 184, 108, 0.3);
-  box-shadow: 0 0 16px rgba(255, 184, 108, 0.1);
+  border-color: var(--accent3-border);
+  box-shadow: 0 0 16px var(--accent3-glow);
 }
 
 .person__badge--earned[data-category="speed"] {
-  border-color: rgba(43, 210, 255, 0.3);
-  box-shadow: 0 0 16px rgba(43, 210, 255, 0.1);
+  border-color: var(--accent2-border);
+  box-shadow: 0 0 16px var(--accent2-glow);
 }
 
 .person__badge--earned[data-category="special"] {
-  border-color: rgba(124, 92, 255, 0.3);
-  box-shadow: 0 0 16px rgba(124, 92, 255, 0.1);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 16px var(--accent-glow-soft);
 }
 
 .person__badge--earned[data-category="negative"] {
-  border-color: rgba(255, 60, 80, 0.35);
-  box-shadow: 0 0 16px rgba(255, 60, 80, 0.12);
+  border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 /* ==========================================================================
@@ -224,8 +224,8 @@
 }
 
 @keyframes medal-glow-cyan {
-  0%, 100% { filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45)) drop-shadow(0 0 6px rgba(43,210,255,0.35)); }
-  50% { filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45)) drop-shadow(0 0 14px rgba(43,210,255,0.6)); }
+  0%, 100% { filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45)) drop-shadow(0 0 6px color-mix(in srgb, var(--accent2) 35%, transparent)); }
+  50% { filter: drop-shadow(0 2px 5px rgba(0,0,0,0.45)) drop-shadow(0 0 14px color-mix(in srgb, var(--accent2) 60%, transparent)); }
 }
 
 /* ==========================================================================

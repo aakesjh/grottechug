@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { authClient } from "../auth/client";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
   const location = useLocation();
@@ -18,12 +19,13 @@ export function Navbar() {
   // LØSNINGEN: Er vi på forsiden, er den ALLTID i hero-modus (låst).
   // På andre sider bytter den til kompakt.
   const isHeroMode = isHome;
+  const displayParticipantName = user?.participantId ? participantName : null;
+  const displayParticipantImage = user?.participantId ? participantImage : null;
 
   useEffect(() => {
     let cancelled = false;
 
     if (!user?.participantId) {
-      setParticipantName(null);
       return () => {
         cancelled = true;
       };
@@ -151,25 +153,31 @@ export function Navbar() {
               </div>
             </div>
 
+            {!isPending && !isAuthenticated && (
+              <div className="profileMenu profileMenu--themeOnly">
+                <ThemeToggle className="profileMenuThemeToggle" variant="compact" />
+              </div>
+            )}
+
             {!isPending && isAuthenticated && (
               <div className="profileMenu" ref={menuRef}>
                 <button
                   className="profileBlob"
                   onClick={() => setMenuOpen((v) => !v)}
                 >
-                  {participantImage ? (
+                  {displayParticipantImage ? (
                     <img
-                      src={participantImage}
-                      alt={participantName ?? ""}
+                      src={displayParticipantImage}
+                      alt={displayParticipantName ?? ""}
                       className="profileImg"
                     />
                   ) : (
                     <span className="profileInitial">
-                      {(participantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
+                      {(displayParticipantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
                     </span>
                   )}
                   <span className="profileBlobInfo">
-                    <span className="profileBlobName">{participantName ?? user?.name}</span>
+                    <span className="profileBlobName">{displayParticipantName ?? user?.name}</span>
                     <span className={`profileBlobRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
                       {isAdmin ? "Admin" : "Medlem"}
                     </span>
@@ -185,12 +193,22 @@ export function Navbar() {
                         if (user?.participantId) navigate(`/person/${user.participantId}`);
                       }}
                     >
-                      <span className="profileDropdownName">
-                        {participantName ?? user?.name}
-                      </span>
-                      <span className={`authRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
-                        {isAdmin ? "Admin" : "Medlem"}
-                      </span>
+                      <div className="profileDropdownHeaderMain">
+                        <span className="profileDropdownName">
+                          {displayParticipantName ?? user?.name}
+                        </span>
+                        <span className={`authRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                          {isAdmin ? "Admin" : "Medlem"}
+                        </span>
+                      </div>
+                      {isAdmin && (
+                        <div
+                          className="profileDropdownThemeToggleWrap"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <ThemeToggle className="profileDropdownThemeToggle" variant="compact" />
+                        </div>
+                      )}
                     </div>
                     <div className="profileDropdownDivider" />
                     {isAdmin && (
@@ -232,6 +250,20 @@ export function Navbar() {
           <div className="mobileOverlay" onClick={() => setDrawerOpen(false)} />
         )}
         <div className={`mobileDrawer ${drawerOpen ? "mobileDrawerOpen" : ""}`}>
+          {!isPending && !isAuthenticated && (
+            <div className="mobileDrawerProfile mobileDrawerProfile--themeOnly">
+              <div className="mobileDrawerProfileInfo mobileDrawerProfileInfo--static">
+                <div className="mobileDrawerProfileMeta">
+                  <span className="mobileDrawerThemeInfo">
+                    <span className="mobileDrawerThemeLabel">Fargetema</span>
+                  </span>
+                </div>
+                <span className="mobileDrawerThemeToggleWrap">
+                  <ThemeToggle className="mobileDrawerThemeToggle" variant="compact" />
+                </span>
+              </div>
+            </div>
+          )}
           {!isPending && isAuthenticated && (
             <div className="mobileDrawerProfile">
               <div
@@ -241,19 +273,29 @@ export function Navbar() {
                   if (user?.participantId) navigate(`/person/${user.participantId}`);
                 }}
               >
-                {participantImage ? (
-                  <img src={participantImage} alt={participantName ?? ""} className="profileImg" />
-                ) : (
-                  <span className="profileInitial">
-                    {(participantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
+                <div className="mobileDrawerProfileMeta">
+                  {displayParticipantImage ? (
+                    <img src={displayParticipantImage} alt={displayParticipantName ?? ""} className="profileImg" />
+                  ) : (
+                    <span className="profileInitial">
+                      {(displayParticipantName ?? user?.name ?? "?").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="profileBlobInfo">
+                    <span className="profileBlobName">{displayParticipantName ?? user?.name}</span>
+                    <span className={`profileBlobRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
+                      {isAdmin ? "Admin" : "Medlem"}
+                    </span>
+                  </span>
+                </div>
+                {isAdmin && (
+                  <span
+                    className="mobileDrawerThemeToggleWrap"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <ThemeToggle className="mobileDrawerThemeToggle" variant="compact" />
                   </span>
                 )}
-                <span className="profileBlobInfo">
-                  <span className="profileBlobName">{participantName ?? user?.name}</span>
-                  <span className={`profileBlobRole ${isAdmin ? "authRoleAdmin" : "authRoleMember"}`}>
-                    {isAdmin ? "Admin" : "Medlem"}
-                  </span>
-                </span>
               </div>
             </div>
           )}
