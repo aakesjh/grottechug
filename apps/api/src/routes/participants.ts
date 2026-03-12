@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { put } from "@vercel/blob";
+import { del, put } from "@vercel/blob";
 import { requireAdmin } from "../auth-middleware.js";
 import { appEnv } from "../env.js";
 import { prisma } from "../prisma.js";
@@ -11,6 +11,23 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 },
 });
+
+function buildParticipantImagePath(name: string) {
+  const safeName = name.toLowerCase().replace(/\s+/g, "-");
+  const version = Date.now().toString(36);
+  return `people/${safeName}-${version}.jpeg`;
+}
+
+function normalizeBlobUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
 
 /**
  * SEARCH (må ligge før /:id routes)
@@ -121,19 +138,17 @@ participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), asyn
 
     const participant = await prisma.participant.findUnique({
       where: { id },
-      select: { id: true, name: true },
+      select: { id: true, name: true, imageUrl: true },
     });
 
     if (!participant) {
       return res.status(404).json({ error: "Participant not found" });
     }
 
-    const safeName = participant.name.toLowerCase().replace(/\s+/g, "-");
-    const blob = await put(`people/${safeName}.jpeg`, file.buffer, {
+    const blob = await put(buildParticipantImagePath(participant.name), file.buffer, {
       access: "public",
       contentType: file.mimetype,
       addRandomSuffix: false,
-      allowOverwrite: true,
       token: appEnv.blobReadWriteToken,
     });
 
@@ -142,6 +157,15 @@ participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), asyn
       data: { imageUrl: blob.url },
       select: { id: true, name: true, isRegular: true, imageUrl: true },
     });
+
+    const previousImageUrl = participant.imageUrl ? normalizeBlobUrl(participant.imageUrl) : null;
+    if (previousImageUrl && previousImageUrl !== blob.url) {
+      try {
+        await del(previousImageUrl, { token: appEnv.blobReadWriteToken });
+      } catch (cleanupError) {
+        console.error("Old image cleanup failed:", cleanupError);
+      }
+    }
 
     res.json(updated);
   } catch (err: any) {
