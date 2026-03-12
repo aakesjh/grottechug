@@ -365,10 +365,10 @@ export function PersonPage() {
         <div className="card person__lower-col--badges">
           <h2>Badges</h2>
           <p className="u-text-muted" style={{ fontSize: "var(--font-sm)", marginBottom: 16 }}>
-            {data.badges.filter(b => b.earned).length} / {data.badges.length} oppnådd
+            {(data.badges ?? []).filter(b => b.earned).length} / {(data.badges ?? []).length} oppnådd
           </p>
           <div className="person__badges-grid">
-            {data.badges.map(badge => (
+            {(data.badges ?? []).map(badge => (
               <div
                 key={badge.id}
                 className={`person__badge ${badge.earned ? 'person__badge--earned' : 'person__badge--locked'}`}
