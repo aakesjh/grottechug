@@ -4,16 +4,19 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend
 } from "recharts";
 import { apiFetch } from "../lib/api";
+import { BadgeMedal } from "../components/BadgeMedal";
 
 type Semester = "2026V" | "2025H" | "all";
 
 // NYTT: Inkludert sessionId i typen
 type Point = { sessionId: string; dateISO: string; seconds: number; note: string | null };
+type Badge = { id: string; title: string; description: string; icon: string; category: string; earned: boolean };
 type Resp = {
   participant: { id: string; name: string; isRegular: boolean; imageUrl?: string | null };
   semester: string;
   points: Point[];
   stats: { attempts: number; best: number | null; avg: number | null; bestClean: number | null };
+  badges: Badge[];
 };
 
 function fmtDDMMYYYY(iso: string) {
@@ -358,8 +361,29 @@ export function PersonPage() {
         </div>
       </div>
 
-      <div className="card u-mt-md">
-        <h2>Historikk</h2>
+      <div className="person__lower-row">
+        <div className="card person__lower-col--badges">
+          <h2>Badges</h2>
+          <p className="u-text-muted" style={{ fontSize: "var(--font-sm)", marginBottom: 16 }}>
+            {data.badges.filter(b => b.earned).length} / {data.badges.length} oppnådd
+          </p>
+          <div className="person__badges-grid">
+            {data.badges.map(badge => (
+              <div
+                key={badge.id}
+                className={`person__badge ${badge.earned ? 'person__badge--earned' : 'person__badge--locked'}`}
+                data-category={badge.category}
+                data-tooltip={badge.description}
+              >
+                <BadgeMedal badgeId={badge.id} category={badge.category} icon={badge.icon} />
+                <div className="person__badge-title">{badge.title}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="card person__lower-col--history">
+          <h2>Historikk</h2>
         <div className="tableWrap">
           <table className="person__history-table">
             <thead>
@@ -414,6 +438,7 @@ export function PersonPage() {
               )}
             </tbody>
           </table>
+        </div>
         </div>
       </div>
     </div>
