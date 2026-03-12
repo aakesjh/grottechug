@@ -200,7 +200,7 @@ personRouter.get("/:id", async (req, res) => {
     { id: "improver", title: "Forbedring", description: "Forbedret tiden med over 20%", icon: "📈", category: "special", earned: hasImproved },
     { id: "consistent", title: "Konsansen", description: "Standardavvik under 2s (minst 5 forsøk)", icon: "🎯", category: "special", earned: isConsistent },
     { id: "session-winner", title: "Vinneren", description: "Raskest på en chug", icon: "🥇", category: "special", earned: isSessionWinner },
-    { id: "ironman", title: "Jernmann", description: "Over 5 min total chuggetid", icon: "⚙️", category: "special", earned: totalChugTime >= 300 },
+    { id: "admin", title: "Admin", description: "Grunnlegger og administrator av grottechug.no", icon: "🛡️", category: "special", earned: ["morten", "åke"].includes(p.nameLower) },
   ];
 
   res.json({

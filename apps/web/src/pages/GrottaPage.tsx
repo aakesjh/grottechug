@@ -25,6 +25,8 @@ type TableResponse = {
 
 type GuestSortMode = "alpha" | "chugs";
 
+const ADMIN_NAMES = new Set(["morten", "åke"]);
+
 function getInitials(name: string) {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -100,6 +102,7 @@ export function GrottaPage() {
   const renderCard = (p: Person) => {
     const chugCount = chugCountById[p.id] ?? 0;
     const bestTime = bestTimeById[p.id];
+    const isAdmin = ADMIN_NAMES.has(p.name.toLowerCase());
 
     return (
       <button
@@ -109,6 +112,7 @@ export function GrottaPage() {
         title={`Åpne profil: ${p.name}`}
       >
         <div className="grotta__card-image-frame">
+          {isAdmin && <span className="grotta__crown">👑</span>}
           {p.imageUrl ? (
             <img src={p.imageUrl} alt={p.name} className="grotta__card-image" />
           ) : (
