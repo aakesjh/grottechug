@@ -101,9 +101,11 @@
   justify-content: flex-end;
 }
 
-/* --- Profile Menu (inline in nav, hidden on mobile) --- */
+/* --- Profile Menu (fixed top-right when space, inline when tight) --- */
 .profileMenu {
-  position: relative;
+  position: fixed;
+  top: 27px;
+  right: 24px;
   z-index: 1001;
   flex-shrink: 0;
 }
@@ -280,7 +282,7 @@
 .navLinks {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .navLink {
@@ -362,32 +364,17 @@
   display: none;
 }
 
-/* --- Tablet Breakpoint (below 850px) --- */
-@media (max-width: 850px) {
-  .compactMode .navInner {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .compactMode .navControls {
-    justify-content: center;
-  }
-
-  .compactMode .navLinks {
-    justify-content: center;
-  }
-
-  .navAuth {
-    justify-content: center;
-  }
-
-  .navPlaceholder.compact {
-    height: 160px;
+/* --- Mid-range: profile goes inline with links (below 1350px) --- */
+@media (max-width: 1350px) {
+  .profileMenu {
+    position: relative;
+    top: auto;
+    right: auto;
   }
 }
 
-/* --- Mobile Breakpoint (below 768px) --- */
-@media (max-width: 768px) {
+/* --- Mobile / Hamburger Breakpoint (below 985px) --- */
+@media (max-width: 985px) {
   .hamburger {
     display: flex;
   }
@@ -420,7 +407,7 @@
   }
 
   .navPlaceholder.hero {
-    height: 200px;
+    height: 180px;
   }
 
   .heroMode .navInner {
