@@ -133,6 +133,7 @@ participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), asyn
       access: "public",
       contentType: file.mimetype,
       addRandomSuffix: false,
+      allowOverwrite: true,
       token: appEnv.blobReadWriteToken,
     });
 
@@ -143,9 +144,10 @@ participantsRouter.post("/:id/image", requireAdmin, upload.single("image"), asyn
     });
 
     res.json(updated);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Could not update image" });
+  } catch (err: any) {
+    console.error("Image upload failed:", err);
+    const message = err instanceof Error ? err.message : "Could not update image";
+    res.status(500).json({ error: message });
   }
 });
 

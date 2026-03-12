@@ -24,3 +24,4 @@ node_modules/
 *.mp4
 *.m4v
 *.avi
+.vercel

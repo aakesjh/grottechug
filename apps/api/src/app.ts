@@ -90,3 +90,13 @@ app.use("/api/analytics", analyticsRouter);
 app.use("/api/crosses", crossesRouter);
 app.use("/api/violations", violationsRouter);
 app.use("/api/participant-submissions", participantSubmissionsRouter);
+
+// Global error handler – returns JSON instead of Express 5 default HTML
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error("Unhandled error:", err);
+  const status = err.status || err.statusCode || 500;
+  const message = err instanceof Error ? err.message : "Internal server error";
+  if (!res.headersSent) {
+    res.status(status).json({ error: message });
+  }
+});
