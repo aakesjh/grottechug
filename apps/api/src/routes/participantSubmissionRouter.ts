@@ -104,7 +104,7 @@ participantSubmissionsRouter.get("/", async (req, res) => {
  */
 participantSubmissionsRouter.post("/:id/approve", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const editedNameRaw = String(req.body?.editedName ?? "").trim();
     const isRegular = Boolean(req.body?.isRegular ?? false);
 
@@ -170,7 +170,7 @@ participantSubmissionsRouter.post("/:id/approve", async (req, res) => {
  */
 participantSubmissionsRouter.post("/:id/reject", async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const adminNote = String(req.body?.adminNote ?? "").trim() || null;
 
     const submission = await prisma.participantSubmission.findUnique({
@@ -203,7 +203,7 @@ participantSubmissionsRouter.post("/:id/reject", async (req, res) => {
  */
 participantSubmissionsRouter.delete("/:id", requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     const submission = await prisma.participantSubmission.findUnique({
       where: { id },
