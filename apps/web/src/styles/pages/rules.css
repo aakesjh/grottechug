@@ -135,6 +135,10 @@
   gap: 8px;
 }
 
+.rules__crossAdminActions {
+  margin-top: 4px;
+}
+
 .rules__sectionHeader h2,
 .rules__ruleCard h2 {
   margin: 0;
@@ -191,6 +195,51 @@
   justify-items: end;
   gap: 2px;
   min-width: 56px;
+}
+
+.rules__crossEditBtn {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.rules__crossEditBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.rules__crossActions {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rules__crossActions .rules__crossEditBtn {
+  margin-top: 0;
+}
+
+.rules__crossDeleteBtn {
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: color-mix(in srgb, var(--danger) 86%, var(--text));
+  font-size: var(--font-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.rules__crossDeleteBtn:hover {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  transform: translateY(-1px);
 }
 
 .rules__crossValue {
@@ -285,76 +334,6 @@
   font-size: 1rem;
 }
 
-.rules__adminCard {
-  padding: 0;
-  overflow: hidden;
-}
-
-.rules__adminSummary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 18px;
-  cursor: pointer;
-  list-style: none;
-  font-weight: 700;
-}
-
-.rules__adminSummary::-webkit-details-marker {
-  display: none;
-}
-
-.rules__adminHint {
-  font-size: var(--font-sm);
-  font-weight: 500;
-  color: var(--muted);
-}
-
-.rules__adminCard[open] .rules__adminSummary {
-  border-bottom: 1px solid var(--border);
-}
-
-.rules__adminContent {
-  padding: 18px;
-}
-
-.rules__adminIntro {
-  margin-top: 0;
-}
-
-.rules__adminTableWrap {
-  margin-top: 14px;
-  padding-bottom: 0;
-}
-
-.rules__adminTable td,
-.rules__adminTable th {
-  white-space: normal;
-}
-
-.rules__adminDetails {
-  min-width: 240px;
-}
-
-.rules__editBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
-  cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
-}
-
-.rules__editBtn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-1px);
-}
-
 .rules__modalActions {
   display: flex;
   justify-content: flex-end;
@@ -377,8 +356,7 @@
     padding: 16px;
   }
 
-  .rules__heroTop,
-  .rules__adminSummary {
+  .rules__heroTop {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -417,10 +395,6 @@
 
   .rules__summaryGrid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .rules__adminContent {
-    padding: 14px;
   }
 }
 

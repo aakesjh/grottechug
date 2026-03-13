@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requireAdmin } from "../auth-middleware.js";
 import { prisma } from "../prisma.js";
+import { Prisma } from "@prisma/client";
 
 export const rulesRouter = Router();
 
@@ -74,4 +75,29 @@ rulesRouter.post("/", requireAdmin, async (req, res) => {
 
   const created = await prisma.rule.create({ data: { code, label, crosses, details } });
   res.json(created);
+});
+
+// DELETE rule by code
+rulesRouter.delete("/:code", requireAdmin, async (req, res) => {
+  const code = String(req.params.code).trim();
+
+  if (!code) {
+    return res.status(400).json({ error: "Need code" });
+  }
+
+  try {
+    await prisma.rule.delete({ where: { code } });
+    return res.status(204).send();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2025") {
+        return res.status(404).json({ error: "Rule not found" });
+      }
+      if (error.code === "P2003") {
+        return res.status(409).json({ error: "Rule is in use and cannot be deleted" });
+      }
+    }
+
+    return res.status(500).json({ error: "Failed to delete rule" });
+  }
 });
