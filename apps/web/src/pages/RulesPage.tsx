@@ -165,7 +165,7 @@ const OFFICIAL_CROSS_RULES: Rule[] = [
     code: "ABSENCE",
     label: "Fravær",
     crosses: 2,
-    details: "Å ikke være til stede på Geogrotta under chugging.",
+    details: "Fravær fra Grotta uten godkjent video/remotechug.",
   },
   {
     code: "VOMIT",
