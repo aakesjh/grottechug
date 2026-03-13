@@ -31,6 +31,7 @@ type ViolationEntry = {
   id: string;
   participantId: string;
   participantName: string;
+  sessionId: string;
   ruleCode: string;
   reason?: string | null;
   crosses: number;
@@ -74,6 +75,8 @@ const RULE_COLORS: Record<string, string> = {
   VOMIT: "#84cc16",
   KPR: "#06b6d4",
 };
+
+const WET_CODES = new Set(["W", "VW", "MM", "P", "T"]);
 
 const FALLBACK_PIE_COLOR = "#a8a29e";
 
@@ -169,7 +172,7 @@ export function SessionPage() {
     Promise.all([
       apiFetch(`/api/stats/table?semester=all`).then((r) => r.json()),
       apiFetch(`/api/sessions`).then((r) => r.json()),
-      apiFetch(`/api/violations?sessionId=${id}`).then((r) => r.json()),
+      apiFetch(`/api/violations?semester=all`).then((r) => r.json()),
     ])
       .then(([tData, sData, vData]) => {
         setTableData(tData);
@@ -182,6 +185,11 @@ export function SessionPage() {
         setLoading(false);
       });
   }, [id]);
+
+  const currentSessionViolations = useMemo(
+    () => violations.filter((v) => v.sessionId === id),
+    [violations, id]
+  );
 
   const sessionStats = useMemo(() => {
     if (!tableData || !sessions.length || !id) return null;
@@ -229,6 +237,54 @@ export function SessionPage() {
     const sortedByCount = [...allSessionsStats].sort((a, b) => b.count - a.count);
     const countRank = sortedByCount.findIndex((s) => s.sid === id) + 1;
 
+    const allSessionsGuestStats = sortedSessions.map((s) => {
+      const sid = s.id || s.sessionId;
+      let guestCount = 0;
+
+      tableData.rows.forEach((r) => {
+        if (r.isRegular) return;
+        const cell = tableData.cells[r.participantId]?.[sid];
+        if (cell && typeof cell.seconds === "number" && cell.seconds > 0) {
+          guestCount++;
+        }
+      });
+
+      return { sid, guestCount };
+    });
+    const sortedByGuests = [...allSessionsGuestStats].sort((a, b) => b.guestCount - a.guestCount);
+    const guestCountRank = sortedByGuests.findIndex((s) => s.sid === id) + 1;
+
+    const wetViolationKeys = new Set(
+      violations
+        .filter((v) => WET_CODES.has(v.ruleCode))
+        .map((v) => `${v.sessionId}:${v.participantId}`)
+    );
+
+    const allSessionsWetStats = sortedSessions.map((s) => {
+      const sid = s.id || s.sessionId;
+      let sessionAttempts = 0;
+      let sessionWet = 0;
+
+      tableData.rows.forEach((r) => {
+        const cell = tableData.cells[r.participantId]?.[sid];
+        if (!cell || typeof cell.seconds !== "number" || cell.seconds <= 0) return;
+        sessionAttempts++;
+        if (wetViolationKeys.has(`${sid}:${r.participantId}`)) {
+          sessionWet++;
+        }
+      });
+
+      return {
+        sid,
+        wetRate: sessionAttempts > 0 ? (sessionWet / sessionAttempts) * 100 : null,
+      };
+    });
+
+    const sortedByWetRate = allSessionsWetStats
+      .filter((s): s is { sid: string; wetRate: number } => s.wetRate !== null)
+      .sort((a, b) => b.wetRate - a.wetRate);
+    const wetRateRank = sortedByWetRate.findIndex((s) => s.sid === id) + 1;
+
     const attempts: AttemptStat[] = [];
     let totalSeconds = 0;
     let wetCount = 0;
@@ -237,7 +293,7 @@ export function SessionPage() {
       const cell = tableData.cells[row.participantId]?.[id];
       if (!cell || cell.seconds == null) return;
 
-      const participantViolations = violations
+      const participantViolations = currentSessionViolations
         .filter((v) => v.participantId === row.participantId)
         .map((v) => v.ruleCode);
 
@@ -292,13 +348,14 @@ export function SessionPage() {
 
     const fastest = attempts[0] || null;
     const slowest = attempts[attempts.length - 1] || null;
+    const guestCount = attempts.filter((a) => !a.isRegular).length;
 
     const fastestGlobalRank =
       fastest != null ? allHistoricalTimes.findIndex((t) => t === fastest.seconds) + 1 : null;
 
     const slowestGlobalRank =
       slowest != null
-        ? [...allHistoricalTimes].sort((a, b) => b - a).findIndex((t) => t === slowest.seconds) + 1
+        ? allHistoricalTimes.lastIndexOf(slowest.seconds) + 1
         : null;
 
     return {
@@ -312,6 +369,11 @@ export function SessionPage() {
       slowestGlobalRank,
       totalHistoricalAttempts: allHistoricalTimes.length,
       wetRate: attempts.length > 0 ? (wetCount / attempts.length) * 100 : 0,
+      wetRateRank,
+      totalSessionsWithWetRate: sortedByWetRate.length,
+      guestCount,
+      guestCountRank,
+      totalSessionsWithGuestCount: sortedByGuests.length,
       attempts,
       avgRank,
       totalSessionsWithAvg: sortedByAvg.length,
@@ -320,7 +382,7 @@ export function SessionPage() {
       prevSessionId,
       nextSessionId,
     };
-  }, [tableData, sessions, violations, id]);
+  }, [tableData, sessions, violations, currentSessionViolations, id]);
 
   const groupedViolations = useMemo(() => {
     const map = new Map<
@@ -328,7 +390,7 @@ export function SessionPage() {
       { name: string; codes: string[]; totalCrosses: number; notes: string[] }
     >();
 
-    violations.forEach((v) => {
+    currentSessionViolations.forEach((v) => {
       const existing = map.get(v.participantId);
       if (existing) {
         existing.codes.push(v.ruleCode);
@@ -348,10 +410,10 @@ export function SessionPage() {
       participantId,
       ...data,
     }));
-  }, [violations]);
+  }, [currentSessionViolations]);
 
   const pieData = useMemo(() => {
-    const counts = violations.reduce((acc, v) => {
+    const counts = currentSessionViolations.reduce((acc, v) => {
       acc[v.ruleCode] = (acc[v.ruleCode] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
@@ -361,7 +423,7 @@ export function SessionPage() {
       label: getRuleLabel(name),
       value,
     }));
-  }, [violations]);
+  }, [currentSessionViolations]);
 
   const pbData = useMemo(
     () =>
@@ -374,15 +436,22 @@ export function SessionPage() {
     [sessionStats]
   );
 
-  const gapToWinnerData = useMemo(() => {
-    if (!sessionStats || sessionStats.attempts.length === 0) return [];
-    const best = sessionStats.attempts[0].seconds;
+  const wetBreakdownData = useMemo(() => {
+    if (!sessionStats) return [];
 
-    return sessionStats.attempts.map((a) => ({
-      name: a.name,
-      seconds: a.seconds,
-      gap: a.seconds - best,
-    }));
+    const wetCount = sessionStats.attempts.filter((a) =>
+      a.violations.some((code) => WET_CODES.has(code))
+    ).length;
+    const cleanCount = Math.max(sessionStats.attempts.length - wetCount, 0);
+
+    return [
+      { name: "Wet", count: wetCount, pct: sessionStats.wetRate },
+      {
+        name: "Clean",
+        count: cleanCount,
+        pct: sessionStats.attempts.length > 0 ? (cleanCount / sessionStats.attempts.length) * 100 : 0,
+      },
+    ];
   }, [sessionStats]);
 
   if (loading) {
@@ -509,82 +578,60 @@ export function SessionPage() {
         )}
       </div>
 
-      <div className="session__stat-grid">
-        <div
-          className="card"
-          style={{
-            textAlign: "center",
-            padding: "20px 10px",
-            ...(sessionStats.avgRank === 1
-              ? {
-                  border: "2px solid rgba(250, 204, 21, 0.8)",
-                  background: "linear-gradient(180deg, rgba(250,204,21,0.1), rgba(255,255,255,0.02))",
-                }
-              : {}),
-          }}
-        >
-          <div
-            style={{
-              fontSize: "0.85rem",
-              color: sessionStats.avgRank === 1 ? "#facc15" : "var(--muted)",
-              marginBottom: 6,
-              fontWeight: "bold",
-            }}
-          >
+      <div className="session__stat-grid session__stat-grid--top">
+        <div className={`card session__stat-card ${sessionStats.avgRank === 1 ? "session__stat-card--record" : ""}`}>
+          <div className={`session__stat-label ${sessionStats.avgRank === 1 ? "session__stat-label--record" : ""}`}>
             {sessionStats.avgRank === 1 && "🏆 "}Gjennomsnitt
           </div>
-          <div
-            style={{
-              fontSize: "2.2rem",
-              fontWeight: 900,
-              color: sessionStats.avgRank === 1 ? "#facc15" : "var(--accent)",
-              textShadow: sessionStats.avgRank === 1 ? "0 0 15px rgba(250,204,21,0.5)" : "none",
-            }}
-          >
+          <div className={`session__stat-value session__stat-value--accent ${sessionStats.avgRank === 1 ? "session__stat-value--record" : ""}`}>
             {sessionStats.avgTime?.toFixed(2)}s
           </div>
-          <div style={{ fontSize: "0.8rem", opacity: 0.6 }}>
+          <div className="session__stat-meta">
             #{sessionStats.avgRank}/{sessionStats.totalSessionsWithAvg} raskeste snitt
           </div>
         </div>
 
-        <div
-          className="card"
-          style={{
-            textAlign: "center",
-            padding: "20px 10px",
-            ...(sessionStats.countRank === 1
-              ? {
-                  border: "2px solid rgba(250, 204, 21, 0.8)",
-                  background: "linear-gradient(180deg, rgba(250,204,21,0.1), rgba(255,255,255,0.02))",
-                }
-              : {}),
-          }}
-        >
-          <div
-            style={{
-              fontSize: "0.85rem",
-              color: sessionStats.countRank === 1 ? "#facc15" : "var(--muted)",
-              marginBottom: 6,
-              fontWeight: "bold",
-            }}
-          >
+        <div className={`card session__stat-card ${sessionStats.countRank === 1 ? "session__stat-card--record" : ""}`}>
+          <div className={`session__stat-label ${sessionStats.countRank === 1 ? "session__stat-label--record" : ""}`}>
             {sessionStats.countRank === 1 && "🔥 "}Antall Chuggere
           </div>
-          <div
-            style={{
-              fontSize: "2.2rem",
-              fontWeight: 900,
-              color: sessionStats.countRank === 1 ? "#facc15" : "var(--text)",
-              textShadow: sessionStats.countRank === 1 ? "0 0 15px rgba(250,204,21,0.5)" : "none",
-            }}
-          >
+          <div className={`session__stat-value ${sessionStats.countRank === 1 ? "session__stat-value--record" : ""}`}>
             {sessionStats.participantCount}
           </div>
-          <div style={{ fontSize: "0.8rem", opacity: 0.6 }}>
+          <div className="session__stat-meta">
             #{sessionStats.countRank}/{sessionStats.totalSessionsWithCount} beste oppmøte
           </div>
         </div>
+
+        <div className={`card session__stat-card session__stat-card--wet ${sessionStats.wetRateRank === 1 ? "session__stat-card--record" : ""}`}>
+          <div className={`session__stat-label ${sessionStats.wetRateRank === 1 ? "session__stat-label--record" : "session__stat-label--wet"}`}>
+            {sessionStats.wetRateRank === 1 && "💧 "}Wet-Rate i dag
+          </div>
+          <div className={`session__stat-value session__stat-value--wet ${sessionStats.wetRateRank === 1 ? "session__stat-value--record" : ""}`}>
+            {sessionStats.wetRate.toFixed(1)}%
+          </div>
+          <div className="session__stat-meta session__stat-meta--strong">
+            {sessionStats.wetRateRank > 0
+              ? `#${sessionStats.wetRateRank}/${sessionStats.totalSessionsWithWetRate} mest wet-rate`
+              : `${wetBreakdownData[0]?.count ?? 0} av ${sessionStats.participantCount} hadde wet-anmerkning`}
+          </div>
+        </div>
+
+        <div className={`card session__stat-card session__stat-card--guest ${sessionStats.guestCountRank === 1 ? "session__stat-card--record" : ""}`}>
+          <div className={`session__stat-label ${sessionStats.guestCountRank === 1 ? "session__stat-label--record" : "session__stat-label--guest"}`}>
+            {sessionStats.guestCountRank === 1 && "🎉 "}Antall gjester
+          </div>
+          <div className={`session__stat-value session__stat-value--guest ${sessionStats.guestCountRank === 1 ? "session__stat-value--record" : ""}`}>
+            {sessionStats.guestCount}
+          </div>
+          <div className="session__stat-meta session__stat-meta--strong">
+            #{sessionStats.guestCountRank}/{sessionStats.totalSessionsWithGuestCount} flest gjester
+          </div>
+        </div>
+
+      </div>
+
+      <div className="session__stat-grid session__stat-grid--secondary">
 
         {sessionStats.fastest && (
           <div
@@ -1016,22 +1063,20 @@ export function SessionPage() {
         </div>
 
         <div className="card" style={{ padding: 20 }}>
-          <h2 style={{ marginBottom: 12 }}>Avstand opp til dagens raskeste</h2>
+          <h2 style={{ marginBottom: 12 }}>Wet vs. clean</h2>
           <div className="session__chart-desc">
-            Viser hvor mange sekunder hver deltaker var bak dagens beste tid.
+            Fordeling av dagens forsok med og uten wet-anmerkning.
           </div>
           <div className="session__chart-area">
             <ResponsiveContainer>
-              <BarChart data={gapToWinnerData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
+              <BarChart data={wetBreakdownData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
                 <XAxis
                   dataKey="name"
                   stroke="var(--muted)"
-                  angle={-45}
-                  textAnchor="end"
-                  height={70}
+                  tick={{ fontSize: 12 }}
                 />
-                <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
+                <YAxis stroke="var(--muted)" allowDecimals={false} />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.04)" }}
                   contentStyle={TOOLTIP_STYLE}
@@ -1039,16 +1084,19 @@ export function SessionPage() {
                   itemStyle={{ color: "#e2e8f0" }}
                   formatter={(value: any, name: any, props: any) => {
                     const numericValue = Number(value ?? 0);
-                    if (name === "gap") {
-                      return [`+${numericValue.toFixed(2)}s`, "Bak dagens beste"];
+                    if (name === "count") {
+                      return [
+                        `${numericValue} stk (${Number(props?.payload?.pct ?? 0).toFixed(1)}%)`,
+                        props?.payload?.name === "Wet" ? "Wet" : "Clean",
+                      ];
                     }
-                    return [fmtSeconds(props?.payload?.seconds), "Tid"];
+                    return [String(value), String(name)];
                   }}
                 />
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.22)" strokeWidth={2} />
-                <Bar dataKey="gap" radius={[8, 8, 0, 0]}>
-                  {gapToWinnerData.map((entry, i) => (
-                    <Cell key={i} fill={entry.gap === 0 ? "#facc15" : getColor(entry.name)} />
+                <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                  {wetBreakdownData.map((entry, i) => (
+                    <Cell key={i} fill={entry.name === "Wet" ? "#38bdf8" : "#22c55e"} />
                   ))}
                 </Bar>
               </BarChart>
