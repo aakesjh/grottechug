@@ -41,36 +41,48 @@ attemptsRouter.post("/upsert", requireAdmin, async (req, res) => {
 
   const cleanNote = note?.trim() ? note.trim() : null;
 
-  let saved: any = null;
-  if (hasTime) {
-    saved = await prisma.attempt.upsert({
-      where: { participantId_sessionId: { participantId, sessionId } },
-      update: { seconds: seconds!, note: cleanNote },
-      create: { participantId, sessionId, seconds: seconds!, note: cleanNote }
-    });
-  }
-
   // Explicit violations array takes precedence; otherwise parse from note text
-  const codes = Array.isArray(violationCodes)
+  const parsedCodes = Array.isArray(violationCodes)
     ? violationCodes.map(c => c.toUpperCase()).filter(c => VALID_CODES.has(c))
     : parseRuleCodes(cleanNote);
+  const codes = Array.from(new Set(parsedCodes));
 
-  // Sync violations: delete old, recreate from codes
-  await prisma.violation.deleteMany({ where: { participantId, sessionId } });
+  const saved = await prisma.$transaction(async (tx) => {
+    let attempt: any = null;
 
-  if (codes.length > 0) {
-    const rules = await prisma.rule.findMany({ where: { code: { in: codes } } });
-    const ruleMap = Object.fromEntries(rules.map(r => [r.code, r]));
+    if (hasTime) {
+      attempt = await tx.attempt.upsert({
+        where: { participantId_sessionId: { participantId, sessionId } },
+        update: { seconds: seconds!, note: cleanNote },
+        create: { participantId, sessionId, seconds: seconds!, note: cleanNote }
+      });
+    }
 
-    for (const code of codes) {
-      const rule = ruleMap[code];
-      if (rule) {
-        await prisma.violation.create({
-          data: { participantId, sessionId, ruleCode: rule.code, crosses: rule.crosses, reason: cleanNote }
+    // Keep violation sync atomic with the attempt update to avoid duplicate rows on rapid saves.
+    await tx.violation.deleteMany({ where: { participantId, sessionId } });
+
+    if (codes.length > 0) {
+      const rules = await tx.rule.findMany({ where: { code: { in: codes } } });
+      const ruleMap = Object.fromEntries(rules.map(r => [r.code, r]));
+
+      for (const code of codes) {
+        const rule = ruleMap[code];
+        if (!rule) continue;
+
+        await tx.violation.create({
+          data: {
+            participantId,
+            sessionId,
+            ruleCode: rule.code,
+            crosses: rule.crosses,
+            reason: cleanNote,
+          }
         });
       }
     }
-  }
+
+    return attempt;
+  });
 
   res.json(saved ?? { participantId, sessionId, seconds: null });
 });

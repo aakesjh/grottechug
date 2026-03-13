@@ -1,5 +1,5 @@
 // ChugListPage.tsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
@@ -115,12 +115,13 @@ export function ChugListPage() {
 
   const [dirtyCells, setDirtyCells] = useState<Set<string>>(new Set());
   const [dirtySessionNote, setDirtySessionNote] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [sessionNote, setSessionNote] = useState("");
 
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  async function load() {
+  const load = useCallback(async () => {
     setData(null);
     
     const [resT, resV, resS] = await Promise.all([
@@ -146,9 +147,9 @@ export function ChugListPage() {
     setAllViolations(violationsJson);
 
     setEditSessionId(prev => (prev && json.columns.some(c => c.sessionId === prev) ? prev : null));
-  }
+  }, [semester]);
 
-  useEffect(() => { load(); }, [semester]);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     if (isAdmin) return;
@@ -290,50 +291,59 @@ export function ChugListPage() {
   }
 
   async function saveAll() {
-    if (!data || !editSessionId || !isAdmin) return;
+    if (!data || !editSessionId || !isAdmin || isSaving) return;
 
-    const sid = editSessionId;
-    const dirty = Array.from(dirtyCells);
+    setIsSaving(true);
 
-    for (const k of dirty) {
-      const [participantId, sessionId] = k.split("|");
-      if (sessionId !== sid) continue;
+    try {
+      const sid = editSessionId;
+      const dirty = Array.from(dirtyCells);
 
-      const secStr = (draftSeconds[participantId] ?? "").trim();
-      const violations = draftViolations[participantId] ?? [];
-      const seconds = secStr ? parseSeconds(secStr) : null;
-      const hasValidTime = seconds !== null && Number.isFinite(seconds) && seconds > 0;
+      for (const k of dirty) {
+        const [participantId, sessionId] = k.split("|");
+        if (sessionId !== sid) continue;
 
-      if (!hasValidTime && violations.length === 0 && !draftNote[participantId]?.trim()) continue;
-      if (secStr && !hasValidTime) continue;
+        const secStr = (draftSeconds[participantId] ?? "").trim();
+        const violations = draftViolations[participantId] ?? [];
+        const seconds = secStr ? parseSeconds(secStr) : null;
+        const hasValidTime = seconds !== null && Number.isFinite(seconds) && seconds > 0;
 
-      const note = (draftNote[participantId] ?? "").trim();
+        if (!hasValidTime && violations.length === 0 && !draftNote[participantId]?.trim()) continue;
+        if (secStr && !hasValidTime) continue;
 
-      await apiFetch("/api/attempts/upsert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          participantId,
-          sessionId: sid,
-          seconds: hasValidTime ? seconds : null,
-          note: note ? note : null,
-          violations
-        })
-      });
+        const note = (draftNote[participantId] ?? "").trim();
+
+        await apiFetch("/api/attempts/upsert", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            participantId,
+            sessionId: sid,
+            seconds: hasValidTime ? seconds : null,
+            note: note ? note : null,
+            violations
+          })
+        });
+      }
+
+      if (dirtySessionNote) {
+        await apiFetch(`/api/sessions/${sid}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note: sessionNote.trim() ? sessionNote.trim() : null })
+        });
+      }
+
+      await load();
+
+      setDirtyCells(new Set());
+      setDirtySessionNote(false);
+      setEditSessionId(null);
+    } catch (e) {
+      alert(`Kunne ikke lagre endringer.\n\n${String(e)}`);
+    } finally {
+      setIsSaving(false);
     }
-
-    if (dirtySessionNote) {
-      await apiFetch(`/api/sessions/${sid}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: sessionNote.trim() ? sessionNote.trim() : null })
-      });
-    }
-
-    await load();
-
-    setDirtyCells(new Set());
-    setDirtySessionNote(false);
   }
 
   const dirtyCount = dirtyCells.size + (dirtySessionNote ? 1 : 0);
@@ -397,7 +407,7 @@ export function ChugListPage() {
         setDirtySessionNote(false);
         await load();
 
-      } catch (e) {
+      } catch {
         alert("Nettverksfeil ved sletting.");
       }
     }
@@ -448,7 +458,9 @@ export function ChugListPage() {
             <>
               <span className="chuglist__pill chuglist__pill--warn">✏️ {fmtDDMMYYYY(editSession.dateISO)}</span>
               <span className="chuglist__pill">{dirtyCount} ulagret</span>
-              <button className="btn btnPrimary" onClick={saveAll} disabled={dirtyCount === 0}>Lagre</button>
+              <button className="btn btnPrimary" onClick={saveAll} disabled={dirtyCount === 0 || isSaving}>
+                {isSaving ? "Lagrer..." : "Lagre"}
+              </button>
               <button
                 className="btn"
                 onClick={() => {
