@@ -68,6 +68,22 @@ function KneelSVG() {
   );
 }
 
+function WheelSVG() {
+  return (
+    <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="90" r="46" fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth="2" />
+      <circle cx="100" cy="90" r="10" fill="color-mix(in srgb, var(--accent2) 18%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
+      <path d="M100 44 V136" stroke="var(--accent2)" strokeWidth="1.5" opacity="0.7" />
+      <path d="M54 90 H146" stroke="var(--accent2)" strokeWidth="1.5" opacity="0.7" />
+      <path d="M68 58 L132 122" stroke="var(--accent3)" strokeWidth="1.5" opacity="0.7" />
+      <path d="M68 122 L132 58" stroke="var(--accent3)" strokeWidth="1.5" opacity="0.7" />
+      <path d="M100 22 L114 44 H86 L100 22 Z" fill="var(--danger)" />
+      <circle cx="100" cy="90" r="3.5" fill="var(--text)" />
+      <text x="100" y="156" textAnchor="middle" fill="var(--muted)" fontSize="10" fontWeight="700">VENT PÅ TUR</text>
+    </svg>
+  );
+}
+
 function DrinkSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -181,6 +197,14 @@ const steps = [
   },
   {
     number: 2,
+    title: "Vent på tur",
+    description: "Hjulet bestemmer rekkefølgen, så vent til det er din tur.",
+    tip: null,
+    Illustration: WheelSVG,
+    accent: "purple",
+  },
+  {
+    number: 3,
     title: "Klar ved disken",
     description: "Gå ned på knærne ved disken og gjør deg klar.",
     tip: null,
@@ -188,7 +212,7 @@ const steps = [
     accent: "cyan",
   },
   {
-    number: 3,
+    number: 4,
     title: "Start chuggingen",
     description: "Sett koppen til munnen og begynn å drikke. Timeren starter når første dråpe treffer leppene dine.",
     tip: null,
@@ -196,7 +220,7 @@ const steps = [
     accent: "purple",
   },
   {
-    number: 4,
+    number: 5,
     title: "Hold alt inni munnen",
     description: "Drikk til du er ferdig. Hold så mye som mulig inni munnen for å unngå anmerkninger.",
     tip: "Søl = kryss! Hold leppene tett rundt koppen.",
@@ -204,7 +228,7 @@ const steps = [
     accent: "pink",
   },
   {
-    number: 5,
+    number: 6,
     title: "Sett ned koppen",
     description: "Når du er ferdig, sett koppen tilbake på disken. Timeren stopper når koppen treffer disken.",
     tip: "Tiden din blir gjennomsnittet av (minst) to målte tider.",
@@ -226,7 +250,7 @@ export function HowToPage() {
     <div className="howto">
       <div className="howto__hero">
         <h1 className="howto__title">Slik chugger du</h1>
-        <p className="howto__subtitle">Grottechug på 5 enkle steg</p>
+        <p className="howto__subtitle">Grottechug på 6 enkle steg</p>
       </div>
 
       <div className="howto__steps">
