@@ -33,6 +33,7 @@ type ViolationEntry = {
 };
 
 const PERF_CODES = ["MM", "W", "VW", "P", "T", "DNS", "DNF", "VOMIT", "KPR"] as const;
+const WETNESS_CODES = new Set<string>(["MM", "W", "VW"]);
 
 type SortKey =
   | { kind: "none" }
@@ -596,7 +597,10 @@ export function ChugListPage() {
                             const cur = prev[r.participantId] ?? [];
                             const next = cur.includes(code)
                               ? cur.filter(c => c !== code)
-                              : [...cur, code];
+                              : WETNESS_CODES.has(code)
+                                // Allow only one wetness mark at a time (MM/W/VW).
+                                ? [...cur.filter(c => !WETNESS_CODES.has(c)), code]
+                                : [...cur, code];
                             return { ...prev, [r.participantId]: next };
                           });
                           markDirty(r.participantId, editSession.sessionId);
