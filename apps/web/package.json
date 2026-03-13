@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "better-auth": "^1.5.4",
     "canvas-confetti": "^1.9.4",
     "react": "^19.2.0",
