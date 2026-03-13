@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type ThemeName = "grotta" | "skifer";
+export type ThemeName = "grotta" | "skifer" | "lys";
 
 export type ThemeContextValue = {
   theme: ThemeName;

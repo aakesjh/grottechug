@@ -131,6 +131,50 @@
   --chart-tooltip-border: rgba(198, 179, 149, 0.16);
 }
 
+/* Light theme: daylight surface */
+:root[data-theme="lys"] {
+  --bg: #e7edf5;
+
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel2: rgba(255, 255, 255, 0.88);
+
+  --text: rgba(17, 24, 39, 0.94);
+  --muted: rgba(55, 65, 81, 0.78);
+
+  --accent: #2157a5;
+  --accent2: #0f766e;
+  --accent3: #b45309;
+  --accent4: #9d174d;
+  --danger: #dc2626;
+
+  --border: rgba(30, 41, 59, 0.16);
+  --shadow: 0 14px 36px rgba(15, 23, 42, 0.14);
+
+  --page-backdrop:
+    radial-gradient(circle at 10% 5%, rgba(96, 165, 250, 0.30), transparent 26%),
+    radial-gradient(circle at 90% 0%, rgba(110, 231, 183, 0.24), transparent 24%),
+    linear-gradient(rgba(248, 252, 255, 0.94), rgba(231, 237, 245, 0.96)),
+    url("/gnottene.png");
+
+  --nav-bg: rgba(248, 252, 255, 0.90);
+  --nav-hero-bg: rgba(248, 252, 255, 0.78);
+  --nav-drawer-bg: rgba(248, 252, 255, 0.98);
+  --dropdown-bg: rgba(255, 255, 255, 0.98);
+  --surface-elevated: rgba(255, 255, 255, 0.96);
+  --surface-elevated-solid: rgba(255, 255, 255, 0.99);
+  --footer-border: rgba(30, 41, 59, 0.12);
+  --logo-glow-strong: rgba(33, 87, 165, 0.24);
+  --logo-glow-soft: rgba(15, 118, 110, 0.18);
+  --theme-toggle-bg: rgba(255, 255, 255, 0.78);
+  --theme-toggle-border: rgba(30, 41, 59, 0.18);
+  --theme-toggle-active-ink: #ffffff;
+
+  --tooltip-bg: rgba(255, 255, 255, 0.96);
+  --tooltip-bg-solid: rgba(255, 255, 255, 0.99);
+  --chart-tooltip-bg: rgba(255, 255, 255, 0.98);
+  --chart-tooltip-border: rgba(30, 41, 59, 0.18);
+}
+
 :root {
   --accent-subtle: color-mix(in srgb, var(--accent) 15%, transparent);
   --accent-subtle-strong: color-mix(in srgb, var(--accent) 19%, transparent);

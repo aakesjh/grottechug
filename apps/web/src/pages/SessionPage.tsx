@@ -575,7 +575,7 @@ export function SessionPage() {
             style={{
               fontSize: "2.2rem",
               fontWeight: 900,
-              color: sessionStats.countRank === 1 ? "#facc15" : "white",
+              color: sessionStats.countRank === 1 ? "#facc15" : "var(--text)",
               textShadow: sessionStats.countRank === 1 ? "0 0 15px rgba(250,204,21,0.5)" : "none",
             }}
           >
@@ -615,7 +615,7 @@ export function SessionPage() {
               style={{
                 fontSize: "1.4rem",
                 fontWeight: 900,
-                color: isAllTimeFastest ? "#fef08a" : "white",
+                color: isAllTimeFastest ? "#fef08a" : "var(--text)",
                 textShadow: isAllTimeFastest ? "0 0 14px rgba(250,204,21,0.35)" : "none",
               }}
             >
@@ -629,7 +629,7 @@ export function SessionPage() {
               style={{
                 fontSize: "1rem",
                 fontWeight: 700,
-                color: isAllTimeFastest ? "#fef08a" : "white",
+                color: isAllTimeFastest ? "#fef08a" : "var(--text)",
               }}
             >
               {sessionStats.fastest.seconds.toFixed(2)}s
@@ -670,7 +670,7 @@ export function SessionPage() {
               style={{
                 fontSize: "1.4rem",
                 fontWeight: 900,
-                color: isAllTimeSlowest ? "#fca5a5" : "white",
+                color: isAllTimeSlowest ? "#fca5a5" : "var(--text)",
                 textShadow: isAllTimeSlowest ? "0 0 14px rgba(239,68,68,0.28)" : "none",
               }}
             >
@@ -684,7 +684,7 @@ export function SessionPage() {
               style={{
                 fontSize: "1rem",
                 fontWeight: 700,
-                color: isAllTimeSlowest ? "#fecaca" : "white",
+                color: isAllTimeSlowest ? "#fecaca" : "var(--text)",
               }}
             >
               {sessionStats.slowest.seconds.toFixed(2)}s

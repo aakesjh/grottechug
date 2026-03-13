@@ -4,6 +4,10 @@ import { ThemeContext, type ThemeName } from "./useTheme";
 const STORAGE_KEY = "grottechug-theme";
 const DEFAULT_THEME: ThemeName = "grotta";
 
+function isThemeName(value: string | null): value is ThemeName {
+  return value === "grotta" || value === "skifer" || value === "lys";
+}
+
 function resolveInitialTheme(): ThemeName {
   if (typeof window === "undefined") {
     return DEFAULT_THEME;
@@ -17,7 +21,7 @@ function resolveInitialTheme(): ThemeName {
     savedTheme = null;
   }
 
-  const theme = savedTheme === "skifer" ? "skifer" : DEFAULT_THEME;
+  const theme = isThemeName(savedTheme) ? savedTheme : DEFAULT_THEME;
 
   document.documentElement.dataset.theme = theme;
   return theme;
