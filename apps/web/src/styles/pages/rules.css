@@ -195,6 +195,22 @@
     display: table-row;
   }
 
+  .rules__expand-content,
+  .rules__expand-item,
+  .rules__expand-item b,
+  .rules__expand-item .u-text-muted {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .rules__expand-item {
+    margin-bottom: 6px;
+  }
+
+  .rules__expand-item .badge {
+    font-size: 11px;
+  }
+
   .rules__expand-row td {
     padding: 0 10px 10px;
     border-bottom: 1px solid var(--border);
