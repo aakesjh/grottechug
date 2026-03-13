@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
@@ -11,6 +12,7 @@ type Rule = {
 };
 
 type SummaryItem = {
+  icon: "time" | "place" | "move" | "order";
   label: string;
   value: string;
   note?: string;
@@ -41,26 +43,73 @@ const RULE_COLORS: Record<string, string> = {
 
 const SUMMARY_ITEMS: SummaryItem[] = [
   {
+    icon: "time",
     label: "Tid",
     value: "Fredag 15:15",
     note: "Med mindre annet avtales.",
   },
   {
+    icon: "place",
     label: "Sted",
     value: "Geogrotta",
     href: "https://link.mazemap.com/TrTpAZMq",
+    note: "Med mindre annet avtales.",
   },
   {
+    icon: "move",
     label: "Flytting",
     value: "2/3 flertall",
     note: "Kreves for å flytte bort fra fredag.",
   },
   {
+    icon: "order",
     label: "Rekkefølge",
     value: "Hjulet",
     note: "Helst Tobias A. sin PC.",
   },
 ];
+
+function SummarySymbol({ icon }: { icon: SummaryItem["icon"] }) {
+  if (icon === "time") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 8v4l2.8 1.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (icon === "place") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 20s-5-4.6-5-8.6A5 5 0 0 1 17 11.4C17 15.4 12 20 12 20Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        <circle cx="12" cy="11" r="1.9" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+
+  if (icon === "move") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5 8h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M12 5l3 3-3 3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M19 16H9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M12 13l-3 3 3 3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 7h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M5 12h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M5 17h7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="18" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="15" cy="17" r="1.5" fill="currentColor" />
+      <circle cx="20" cy="7" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
 
 const RULE_SECTIONS: RuleSection[] = [
   {
@@ -364,22 +413,35 @@ export function RulesPage() {
           </div>
 
           <Link to="/howto" className="rules__heroLink">
-            Hvordan chugge? Se vår guide
+            <span className="rules__heroLinkLabel">Hvordan chugge?</span>
+            <span className="rules__heroLinkHint">Se guide</span>
           </Link>
         </div>
 
         <div className="rules__summaryGrid">
           {SUMMARY_ITEMS.map((item) => (
             <article key={item.label} className="rules__summaryCard">
-              <span className="rules__summaryLabel">{item.label}</span>
+              <div className="rules__summaryHead">
+                <span className="rules__summaryIcon" aria-hidden="true">
+                  <SummarySymbol icon={item.icon} />
+                </span>
+                <span className="rules__summaryLabel">{item.label}</span>
+              </div>
               {item.href ? (
                 <a
-                  className="rules__summaryValue rules__summaryValueLink"
+                  className={`rules__summaryValue rules__summaryValueLink ${item.icon === "place" ? "rules__summaryValueLink--place" : ""}`}
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {item.value}
+                  <span className={item.icon === "place" ? "rules__summaryPlaceText" : undefined}>{item.value}</span>
+                  {item.icon === "place" && (
+                    <img
+                      className="rules__summaryPlaceLogo"
+                      src="/mazemap-logo.png"
+                      alt="MazeMap"
+                    />
+                  )}
                 </a>
               ) : (
                 <div className="rules__summaryValue">{item.value}</div>
@@ -437,10 +499,12 @@ export function RulesPage() {
             !systemRulesError &&
             crossRules.map((rule) => {
             const color = RULE_COLORS[rule.code] ?? "var(--muted)";
+            const rowStyle = { "--rule-color": color } as CSSProperties;
             return (
               <article
                 key={rule.code}
                 className="rules__crossRow"
+                style={rowStyle}
                 role="listitem"
               >
                 <div className="rules__crossCode">
