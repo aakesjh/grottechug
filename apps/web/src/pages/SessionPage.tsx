@@ -612,7 +612,7 @@ export function SessionPage() {
           </div>
           <div className="session__stat-meta session__stat-meta--strong">
             {sessionStats.wetRateRank > 0
-              ? `#${sessionStats.wetRateRank}/${sessionStats.totalSessionsWithWetRate} mest wet-rate`
+              ? `#${sessionStats.wetRateRank}/${sessionStats.totalSessionsWithWetRate} høyest wet-rate`
               : `${wetBreakdownData[0]?.count ?? 0} av ${sessionStats.participantCount} hadde wet-anmerkning`}
           </div>
         </div>
