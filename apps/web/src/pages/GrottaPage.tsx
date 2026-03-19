@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { LoadingCard } from "../components/LoadingCard";
 import { apiFetch } from "../lib/api";
 
 type Person = {
@@ -37,44 +38,65 @@ function getInitials(name: string) {
 export function GrottaPage() {
   const nav = useNavigate();
   const [people, setPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showGuests, setShowGuests] = useState(false);
   const [guestSortMode, setGuestSortMode] = useState<GuestSortMode>("alpha");
   const [chugCountById, setChugCountById] = useState<Record<string, number>>({});
   const [bestTimeById, setBestTimeById] = useState<Record<string, number | null>>({});
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
-      const [peopleRes, statsRes] = await Promise.all([
-        apiFetch("/api/participants?includeGuests=true"),
-        apiFetch("/api/stats/table?semester=all")
-      ]);
+      try {
+        setLoading(true);
+        setError(null);
+        const [peopleRes, statsRes] = await Promise.all([
+          apiFetch("/api/participants?includeGuests=true"),
+          apiFetch("/api/stats/table?semester=all")
+        ]);
 
-      const peopleJson: Person[] = await peopleRes.json();
-      const statsJson: TableResponse = await statsRes.json();
-
-      setPeople(peopleJson);
-
-      const counts: Record<string, number> = {};
-      for (const personId of Object.keys(statsJson.cells ?? {})) {
-        const rowCells = statsJson.cells[personId] ?? {};
-        let count = 0;
-
-        for (const sessionId of Object.keys(rowCells)) {
-          const cell = rowCells[sessionId];
-          if (cell?.seconds != null) count += 1;
+        if (!peopleRes.ok || !statsRes.ok) {
+          throw new Error("Kunne ikke laste grotta-data");
         }
 
-        counts[personId] = count;
-      }
+        const peopleJson: Person[] = await peopleRes.json();
+        const statsJson: TableResponse = await statsRes.json();
 
-      setChugCountById(counts);
+        if (cancelled) return;
+        setPeople(peopleJson);
 
-      const bests: Record<string, number | null> = {};
-      for (const row of statsJson.rows ?? []) {
-        bests[row.participantId] = row.bestOverall;
+        const counts: Record<string, number> = {};
+        for (const personId of Object.keys(statsJson.cells ?? {})) {
+          const rowCells = statsJson.cells[personId] ?? {};
+          let count = 0;
+
+          for (const sessionId of Object.keys(rowCells)) {
+            const cell = rowCells[sessionId];
+            if (cell?.seconds != null) count += 1;
+          }
+
+          counts[personId] = count;
+        }
+
+        setChugCountById(counts);
+
+        const bests: Record<string, number | null> = {};
+        for (const row of statsJson.rows ?? []) {
+          bests[row.participantId] = row.bestOverall;
+        }
+        setBestTimeById(bests);
+      } catch {
+        if (!cancelled) setError("Kunne ikke hente Grotta akkurat nå.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setBestTimeById(bests);
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const regularCards = useMemo(() => {
@@ -131,6 +153,24 @@ export function GrottaPage() {
       </button>
     );
   };
+
+  if (loading) {
+    return (
+      <LoadingCard
+        title="Laster grotta..."
+        subtitle="Henter medlemmer og chug-statistikk"
+        className="grotta__loading"
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card grotta__loading" role="alert">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="grotta">

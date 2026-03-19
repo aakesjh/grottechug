@@ -6,6 +6,10 @@
   padding-bottom: 60px;
 }
 
+.grotta__loading {
+  margin-top: 12px;
+}
+
 /* --- Hero Header --- */
 .grotta__hero {
   display: flex;

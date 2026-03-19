@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Loading Card
+   ========================================================================== */
+
+.loading-card {
+  padding: 34px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.loading-card--compact {
+  padding: 20px 12px;
+}
+
+.loading-card__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(148, 163, 184, 0.35);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: loading-card-spin 0.9s linear infinite;
+}
+
+.loading-card__title {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.loading-card__subtitle {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.loading-card__skeletons {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.loading-card__skeleton {
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(100, 116, 139, 0.2) 0%,
+    rgba(148, 163, 184, 0.42) 50%,
+    rgba(100, 116, 139, 0.2) 100%
+  );
+  background-size: 180% 100%;
+  animation: loading-card-shimmer 1.2s ease-in-out infinite;
+}
+
+.loading-card__skeleton--lg {
+  height: 16px;
+}
+
+.loading-card__skeleton--md {
+  width: 100%;
+}
+
+.loading-card__skeleton--sm {
+  width: 64%;
+}
+
+@keyframes loading-card-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-card-shimmer {
+  0% {
+    background-position: 180% 0;
+  }
+  100% {
+    background-position: -180% 0;
+  }
+}

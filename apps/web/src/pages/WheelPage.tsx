@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import confetti from "canvas-confetti";
+import { LoadingCard } from "../components/LoadingCard";
 import { WheelCanvas } from "../components/WheelCanvas";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
@@ -25,6 +26,7 @@ function getInitials(name: string) {
 export function WheelPage() {
   const { isAdmin } = useAuthSession();
   const [regulars, setRegulars] = useState<Participant[]>([]);
+  const [loadingRegulars, setLoadingRegulars] = useState(true);
   const [selectedGuests, setSelectedGuests] = useState<Participant[]>([]);
   const [present, setPresent] = useState<Record<string, boolean>>({});
 
@@ -67,6 +69,7 @@ export function WheelPage() {
   // Last inn faste deltakere
   async function loadRegulars() {
     try {
+      setLoadingRegulars(true);
       const res = await apiFetch(`/api/participants?includeGuests=false`);
       const data: Participant[] = await res.json();
       setRegulars(data);
@@ -80,6 +83,8 @@ export function WheelPage() {
       });
     } catch (error) {
       console.error("Kunne ikke laste deltakere:", error);
+    } finally {
+      setLoadingRegulars(false);
     }
   }
 
@@ -156,8 +161,9 @@ export function WheelPage() {
       } catch (error) {
         console.error("Feil ved søk:", error);
       } finally {
-        if (!alive) return;
-        setGuestLoading(false);
+        if (alive) {
+          setGuestLoading(false);
+        }
       }
     }, 200);
     return () => {
@@ -442,6 +448,16 @@ export function WheelPage() {
     : Math.min(windowSize.w - 48, 480);
 
   const presentCount = regulars.filter(p => !!present[p.id]).length;
+
+  if (loadingRegulars) {
+    return (
+      <LoadingCard
+        title="Laster hjulet..."
+        subtitle="Henter faste medlemmer"
+        className="wheel-page__loading"
+      />
+    );
+  }
 
   return (
     <div className="wheel-page">

@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import Cropper from "react-easy-crop";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
+import { LoadingCard } from "../components/LoadingCard";
 
 type CropArea = { x: number; y: number; width: number; height: number };
 
@@ -138,7 +139,15 @@ function PendingTab() {
     }
   }
 
-  if (loading) return <p>Laster innmeldinger…</p>;
+  if (loading) {
+    return (
+      <LoadingCard
+        className="admin__loading"
+        title="Laster innmeldinger..."
+        subtitle="Henter ventende saker"
+      />
+    );
+  }
 
   return (
     <div className="admin__grid">
@@ -356,7 +365,15 @@ function ParticipantsTab() {
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <p>Laster deltakere…</p>;
+  if (loading) {
+    return (
+      <LoadingCard
+        className="admin__loading"
+        title="Laster deltakere..."
+        subtitle="Henter deltakerliste"
+      />
+    );
+  }
 
   return (
     <div className="admin__grid">
@@ -584,7 +601,13 @@ function HistoryTab() {
         </button>
       </div>
 
-      {loading && <p>Laster…</p>}
+      {loading && (
+        <LoadingCard
+          className="admin__loading"
+          title="Laster historikk..."
+          subtitle="Henter tidligere vedtak"
+        />
+      )}
 
       {!loading && submissions.length === 0 && (
         <p className="u-text-muted">Ingen {filter === "approved" ? "godkjente" : "avviste"} innmeldinger.</p>

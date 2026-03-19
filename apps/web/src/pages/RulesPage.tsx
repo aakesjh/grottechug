@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
+import { LoadingCard } from "../components/LoadingCard";
 
 type Rule = {
   code: string;
@@ -472,7 +473,14 @@ export function RulesPage() {
           {loadingSystemRules && (
             <article className="rules__crossRow" role="listitem">
               <div className="rules__crossBody">
-                <p className="rules__crossText">Laster regler...</p>
+                <LoadingCard
+                  card={false}
+                  compact
+                  className="rules__inline-loading"
+                  title="Laster regler..."
+                  subtitle="Henter kryssregler"
+                  skeletonPattern={["md", "sm"]}
+                />
               </div>
             </article>
           )}

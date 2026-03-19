@@ -6,6 +6,10 @@
   padding-bottom: 60px;
 }
 
+.leaderboard__loading {
+  margin-top: 12px;
+}
+
 /* --- Podium (medal stand) --- */
 .podium {
   display: flex;

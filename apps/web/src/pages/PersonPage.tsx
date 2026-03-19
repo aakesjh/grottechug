@@ -5,6 +5,7 @@ import {
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { BadgeMedal } from "../components/BadgeMedal";
+import { LoadingCard } from "../components/LoadingCard";
 
 type Semester = "2026V" | "2025H" | "all";
 
@@ -163,7 +164,15 @@ export function PersonPage() {
     );
   }, [data, compareData]);
 
-  if (!data) return <div className="card u-text-center person__loading">Laster data for profil...</div>;
+  if (!data) {
+    return (
+      <LoadingCard
+        className="person__loading"
+        title="Laster profil..."
+        subtitle="Henter statistikk og historikk"
+      />
+    );
+  }
 
   const p = data.participant;
   const bestClean = data.stats.bestClean;

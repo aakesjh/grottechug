@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "../components/Avatar";
+import { LoadingCard } from "../components/LoadingCard";
 import { apiFetch } from "../lib/api";
 
 type Semester = "2026V" | "2025H" | "all";
@@ -93,15 +94,29 @@ export function LeaderboardPage() {
   const nav = useNavigate();
   const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<Resp | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [showGuests, setShowGuests] = useState<boolean>(false);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
-      const res = await apiFetch(`/api/leaderboard?semester=${semester}`);
-      const json: Resp = await res.json();
-      setData(json);
+      try {
+        setData(null);
+        setError(null);
+        const res = await apiFetch(`/api/leaderboard?semester=${semester}`);
+        if (!res.ok) throw new Error("Kunne ikke hente topplisten");
+        const json: Resp = await res.json();
+        if (!cancelled) setData(json);
+      } catch {
+        if (!cancelled) setError("Kunne ikke hente topplisten akkurat nå.");
+      }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [semester]);
 
   const rows = data?.rows ?? [];
@@ -127,6 +142,24 @@ export function LeaderboardPage() {
     if (slowest === fastest) return 100;
     return 100 - ((time - fastest) / (slowest - fastest)) * 80;
   };
+
+  if (!data && !error) {
+    return (
+      <LoadingCard
+        title="Laster toppliste..."
+        subtitle="Henter tider og rangering"
+        className="leaderboard__loading"
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card leaderboard__loading" role="alert">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="leaderboard">

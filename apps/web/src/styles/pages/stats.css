@@ -9,6 +9,10 @@
   margin-bottom: 20px;
 }
 
+.stats__loading {
+  margin-top: 10px;
+}
+
 @media (min-width: 1500px) {
   .stats__stat-grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));

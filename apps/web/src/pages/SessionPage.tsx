@@ -15,6 +15,7 @@ import {
   Pie,
 } from "recharts";
 import { apiFetch } from "../lib/api";
+import { LoadingCard } from "../components/LoadingCard";
 
 type SessionCol = { sessionId: string; dateISO: string; note?: string | null; id?: string };
 type CellData = { seconds: number | null; note: string | null };
@@ -494,8 +495,12 @@ export function SessionPage() {
 
   if (loading) {
     return (
-      <div className="container u-text-center session__loading">
-        Laster dagens resultater...
+      <div className="container session__loading">
+        <LoadingCard
+          className="session__loading-card"
+          title="Laster dagens resultater..."
+          subtitle="Henter tider, kryss og utmerkelser"
+        />
       </div>
     );
   }

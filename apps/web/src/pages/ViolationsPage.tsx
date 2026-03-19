@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
+import { LoadingCard } from "../components/LoadingCard";
 
 type Semester = "2026V" | "2025H" | "all";
 
@@ -127,7 +128,13 @@ export function ViolationsPage() {
 
       <div className="card u-mt-md violations__card">
         {!detail ? (
-          <p>Laster…</p>
+          <LoadingCard
+            card={false}
+            compact
+            className="violations__inline-loading"
+            title="Laster..."
+            subtitle="Henter kryssoversikt"
+          />
         ) : (
           <div className="tableWrap violations__tableWrap">
             <table className="violations__table">

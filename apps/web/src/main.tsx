@@ -16,6 +16,7 @@ import "./styles/components/modal.css";
 import "./styles/components/avatar.css";
 import "./styles/components/footer.css";
 import "./styles/components/theme-toggle.css";
+import "./styles/components/loading-card.css";
 
 /* --- Pages --- */
 import "./styles/pages/home.css";

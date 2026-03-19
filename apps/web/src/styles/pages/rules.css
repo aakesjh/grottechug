@@ -301,6 +301,16 @@
   pointer-events: none;
 }
 
+.rules__inline-loading {
+  width: 100%;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.rules__inline-loading .loading-card__skeletons {
+  width: min(340px, 100%);
+}
+
 .rules__crossSection > * {
   position: relative;
   z-index: 1;

@@ -4,6 +4,7 @@ import {
   XAxis, YAxis, Tooltip, CartesianGrid, ScatterChart, Scatter, Cell, Legend
 } from "recharts";
 import { apiFetch } from "../lib/api";
+import { LoadingCard } from "../components/LoadingCard";
 
 type Semester = "all" | "2026V" | "2025H";
 
@@ -399,7 +400,11 @@ export function StatsDashboardPage() {
       </div>
 
       {!data || !tableData ? (
-        <div className="card u-text-center u-p-xl">Laster statistikk...</div>
+        <LoadingCard
+          className="stats__loading"
+          title="Laster statistikk..."
+          subtitle="Henter dashboard, grafer og tabell"
+        />
       ) : (
         <>
           {/* DE STATS-BOKSENE ØVERST */}

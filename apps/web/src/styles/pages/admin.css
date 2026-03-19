@@ -76,6 +76,10 @@
   gap: 16px;
 }
 
+.admin__loading {
+  margin-top: 4px;
+}
+
 /* --- Submission cards (pending + history) --- */
 
 .admin__submission-card,

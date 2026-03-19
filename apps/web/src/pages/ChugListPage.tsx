@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
+import { LoadingCard } from "../components/LoadingCard";
 
 type Semester = "2026V" | "2025H" | "all";
 
@@ -664,7 +665,13 @@ export function ChugListPage() {
       {/* Table view */}
       <div className="card chuglist__table-card">
         {!data ? (
-          <p>Laster…</p>
+          <LoadingCard
+            card={false}
+            compact
+            className="chuglist__inline-loading"
+            title="Laster..."
+            subtitle="Henter chuggeliste"
+          />
         ) : (
           <div className="tableWrap">
             <table className="chuglist__table">

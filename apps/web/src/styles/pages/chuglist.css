@@ -97,6 +97,10 @@
   margin-top: 0;
 }
 
+.chuglist__inline-loading {
+  min-height: 180px;
+}
+
 /* --- Editor Card --- */
 .chuglist__editor-card {
   margin-bottom: 14px;

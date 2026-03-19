@@ -7,6 +7,10 @@
   padding-bottom: 40px;
 }
 
+.wheel-page__loading {
+  margin-top: 12px;
+}
+
 /* --- Hero Header --- */
 .wheel-page__hero {
   display: flex;
