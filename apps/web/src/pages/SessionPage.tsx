@@ -48,6 +48,7 @@ type AttemptStat = {
   projected: number | null;
   diffPb: number | null;
   diffProjected: number | null;
+  diffProjectedPct: number | null;
   lastTime: number | null;
 };
 
@@ -80,14 +81,6 @@ const WET_CODES = new Set(["W", "VW", "MM", "P", "T"]);
 
 const FALLBACK_PIE_COLOR = "#a8a29e";
 
-const TOOLTIP_STYLE = {
-  background: "rgba(15, 23, 42, 0.98)",
-  border: "1px solid rgba(148, 163, 184, 0.22)",
-  borderRadius: 14,
-  boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
-  color: "#f8fafc",
-};
-
 function getColor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -109,6 +102,11 @@ function fmtSeconds(value: number | null | undefined) {
   return `${value.toFixed(2)}s`;
 }
 
+function fmtAwardTime(value: number | null | undefined) {
+  if (value == null || Number.isNaN(value)) return "–";
+  return `${value.toFixed(2)}s`;
+}
+
 function getRuleLabel(code: string) {
   const labels: Record<string, string> = {
     DNS: "Did not start",
@@ -122,6 +120,10 @@ function getRuleLabel(code: string) {
     KPR: "Klage på regel",
   };
   return labels[code] || code;
+}
+
+function ruleCodeClass(code: string) {
+  return `session__rule-code--${code.trim().toLowerCase()}`;
 }
 
 const CustomBarLabel = (props: any) => {
@@ -156,6 +158,38 @@ const CustomBarLabel = (props: any) => {
     </g>
   );
 };
+
+type AwardTimeCompareProps = {
+  current: number | null | undefined;
+  reference: number | null | undefined;
+  referenceLabel: string;
+  referenceTone?: "accent" | "danger" | "muted";
+  compactReference?: boolean;
+};
+
+function AwardTimeCompare({
+  current,
+  reference,
+  referenceLabel,
+  referenceTone = "muted",
+  compactReference = false,
+}: AwardTimeCompareProps) {
+  return (
+    <div
+      className="session__award-time-compare"
+      title={`Faktisk tid / ${referenceLabel}`}
+    >
+      <span className="session__award-time-current">{fmtAwardTime(current)}</span>
+      <span className="session__award-time-sep">/</span>
+      <span
+        className={`session__award-time-reference session__award-time-reference--${referenceTone} ${compactReference ? "session__award-time-reference--compact" : ""}`}
+      >
+        {fmtAwardTime(reference)}
+      </span>
+      <span className="session__award-time-hint">Faktisk tid / {referenceLabel}</span>
+    </div>
+  );
+}
 
 export function SessionPage() {
   const { id } = useParams();
@@ -332,6 +366,10 @@ export function SessionPage() {
         projected,
         diffPb: pbBefore !== null ? cell.seconds - pbBefore : null,
         diffProjected: projected !== null ? cell.seconds - projected : null,
+        diffProjectedPct:
+          projected !== null && projected > 0
+            ? ((cell.seconds - projected) / projected) * 100
+            : null,
         lastTime,
       });
 
@@ -456,7 +494,7 @@ export function SessionPage() {
 
   if (loading) {
     return (
-      <div className="container u-text-center" style={{ paddingTop: 100 }}>
+      <div className="container u-text-center session__loading">
         Laster dagens resultater...
       </div>
     );
@@ -464,7 +502,7 @@ export function SessionPage() {
 
   if (!sessionStats) {
     return (
-      <div className="container u-text-center" style={{ paddingTop: 100 }}>
+      <div className="container u-text-center session__loading">
         Fant ikke denne chugge-dagen.
       </div>
     );
@@ -479,10 +517,12 @@ export function SessionPage() {
         )
       : null;
 
+  const validProjectedPct = sessionStats.attempts.filter((a) => a.diffProjectedPct !== null);
+
   const worstProjected =
-    validProjected.length > 0
-      ? validProjected.reduce((prev, curr) =>
-          curr.diffProjected! > prev.diffProjected! ? curr : prev
+    validProjectedPct.length > 0
+      ? validProjectedPct.reduce((prev, curr) =>
+          curr.diffProjectedPct! > prev.diffProjectedPct! ? curr : prev
         )
       : null;
 
@@ -635,36 +675,16 @@ export function SessionPage() {
 
         {sessionStats.fastest && (
           <div
-            className="card"
-            style={{
-              textAlign: "center",
-              padding: "20px 10px",
-              ...(isAllTimeFastest
-                ? {
-                    border: "2px solid rgba(250, 204, 21, 0.85)",
-                    background: "linear-gradient(180deg, rgba(250,204,21,0.12), rgba(255,255,255,0.02))",
-                    boxShadow: "0 0 24px rgba(250, 204, 21, 0.18)",
-                  }
-                : {}),
-            }}
+            className={`card session__highlight-card ${isAllTimeFastest ? "session__highlight-card--alltime-fast" : ""}`}
           >
             <div
-              style={{
-                color: isAllTimeFastest ? "#facc15" : "#10b981",
-                fontSize: "0.85rem",
-                fontWeight: 700,
-              }}
+              className={`session__highlight-label ${isAllTimeFastest ? "session__highlight-label--alltime-fast" : "session__highlight-label--fast"}`}
             >
               {isAllTimeFastest ? "🏆 Raskest i dag • All-time rekord" : "⚡ Raskest i dag"}
             </div>
 
             <div
-              style={{
-                fontSize: "1.4rem",
-                fontWeight: 900,
-                color: isAllTimeFastest ? "#fef08a" : "var(--text)",
-                textShadow: isAllTimeFastest ? "0 0 14px rgba(250,204,21,0.35)" : "none",
-              }}
+              className={`session__highlight-name ${isAllTimeFastest ? "session__highlight-name--alltime-fast" : ""}`}
             >
               <PersonName
                 personId={sessionStats.fastest.participantId}
@@ -673,16 +693,12 @@ export function SessionPage() {
             </div>
 
             <div
-              style={{
-                fontSize: "1rem",
-                fontWeight: 700,
-                color: isAllTimeFastest ? "#fef08a" : "var(--text)",
-              }}
+              className={`session__highlight-time ${isAllTimeFastest ? "session__highlight-time--alltime-fast" : ""}`}
             >
               {sessionStats.fastest.seconds.toFixed(2)}s
             </div>
 
-            <div style={{ fontSize: "0.8rem", opacity: 0.65, marginTop: 4 }}>
+            <div className="session__highlight-meta">
               #{sessionStats.fastestGlobalRank}/{sessionStats.totalHistoricalAttempts} raskeste tid noensinne
             </div>
           </div>
@@ -690,36 +706,16 @@ export function SessionPage() {
 
         {sessionStats.slowest && (
           <div
-            className="card"
-            style={{
-              textAlign: "center",
-              padding: "20px 10px",
-              ...(isAllTimeSlowest
-                ? {
-                    border: "2px solid rgba(239, 68, 68, 0.8)",
-                    background: "linear-gradient(180deg, rgba(239,68,68,0.12), rgba(255,255,255,0.02))",
-                    boxShadow: "0 0 24px rgba(239, 68, 68, 0.16)",
-                  }
-                : {}),
-            }}
+            className={`card session__highlight-card ${isAllTimeSlowest ? "session__highlight-card--alltime-slow" : ""}`}
           >
             <div
-              style={{
-                color: isAllTimeSlowest ? "#f87171" : "var(--danger)",
-                fontSize: "0.85rem",
-                fontWeight: 700,
-              }}
+              className={`session__highlight-label ${isAllTimeSlowest ? "session__highlight-label--alltime-slow" : "session__highlight-label--slow"}`}
             >
               {isAllTimeSlowest ? "💀 Tregest i dag • All-time bunnrekord" : "🐢 Tregest i dag"}
             </div>
 
             <div
-              style={{
-                fontSize: "1.4rem",
-                fontWeight: 900,
-                color: isAllTimeSlowest ? "#fca5a5" : "var(--text)",
-                textShadow: isAllTimeSlowest ? "0 0 14px rgba(239,68,68,0.28)" : "none",
-              }}
+              className={`session__highlight-name ${isAllTimeSlowest ? "session__highlight-name--alltime-slow" : ""}`}
             >
               <PersonName
                 personId={sessionStats.slowest.participantId}
@@ -728,16 +724,12 @@ export function SessionPage() {
             </div>
 
             <div
-              style={{
-                fontSize: "1rem",
-                fontWeight: 700,
-                color: isAllTimeSlowest ? "#fecaca" : "var(--text)",
-              }}
+              className={`session__highlight-time ${isAllTimeSlowest ? "session__highlight-time--alltime-slow" : ""}`}
             >
               {sessionStats.slowest.seconds.toFixed(2)}s
             </div>
 
-            <div style={{ fontSize: "0.8rem", opacity: 0.65, marginTop: 4 }}>
+            <div className="session__highlight-meta">
               #{sessionStats.slowestGlobalRank}/{sessionStats.totalHistoricalAttempts} tregeste tid noensinne
             </div>
           </div>
@@ -746,120 +738,83 @@ export function SessionPage() {
 
       <div className="session__award-grid">
         {bestProjected && bestProjected.diffProjected! < 0 && (
-          <div
-            className="card"
-            style={{
-              padding: "16px",
-              border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--accent)",
-                marginBottom: 6,
-                fontWeight: "bold",
-              }}
-            >
+          <div className="card session__award-card session__award-card--over">
+            <div className="session__award-title session__award-title--over">
               📈 Overgikk Forventningene
             </div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900 }}>
+            <div className="session__award-name">
               <PersonName personId={bestProjected.participantId} name={bestProjected.name} />
             </div>
-            <div style={{ fontSize: "0.9rem", color: "var(--muted)", margin: "4px 0" }}>
-              Faktisk tid: <b>{bestProjected.seconds.toFixed(2)}s</b>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "#10b981" }}>
+            <AwardTimeCompare
+              current={bestProjected.seconds}
+              reference={bestProjected.projected}
+              referenceLabel="Projisert"
+              referenceTone="accent"
+              compactReference
+            />
+            <div className="session__award-result session__award-result--positive">
               {Math.abs(bestProjected.diffProjected!).toFixed(2)}s raskere enn projisert.
             </div>
           </div>
         )}
 
-        {worstProjected && worstProjected.diffProjected! > 0 && (
-          <div
-            className="card"
-            style={{
-              padding: "16px",
-              border: "1px solid color-mix(in srgb, var(--danger) 30%, transparent)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--danger)",
-                marginBottom: 6,
-                fontWeight: "bold",
-              }}
-            >
+        {worstProjected && worstProjected.diffProjectedPct! > 0 && (
+          <div className="card session__award-card session__award-card--under">
+            <div className="session__award-title session__award-title--under">
               📉 Skuffet Mest
             </div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900 }}>
+            <div className="session__award-name">
               <PersonName personId={worstProjected.participantId} name={worstProjected.name} />
             </div>
-            <div style={{ fontSize: "0.9rem", color: "var(--muted)", margin: "4px 0" }}>
-              Faktisk tid: <b>{worstProjected.seconds.toFixed(2)}s</b>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "var(--danger)" }}>
-              {worstProjected.diffProjected!.toFixed(2)}s tregere enn projisert.
+            <AwardTimeCompare
+              current={worstProjected.seconds}
+              reference={worstProjected.projected}
+              referenceLabel="Projisert"
+              referenceTone="danger"
+              compactReference
+            />
+            <div className="session__award-result session__award-result--danger">
+              {worstProjected.diffProjectedPct!.toFixed(1)}% tregere enn projisert.
             </div>
           </div>
         )}
 
         {bestPbSmasher && (
-          <div
-            className="card"
-            style={{
-              padding: "16px",
-              border: "1px solid color-mix(in srgb, #facc15 30%, transparent)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "#facc15",
-                marginBottom: 6,
-                fontWeight: "bold",
-              }}
-            >
+          <div className="card session__award-card session__award-card--pb">
+            <div className="session__award-title session__award-title--pb">
               🔥 Knuste Egen Rekord
             </div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900 }}>
+            <div className="session__award-name">
               <PersonName personId={bestPbSmasher.participantId} name={bestPbSmasher.name} />
             </div>
-            <div style={{ fontSize: "0.9rem", color: "var(--muted)", margin: "4px 0" }}>
-              Ny rekord: <b>{bestPbSmasher.seconds.toFixed(2)}s</b>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "#10b981" }}>
+            <AwardTimeCompare
+              current={bestPbSmasher.seconds}
+              reference={bestPbSmasher.pbBefore}
+              referenceLabel="PB før"
+              referenceTone="accent"
+              compactReference
+            />
+            <div className="session__award-result session__award-result--positive">
               Forbedret PB med {Math.abs(bestPbSmasher.diffPb!).toFixed(2)}s!
             </div>
           </div>
         )}
 
         {biggestComeback && (
-          <div
-            className="card"
-            style={{
-              padding: "16px",
-              border: "1px solid color-mix(in srgb, #06b6d4 30%, transparent)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "#06b6d4",
-                marginBottom: 6,
-                fontWeight: "bold",
-              }}
-            >
+          <div className="card session__award-card session__award-card--comeback">
+            <div className="session__award-title session__award-title--comeback">
               🚀 Dagens Comeback
             </div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900 }}>
+            <div className="session__award-name">
               <PersonName personId={biggestComeback.participantId} name={biggestComeback.name} />
             </div>
-            <div style={{ fontSize: "0.9rem", color: "var(--muted)", margin: "4px 0" }}>
-              Faktisk tid: <b>{biggestComeback.seconds.toFixed(2)}s</b>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "#10b981" }}>
+            <AwardTimeCompare
+              current={biggestComeback.seconds}
+              reference={biggestComeback.lastTime}
+              referenceLabel="Sist"
+              referenceTone="accent"
+            />
+            <div className="session__award-result session__award-result--positive">
               {(biggestComeback.lastTime! - biggestComeback.seconds).toFixed(2)}s raskere enn
               sist!
             </div>
@@ -867,60 +822,39 @@ export function SessionPage() {
         )}
 
         {steadyHand && (
-          <div
-            className="card"
-            style={{
-              padding: "16px",
-              border: "1px solid color-mix(in srgb, #3b82f6 30%, transparent)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "#3b82f6",
-                marginBottom: 6,
-                fontWeight: "bold",
-              }}
-            >
+          <div className="card session__award-card session__award-card--steady">
+            <div className="session__award-title session__award-title--steady">
               🎯 Stabilitets-prisen
             </div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900 }}>
+            <div className="session__award-name">
               <PersonName personId={steadyHand.participantId} name={steadyHand.name} />
             </div>
-            <div style={{ fontSize: "0.9rem", color: "var(--muted)", margin: "4px 0" }}>
-              Faktisk tid: <b>{steadyHand.seconds.toFixed(2)}s</b>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+            <AwardTimeCompare
+              current={steadyHand.seconds}
+              reference={steadyHand.projected}
+              referenceLabel="Projisert"
+            />
+            <div className="session__award-result session__award-result--muted">
               Kun {Math.abs(steadyHand.diffProjected!).toFixed(2)}s avvik fra trend.
             </div>
           </div>
         )}
 
         {closestCall && (
-          <div
-            className="card"
-            style={{
-              padding: "16px",
-              border: "1px solid color-mix(in srgb, #a855f7 30%, transparent)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "#a855f7",
-                marginBottom: 6,
-                fontWeight: "bold",
-              }}
-            >
+          <div className="card session__award-card session__award-card--closecall">
+            <div className="session__award-title session__award-title--closecall">
               🤏 Nesten-rekord
             </div>
-            <div style={{ fontSize: "1.2rem", fontWeight: 900 }}>
+            <div className="session__award-name">
               <PersonName personId={closestCall.participantId} name={closestCall.name} />
             </div>
-            <div style={{ fontSize: "0.9rem", color: "var(--muted)", margin: "4px 0" }}>
-              Faktisk tid: <b>{closestCall.seconds.toFixed(2)}s</b>
-            </div>
-            <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
+            <AwardTimeCompare
+              current={closestCall.seconds}
+              reference={closestCall.pbBefore}
+              referenceLabel="PB"
+              compactReference
+            />
+            <div className="session__award-result session__award-result--muted">
               Var kun {closestCall.diffPb!.toFixed(2)}s unna ny PB.
             </div>
           </div>
@@ -928,28 +862,36 @@ export function SessionPage() {
       </div>
 
       <div className="session__chart-grid">
-        <div className="card" style={{ padding: 20 }}>
-          <h2 style={{ marginBottom: 12 }}>Forventning vs. realitet</h2>
+        <div className="card session__chart-card">
+          <h2 className="session__chart-title">Forventning vs. realitet</h2>
           <div className="session__chart-desc">
             Negativ verdi betyr raskere enn forventet.
           </div>
           <div className="session__chart-area">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
               <BarChart data={validProjected} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
                 <XAxis
                   dataKey="name"
-                  stroke="var(--muted)"
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                  tickMargin={8}
+                  minTickGap={12}
                   angle={-45}
                   textAnchor="end"
                   height={70}
                 />
-                <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
+                <YAxis
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                  width={56}
+                  tickFormatter={(v: any) => `${v}s`}
+                />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                  contentStyle={TOOLTIP_STYLE}
-                  labelStyle={{ color: "#ffffff", fontWeight: 700 }}
-                  itemStyle={{ color: "#e2e8f0" }}
+                  wrapperClassName="session__recharts-tooltip"
                   formatter={(value: any) => {
                     const numericValue = Number(value ?? 0);
                     return [
@@ -973,28 +915,36 @@ export function SessionPage() {
         </div>
 
         {pbData.length > 0 && (
-          <div className="card" style={{ padding: 20 }}>
-            <h2 style={{ marginBottom: 12 }}>Avvik fra personlig rekord</h2>
+          <div className="card session__chart-card">
+            <h2 className="session__chart-title">Avvik fra personlig rekord</h2>
             <div className="session__chart-desc">
               Negativ verdi betyr ny personlig rekord.
             </div>
             <div className="session__chart-area">
-              <ResponsiveContainer>
+              <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
                 <BarChart data={pbData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
                   <XAxis
                     dataKey="name"
-                    stroke="var(--muted)"
+                    stroke="var(--text)"
+                    tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                    tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                    tickMargin={8}
+                    minTickGap={12}
                     angle={-45}
                     textAnchor="end"
                     height={70}
                   />
-                  <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
+                  <YAxis
+                    stroke="var(--text)"
+                    tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                    tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                    width={56}
+                    tickFormatter={(v: any) => `${v}s`}
+                  />
                   <Tooltip
                     cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={{ color: "#ffffff", fontWeight: 700 }}
-                    itemStyle={{ color: "#e2e8f0" }}
+                    wrapperClassName="session__recharts-tooltip"
                     formatter={(value: any) => {
                       const numericValue = Number(value ?? 0);
                       return [
@@ -1017,15 +967,15 @@ export function SessionPage() {
       </div>
 
       <div className="session__chart-grid">
-        <div className="card" style={{ padding: 20 }}>
-          <h2 style={{ marginBottom: 12 }}>Type kryss i dag</h2>
+        <div className="card session__chart-card">
+          <h2 className="session__chart-title">Type kryss i dag</h2>
           {pieData.length === 0 ? (
-            <div className="u-text-center u-text-muted" style={{ paddingTop: 90 }}>
+            <div className="u-text-center u-text-muted session__chart-empty">
               Ingen kryss i dag! 🎉
             </div>
           ) : (
             <div className="session__chart-area">
-              <ResponsiveContainer>
+              <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
                 <PieChart>
                   <Pie
                     data={pieData}
@@ -1048,9 +998,7 @@ export function SessionPage() {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={{ color: "#ffffff", fontWeight: 700 }}
-                    itemStyle={{ color: "#e2e8f0" }}
+                    wrapperClassName="session__recharts-tooltip"
                     formatter={(value: any, _name: any, props: any) => [
                       `${Number(value ?? 0)} stk`,
                       props?.payload?.label || props?.payload?.name || "Kryss",
@@ -1062,26 +1010,32 @@ export function SessionPage() {
           )}
         </div>
 
-        <div className="card" style={{ padding: 20 }}>
-          <h2 style={{ marginBottom: 12 }}>Wet vs. clean</h2>
+        <div className="card session__chart-card">
+          <h2 className="session__chart-title">Wet vs. clean</h2>
           <div className="session__chart-desc">
             Fordeling av dagens forsok med og uten wet-anmerkning.
           </div>
           <div className="session__chart-area">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
               <BarChart data={wetBreakdownData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
                 <XAxis
                   dataKey="name"
-                  stroke="var(--muted)"
-                  tick={{ fontSize: 12 }}
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                  tickMargin={8}
                 />
-                <YAxis stroke="var(--muted)" allowDecimals={false} />
+                <YAxis
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                  width={56}
+                  allowDecimals={false}
+                />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                  contentStyle={TOOLTIP_STYLE}
-                  labelStyle={{ color: "#ffffff", fontWeight: 700 }}
-                  itemStyle={{ color: "#e2e8f0" }}
+                  wrapperClassName="session__recharts-tooltip"
                   formatter={(value: any, name: any, props: any) => {
                     const numericValue = Number(value ?? 0);
                     if (name === "count") {
@@ -1105,28 +1059,36 @@ export function SessionPage() {
         </div>
       </div>
 
-      <div className="card u-mb-md" style={{ padding: 20 }}>
-        <h2 style={{ marginBottom: 12 }}>Tidsfordeling</h2>
+      <div className="card u-mb-md session__chart-card">
+        <h2 className="session__chart-title">Tidsfordeling</h2>
         <div className="session__chart-desc">
           Røde og gule prikker markerer henholdsvis kryss og notat.
         </div>
         <div className="session__chart-area--lg">
-          <ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={420} minWidth={1} minHeight={420}>
             <BarChart data={sessionStats.attempts} margin={{ top: 20, right: 10, bottom: 20, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis
                 dataKey="name"
-                stroke="var(--muted)"
+                stroke="var(--text)"
+                tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                tickMargin={8}
+                minTickGap={12}
                 angle={-45}
                 textAnchor="end"
                 height={70}
               />
-              <YAxis stroke="var(--muted)" tickFormatter={(v: any) => `${v}s`} />
+              <YAxis
+                stroke="var(--text)"
+                tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                width={56}
+                tickFormatter={(v: any) => `${v}s`}
+              />
               <Tooltip
                 cursor={{ fill: "rgba(255,255,255,0.04)" }}
-                contentStyle={TOOLTIP_STYLE}
-                labelStyle={{ color: "#ffffff", fontWeight: 700 }}
-                itemStyle={{ color: "#e2e8f0" }}
+                wrapperClassName="session__recharts-tooltip"
                 formatter={(value: any, name: any) => {
                   if (name === "seconds") return [fmtSeconds(Number(value ?? 0)), "Tid"];
                   return [String(value), String(name ?? "")];
@@ -1159,27 +1121,24 @@ export function SessionPage() {
       <div className="card">
         <h2>Kryss og anmerkninger</h2>
         {groupedViolations.length === 0 ? (
-          <p className="u-text-center u-text-muted" style={{ padding: 20 }}>
+          <p className="u-text-center u-text-muted session__violations-empty">
             En helt ren dag! 🎉
           </p>
         ) : (
-          <div className="tableWrap" style={{ border: "none" }}>
+          <div className="tableWrap session__violations-wrap">
             <table className="session__violations-table">
               <thead>
                 <tr>
-                  <th style={{ padding: 10 }}>Navn</th>
-                  <th style={{ padding: 10 }}>Koder</th>
-                  <th style={{ padding: 10 }}>Totalt kryss</th>
-                  <th style={{ padding: 10 }}>Notater</th>
+                  <th className="session__violations-th">Navn</th>
+                  <th className="session__violations-th">Koder</th>
+                  <th className="session__violations-th">Totalt kryss</th>
+                  <th className="session__violations-th">Notater</th>
                 </tr>
               </thead>
               <tbody>
                 {groupedViolations.map((v) => (
-                  <tr
-                    key={v.participantId}
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-                  >
-                    <td style={{ padding: 10 }}>
+                  <tr key={v.participantId} className="session__violations-row">
+                    <td className="session__violations-td">
                       <button
                         type="button"
                         className="session__table-person-link"
@@ -1188,26 +1147,22 @@ export function SessionPage() {
                         {v.name}
                       </button>
                     </td>
-                    <td style={{ padding: 10 }}>
-                      <div className="u-flex u-flex-wrap" style={{ gap: 6 }}>
+                    <td className="session__violations-td">
+                      <div className="u-flex u-flex-wrap session__violations-code-list">
                         {v.codes.map((code, idx) => (
                           <span
                             key={idx}
-                            className="badge"
-                            style={{
-                              borderColor: RULE_COLORS[code] || "var(--border)",
-                              color: RULE_COLORS[code] || "white",
-                            }}
+                            className={`badge session__rule-code ${ruleCodeClass(code)}`}
                           >
                             {code}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td style={{ padding: 10, color: "var(--danger)", fontWeight: "bold" }}>
+                    <td className="session__violations-td session__violations-crosses">
                       {v.totalCrosses}
                     </td>
-                    <td style={{ padding: 10, color: "var(--muted)", fontSize: "0.9rem" }}>
+                    <td className="session__violations-td session__violations-notes">
                       {v.notes.join(" | ") || "–"}
                     </td>
                   </tr>

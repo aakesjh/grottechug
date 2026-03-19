@@ -282,7 +282,7 @@ export function StatsDashboardPage() {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="chart-tooltip" style={{ minWidth: 200 }}>
+        <div className="chart-tooltip stats__chart-tooltip">
           <strong className="chart-tooltip__title">{label}</strong>
           <div className="chart-tooltip__row">
             <span className="u-text-muted">Gjennomsnitt:</span>
@@ -292,7 +292,7 @@ export function StatsDashboardPage() {
              <div className="chart-tooltip__row">
                <span className="u-text-muted">Raskest:</span>
                <span className="u-text-right">
-                 <strong style={{ color: getColor(data.fastestPerson) }}>{data.fastestPerson}</strong> ({data.fastestTime?.toFixed(2)}s)
+                 <strong className="stats__tooltip-person">{data.fastestPerson}</strong> ({data.fastestTime?.toFixed(2)}s)
                </span>
              </div>
           )}
@@ -300,7 +300,7 @@ export function StatsDashboardPage() {
              <div className="chart-tooltip__row">
                <span className="u-text-muted">Tregest:</span>
                <span className="u-text-right">
-                 <strong style={{ color: getColor(data.slowestPerson) }}>{data.slowestPerson}</strong> ({data.slowestTime?.toFixed(2)}s)
+                 <strong className="stats__tooltip-person">{data.slowestPerson}</strong> ({data.slowestTime?.toFixed(2)}s)
                </span>
              </div>
           )}
@@ -362,11 +362,14 @@ export function StatsDashboardPage() {
   const CustomImprovementTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
+      const improvementClass = data.improvementPct > 0
+        ? "stats__improvement-value--positive"
+        : "stats__improvement-value--negative";
       return (
         <div className="chart-tooltip">
-          <div style={{ marginBottom: 6, color: getColor(label), fontWeight: "bold", fontSize: "1.1rem" }}>{label}</div>
-          <div className="u-text-bold" style={{ marginBottom: 8 }}>
-            Forbedring: <span style={{ color: data.improvementPct > 0 ? "#10b981" : "#ef4444" }}>{data.improvementPct > 0 ? "+" : ""}{data.improvementPct.toFixed(1)}%</span>
+          <div className="stats__improvement-name">{label}</div>
+          <div className="u-text-bold stats__improvement-row">
+            Forbedring: <span className={improvementClass}>{data.improvementPct > 0 ? "+" : ""}{data.improvementPct.toFixed(1)}%</span>
           </div>
           <div className="chart-tooltip__row u-text-muted u-text-sm">
             <span>Snitt 2 første:</span> <span>{data.firstAvg.toFixed(2)}s</span>
@@ -379,6 +382,10 @@ export function StatsDashboardPage() {
     }
     return null;
   };
+
+  const overallWetRateClass = overallWetRate > 20
+    ? "stats__wet-rate-value--danger"
+    : "stats__wet-rate-value--good";
 
   return (
     <div>
@@ -411,7 +418,7 @@ export function StatsDashboardPage() {
             </div>
             <div className="card stat-box">
               <div className="stat-box__label">Total Wet-Rate</div>
-              <div className="stat-box__value" style={{ color: overallWetRate > 20 ? "var(--danger)" : "var(--accent2)" }}>
+              <div className={`stat-box__value ${overallWetRateClass}`}>
                 {overallWetRate.toFixed(1)}%
               </div>
             </div>
@@ -434,15 +441,29 @@ export function StatsDashboardPage() {
           </div>
 
           {/* RAD 1: Tid og Kvantitet vs Kvalitet */}
-          <div className="row u-mt-sm" style={{ flexWrap: "wrap" }}>
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+          <div className="row u-mt-sm stats__row-wrap">
+            <div className="col card stats__panel-col">
               <h2>Raskest/snitt/treigest per dag</h2>
               <div className="stats__chart-area">
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
                   <LineChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="dateFormatted" stroke="var(--muted)" />
-                    <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}s`} domain={['auto', 'auto']} />
+                    <XAxis
+                      dataKey="dateFormatted"
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      tickMargin={8}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      width={56}
+                      tickFormatter={(tick) => `${tick}s`}
+                      domain={['auto', 'auto']}
+                    />
                     
                     <Tooltip content={<CustomTimeSeriesTooltip />} />
                     <Legend verticalAlign="top" height={36} />
@@ -455,11 +476,11 @@ export function StatsDashboardPage() {
               </div>
             </div>
 
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+            <div className="col card stats__panel-col">
               <h2>Kvantitet vs Kvalitet</h2>
               
               <div className="stats__scatter-header">
-                <div className="stats__chart-desc" style={{ marginBottom: 0 }}>
+                <div className="stats__chart-desc stats__chart-desc--tight">
                   Nederst til høyre = Mange forsøk og rask.
                 </div>
                 
@@ -475,11 +496,30 @@ export function StatsDashboardPage() {
 
               <div className="stats__chart-area--sm">
                 {hasParticipantStats ? (
-                  <ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={280}>
                     <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis type="number" dataKey="attempts" name="Forsøk" stroke="var(--muted)" allowDecimals={false} />
-                      <YAxis type="number" dataKey="avg" name="Snitt-tid" unit="s" stroke="var(--muted)" domain={['auto', 'auto']} />
+                      <XAxis
+                        type="number"
+                        dataKey="attempts"
+                        name="Forsøk"
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        tickMargin={8}
+                        allowDecimals={false}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="avg"
+                        name="Snitt-tid"
+                        unit="s"
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        width={56}
+                        domain={['auto', 'auto']}
+                      />
                       <Tooltip 
                         cursor={{ strokeDasharray: '3 3' }}
                         content={({ active, payload }) => {
@@ -487,8 +527,8 @@ export function StatsDashboardPage() {
                             const p = payload[0].payload;
                             return (
                               <div className="chart-tooltip">
-                                <strong style={{ display: "block", marginBottom: 4, color: getColor(p.name) }}>
-                                  {p.name} {!p.isRegular && <span style={{ opacity: 0.7, fontSize: "0.8em" }}>(gjest)</span>}
+                                <strong className="stats__scatter-person">
+                                  {p.name} {!p.isRegular && <span className="stats__scatter-person-tag">(gjest)</span>}
                                 </strong>
                                 <div>Antall chugs: {p.attempts}</div>
                                 <div>Snitt-tid: {p.avg}s</div>
@@ -513,20 +553,33 @@ export function StatsDashboardPage() {
           </div>
 
           {/* RAD 2: Wet-rate og Anmerkninger */}
-          <div className="row u-mt-sm" style={{ flexWrap: "wrap" }}>
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+          <div className="row u-mt-sm stats__row-wrap">
+            <div className="col card stats__panel-col">
               <h2>Søle-prosent (Wet-rate) per dag</h2>
               <div className="stats__chart-desc">Basert på MM, W, VW, P og T-kryss.</div>
               <div className="stats__chart-area">
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
                   <AreaChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="dateFormatted" stroke="var(--muted)" />
-                    <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}%`} />
+                    <XAxis
+                      dataKey="dateFormatted"
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      tickMargin={8}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      width={56}
+                      tickFormatter={(tick) => `${tick}%`}
+                    />
                     <Tooltip 
-                      labelFormatter={(label) => `Dato: ${label}`}
+                      labelFormatter={(label) => String(label)}
                       formatter={(value) => [`${Number(value ?? 0).toFixed(1)}%`, "Wet-rate"]}
-                      contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
+                      wrapperClassName="stats__recharts-tooltip"
                     />
                     <Area type="monotone" dataKey="wetPct" stroke="#0ea5e9" fill="rgba(14, 165, 233, 0.3)" strokeWidth={3} activeDot={{ r: 6 }} />
                   </AreaChart>
@@ -534,15 +587,27 @@ export function StatsDashboardPage() {
               </div>
             </div>
 
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+            <div className="col card stats__panel-col">
               <h2>Anmerkningstyper Totalt</h2>
               <div className="stats__chart-desc">Fordeling av alle registrerte anmerkninger.</div>
               <div className="stats__chart-area">
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
                   <BarChart data={noteBars} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="type" stroke="var(--muted)" />
-                    <YAxis stroke="var(--muted)" allowDecimals={false} />
+                    <XAxis
+                      dataKey="type"
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      width={56}
+                      allowDecimals={false}
+                    />
                     <Tooltip content={<CustomNoteTypesTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                     <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                       {noteBars.map((entry, index) => (
@@ -556,19 +621,32 @@ export function StatsDashboardPage() {
           </div>
 
           {/* RAD 3: Forbedring og Aktivitet (Her ble Forbedring byttet inn) */}
-          <div className="row u-mt-sm" style={{ flexWrap: "wrap" }}>
+          <div className="row u-mt-sm stats__row-wrap">
             
             {/* Prosentvis forbedring */}
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+            <div className="col card stats__panel-col">
               <h2>Største Forbedring (%)</h2>
               <div className="stats__chart-desc">Snitt av to første chugs vs to siste (krever ≥ 4 chugs).</div>
               <div className="stats__chart-area--sm">
                 {improvementData.length > 0 ? (
-                  <ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={280}>
                     <BarChart data={improvementData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="name" stroke="var(--muted)" />
-                      <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}%`} />
+                      <XAxis
+                        dataKey="name"
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        tickMargin={8}
+                        minTickGap={12}
+                      />
+                      <YAxis
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        width={56}
+                        tickFormatter={(tick) => `${tick}%`}
+                      />
                       <Tooltip content={<CustomImprovementTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                       <Bar dataKey="improvementPct" radius={[4, 4, 0, 0]}>
                         {improvementData.map((entry, index) => (
@@ -585,15 +663,28 @@ export function StatsDashboardPage() {
               </div>
             </div>
 
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+            <div className="col card stats__panel-col">
               <h2>Aktivitet per dag</h2>
               <div className="stats__chart-desc">Totalt antall chugs registrert hver dato.</div>
               <div className="stats__chart-area--sm">
-                <ResponsiveContainer>
+                <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={280}>
                   <BarChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis dataKey="dateFormatted" stroke="var(--muted)" />
-                    <YAxis stroke="var(--muted)" allowDecimals={false} />
+                    <XAxis
+                      dataKey="dateFormatted"
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      tickMargin={8}
+                      minTickGap={16}
+                    />
+                    <YAxis
+                      stroke="var(--text)"
+                      tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                      tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                      width={56}
+                      allowDecimals={false}
+                    />
                     <Tooltip content={<CustomActivityTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                     <Bar dataKey="attempts" fill="var(--accent)" radius={[4, 4, 0, 0]} />
                   </BarChart>
@@ -603,19 +694,32 @@ export function StatsDashboardPage() {
           </div>
 
           {/* RAD 4: Lavest Wet-rate og Syndebukker (Her ble Syndebukkene byttet inn) */}
-          <div className="row u-mt-sm u-mb-xl" style={{ flexWrap: "wrap" }}>
+          <div className="row u-mt-sm u-mb-xl stats__row-wrap">
             
             {/* Lavest Wet-Rate */}
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+            <div className="col card stats__panel-col">
               <h2>Mest kontroll på chuggen (lavest wet-rate)</h2>
               <div className="stats__chart-desc">Krever minst 5 registrerte chugs for å kvalifisere.</div>
               <div className="stats__chart-area--sm">
                 {lowestWetRateData.length > 0 ? (
-                  <ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={280}>
                     <BarChart data={lowestWetRateData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="name" stroke="var(--muted)" />
-                      <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}%`} />
+                      <XAxis
+                        dataKey="name"
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        tickMargin={8}
+                        minTickGap={12}
+                      />
+                      <YAxis
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        width={56}
+                        tickFormatter={(tick) => `${tick}%`}
+                      />
                       <Tooltip content={<CustomWetRateTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                       <Bar dataKey="wetPct" radius={[4, 4, 0, 0]}>
                         {lowestWetRateData.map((entry, index) => (
@@ -633,16 +737,29 @@ export function StatsDashboardPage() {
             </div>
 
             {/* Syndebukkene */}
-            <div className="col card" style={{ flex: "1 1 400px" }}>
+            <div className="col card stats__panel-col">
               <h2>Syndebukkene (høyest wet-rate)</h2>
               <div className="stats__chart-desc">Andel runder som får en anmerkning (min. 3 forsøk).</div>
               <div className="stats__chart-area--sm">
                 {hasParticipantStats ? (
-                  <ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={280}>
                     <BarChart data={noteRateData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis dataKey="name" stroke="var(--muted)" />
-                      <YAxis stroke="var(--muted)" tickFormatter={(tick) => `${tick}%`} />
+                      <XAxis
+                        dataKey="name"
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        tickMargin={8}
+                        minTickGap={12}
+                      />
+                      <YAxis
+                        stroke="var(--text)"
+                        tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                        tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                        width={56}
+                        tickFormatter={(tick) => `${tick}%`}
+                      />
                       <Tooltip content={<CustomPunishmentTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
                       <Bar dataKey="notePct" radius={[4, 4, 0, 0]}>
                         {noteRateData.map((entry, index) => (

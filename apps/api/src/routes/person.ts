@@ -158,10 +158,36 @@ personRouter.get("/:id", async (req, res) => {
       _count: true,
     });
     const multiSessions = new Set(sessionCounts.filter(s => s._count >= 2).map(s => s.sessionId));
-    isSessionLoser = maxTimesBySession.some(group => {
-      if (!multiSessions.has(group.sessionId)) return false;
-      const myAttempt = badgeAttemptList.find(a => a.sessionId === group.sessionId);
-      return myAttempt && group._max.seconds === myAttempt.seconds;
+    const sessionMinMap = new Map(
+      minTimesBySession
+        .filter(group => multiSessions.has(group.sessionId) && group._min.seconds != null)
+        .map(group => [group.sessionId, group._min.seconds as number])
+    );
+
+    const attemptsInMultiSessions = await prisma.attempt.findMany({
+      where: { sessionId: { in: Array.from(multiSessions) } },
+      select: { sessionId: true, participantId: true, seconds: true },
+    });
+
+    const maxPercentBehindBySession = new Map<string, number>();
+    for (const attempt of attemptsInMultiSessions) {
+      const fastest = sessionMinMap.get(attempt.sessionId);
+      if (fastest == null || fastest <= 0) continue;
+      const percentBehind = ((attempt.seconds - fastest) / fastest) * 100;
+      const currentMax = maxPercentBehindBySession.get(attempt.sessionId);
+      if (currentMax == null || percentBehind > currentMax) {
+        maxPercentBehindBySession.set(attempt.sessionId, percentBehind);
+      }
+    }
+
+    isSessionLoser = badgeAttemptList.some((myAttempt) => {
+      if (!multiSessions.has(myAttempt.sessionId)) return false;
+      const fastest = sessionMinMap.get(myAttempt.sessionId);
+      const maxPercent = maxPercentBehindBySession.get(myAttempt.sessionId);
+      if (fastest == null || fastest <= 0 || maxPercent == null) return false;
+
+      const myPercentBehind = ((myAttempt.seconds - fastest) / fastest) * 100;
+      return myPercentBehind > 0 && Math.abs(myPercentBehind - maxPercent) < 1e-9;
     });
   }
 
@@ -179,7 +205,7 @@ personRouter.get("/:id", async (req, res) => {
   const badges = [
     // Row 1: Jomfruchug + 4 fun/negative badges
     { id: "first-chug", title: "Jomfruchug", description: "Deltok på første grottechug", icon: "🍺", category: "milestone", earned: numAttempts >= 1 },
-    { id: "session-loser", title: "Taperen", description: "Tregest på en chug", icon: "🐌", category: "negative", earned: isSessionLoser },
+    { id: "session-loser", title: "Skuffet mest", description: "Størst prosentvis avvik bak raskeste tid i en chug", icon: "🐌", category: "negative", earned: isSessionLoser },
     { id: "puker", title: "Brekker'n", description: "Har fått VOMIT-anmerkning", icon: "🤮", category: "negative", earned: hasVomit },
     { id: "spiller", title: "Søl!", description: "Har sølt (W/VW-anmerkning)", icon: "💧", category: "negative", earned: hasSpill },
     { id: "sinner", title: "Syndaren", description: "Samlet 5+ anmerkninger totalt", icon: "😈", category: "negative", earned: totalViolationCount >= 5 },

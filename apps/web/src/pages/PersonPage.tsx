@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { BadgeMedal } from "../components/BadgeMedal";
@@ -27,18 +27,9 @@ function fmtDDMMYYYY(iso: string) {
   return `${dd}/${mm}/${yyyy}`;
 }
 
-const RULE_COLORS: Record<string, string> = {
-  DNS: "#ef4444",
-  DNF: "#f97316",
-  MM: "#86efac",
-  W: "#3b82f6",
-  VW: "#1e3a8a",
-  P: "#ec4899",
-  ABSENCE: "#94a3b8",
-  VOMIT: "#84cc16",
-  KPR: "#06b6d4",
-  T: "#14b8a6",
-};
+function ruleCodeClass(code: string) {
+  return `person__note-code--${code.trim().toLowerCase()}`;
+}
 
 export function PersonPage() {
   const { id } = useParams();
@@ -49,6 +40,35 @@ export function PersonPage() {
   const [participants, setParticipants] = useState<{id: string, name: string}[]>([]);
   const [compareId, setCompareId] = useState<string>("");
   const [compareData, setCompareData] = useState<Resp | null>(null);
+  const chartAreaRef = useRef<HTMLDivElement | null>(null);
+  const [chartSize, setChartSize] = useState({ width: 640, height: 320 });
+
+  useEffect(() => {
+    const element = chartAreaRef.current;
+    if (!element) return;
+
+    const updateSize = () => {
+      const width = Math.floor(element.getBoundingClientRect().width);
+      if (width > 1) {
+        const targetByWidth = Math.round(width * 0.52);
+        const maxByViewport = Math.round(window.innerHeight * 0.46);
+        const height = Math.max(240, Math.min(targetByWidth, maxByViewport, 420));
+        setChartSize({ width, height });
+      }
+    };
+
+    updateSize();
+
+    const observer = new ResizeObserver(() => updateSize());
+    observer.observe(element);
+
+    window.addEventListener("resize", updateSize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateSize);
+    };
+  }, []);
 
   // 1. Hent alle deltakere for sammenligning
   useEffect(() => {
@@ -143,7 +163,7 @@ export function PersonPage() {
     );
   }, [data, compareData]);
 
-  if (!data) return <div className="card u-text-center" style={{ padding: 40 }}>Laster data for profil...</div>;
+  if (!data) return <div className="card u-text-center person__loading">Laster data for profil...</div>;
 
   const p = data.participant;
   const bestClean = data.stats.bestClean;
@@ -197,11 +217,20 @@ export function PersonPage() {
     }
   }
 
+  const changeSinceStartClass =
+    changeSinceStart == null
+      ? ""
+      : changeSinceStart > 0
+        ? "person__bottom-stat-value--better"
+        : changeSinceStart < 0
+          ? "person__bottom-stat-value--worse"
+          : "";
+
   return (
     <div>
-      <div className="row" style={{ marginTop: 14, flexWrap: "wrap", alignItems: "stretch" }}>
+      <div className="row person__top-row">
         
-        <div className="col card" style={{ flex: "1 1 250px", maxWidth: "100%", display: "flex", flexDirection: "column" }}>
+        <div className="col card person__profile-col">
           <div className="person__header">
             <h1 className="u-mb-0">{p.name}</h1>
             <span className="badge">{p.isRegular ? "fast" : "gjest"}</span>
@@ -215,7 +244,7 @@ export function PersonPage() {
             )}
           </div>
 
-          <div className="hr" style={{ marginTop: 8, marginBottom: 12 }} />
+          <div className="hr person__divider person__divider--tight" />
 
           <div className="person__stats-list">
             <h2 className="u-mb-0">Statistikk</h2>
@@ -238,7 +267,7 @@ export function PersonPage() {
           </div>
         </div>
 
-        <div className="col card" style={{ flex: "2 1 500px", display: "flex", flexDirection: "column" }}>
+        <div className="col card person__chart-col">
           <div className="person__chart-header">
             <h2 className="u-mb-0">Utvikling</h2>
             
@@ -248,9 +277,9 @@ export function PersonPage() {
                 value={compareId}
                 onChange={(e) => setCompareId(e.target.value)}
               >
-                <option value="" style={{ background: "#121a33" }}>Sammenlign med...</option>
+                <option value="">Sammenlign med...</option>
                 {participants.map(pt => (
-                  <option key={pt.id} value={pt.id} style={{ background: "#121a33" }}>{pt.name}</option>
+                  <option key={pt.id} value={pt.id}>{pt.name}</option>
                 ))}
               </select>
 
@@ -262,21 +291,39 @@ export function PersonPage() {
             </div>
           </div>
 
-          <div className="person__chart-area">
-            <ResponsiveContainer>
-              <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          <div className="person__chart-area" ref={chartAreaRef}>
+            <LineChart
+              width={chartSize.width}
+              height={chartSize.height}
+              data={chartData}
+              margin={{ top: 16, right: 20, bottom: 26, left: 8 }}
+            >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis dataKey="date" stroke="var(--muted)" />
-                <YAxis domain={['auto', 'auto']} stroke="var(--muted)" tickFormatter={(tick: any) => `${tick}s`} />
+                <XAxis
+                  dataKey="date"
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                  minTickGap={16}
+                  tickMargin={8}
+                />
+                <YAxis
+                  domain={["auto", "auto"]}
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                  width={56}
+                  tickFormatter={(tick: any) => `${tick}s`}
+                />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "rgba(18,26,51,0.95)", borderColor: "var(--border)", borderRadius: 8 }}
+                  wrapperClassName="person__chart-tooltip"
                   formatter={(v: any, name: any) => {
                     if (name === "trend") return [`${Number(v).toFixed(2)}s`, "Trend"];
                     if (name === "seconds" || name === "mainSeconds") return [`${Number(v).toFixed(2)}s`, p.name];
                     if (name === "compSeconds" && compareData) return [`${Number(v).toFixed(2)}s`, compareData.participant.name];
                     return [String(v), String(name)];
                   }}
-                  labelFormatter={(label: any) => `Dato: ${label}`}
+                  labelFormatter={(label: any) => `${label}`}
                 />
                 
                 {compareData && <Legend verticalAlign="top" height={36} />}
@@ -309,16 +356,15 @@ export function PersonPage() {
                   />
                 )}
               </LineChart>
-            </ResponsiveContainer>
           </div>
 
-          <div className="hr" style={{ marginTop: 12, marginBottom: 12 }} />
+          <div className="hr person__divider" />
           <div className="person__bottom-stats">
             {!compareData ? (
               <>
                 <div>
                   <div className="person__bottom-stat-label">Endring siden start</div>
-                  <div className="person__bottom-stat-value" style={{ color: changeSinceStart && changeSinceStart > 0 ? "var(--accent2)" : changeSinceStart && changeSinceStart < 0 ? "var(--danger)" : "var(--text)" }}>
+                  <div className={`person__bottom-stat-value ${changeSinceStartClass}`}>
                     {changeSinceStart == null ? "—" : changeSinceStart > 0 ? `Bedre (${changeSinceStart.toFixed(2)}s)` : `Tregere (${Math.abs(changeSinceStart).toFixed(2)}s)`}
                   </div>
                 </div>
@@ -364,7 +410,7 @@ export function PersonPage() {
       <div className="person__lower-row">
         <div className="card person__lower-col--badges">
           <h2>Badges</h2>
-          <p className="u-text-muted" style={{ fontSize: "var(--font-sm)", marginBottom: 16 }}>
+          <p className="u-text-muted person__badge-summary">
             {(data.badges ?? []).filter(b => b.earned).length} / {(data.badges ?? []).length} oppnådd
           </p>
           <div className="person__badges-grid">
@@ -388,9 +434,9 @@ export function PersonPage() {
           <table className="person__history-table">
             <thead>
               <tr>
-                <th style={{ padding: 10, width: "120px" }}>Dato</th>
-                <th style={{ padding: 10, width: "100px" }}>Tid</th>
-                <th style={{ padding: 10 }}>Anmerkning</th>
+                <th className="person__history-th person__history-th--date">Dato</th>
+                <th className="person__history-th person__history-th--time">Tid</th>
+                <th className="person__history-th">Anmerkning</th>
               </tr>
             </thead>
             <tbody>
@@ -398,7 +444,7 @@ export function PersonPage() {
                 const isPB = !pt.note && bestClean !== null && pt.seconds === bestClean;
                 return (
                   <tr key={`${pt.dateISO}-${i}`}>
-                    <td style={{ padding: 10 }}>
+                    <td className="person__history-cell">
                       <button 
                         className="btnGhost person__history-date-btn" 
                         onClick={() => nav(`/session/${pt.sessionId}`)}
@@ -407,34 +453,30 @@ export function PersonPage() {
                         {fmtDDMMYYYY(pt.dateISO)}
                       </button>
                     </td>
-                    <td style={{ padding: 10 }} className={isPB ? "person__pb-cell" : ""}>
+                    <td className={`person__history-cell ${isPB ? "person__pb-cell" : ""}`}>
                       {pt.seconds.toFixed(2)}s {isPB && "🌟"}
                     </td>
-                    <td style={{ padding: 10 }}>
+                    <td className="person__history-cell">
                       {pt.note ? (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        <div className="person__history-note-list">
                           {pt.note.split(", ").map((code, idx) => (
                             <span
                               key={idx}
-                              className="badge"
-                              style={{
-                                borderColor: RULE_COLORS[code.trim().toUpperCase()] || "var(--border)",
-                                color: RULE_COLORS[code.trim().toUpperCase()] || "var(--danger)",
-                              }}
+                              className={`badge person__note-code ${ruleCodeClass(code)}`}
                             >
                               {code.trim()}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span style={{ color: "var(--muted)" }}>—</span>
+                        <span className="u-text-muted">—</span>
                       )}
                     </td>
                   </tr>
                 );
               })}
               {!data.points.length && (
-                <tr><td colSpan={3} className="u-text-muted u-text-center" style={{ padding: 20 }}>Ingen data</td></tr>
+                <tr><td colSpan={3} className="u-text-muted u-text-center person__history-empty">Ingen data</td></tr>
               )}
             </tbody>
           </table>
