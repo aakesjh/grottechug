@@ -19,6 +19,56 @@
   gap: 8px;
 }
 
+.violations__awards-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.violations__awards-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 12px;
+  width: min(1200px, 100%);
+}
+
+.violations__award-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px 14px 13px;
+  background:
+    radial-gradient(90% 120% at 10% -20%, rgba(99, 102, 241, 0.18), transparent 55%),
+    radial-gradient(70% 100% at 90% 120%, rgba(16, 185, 129, 0.15), transparent 50%),
+    linear-gradient(165deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.violations__award-title {
+  font-size: 0.74rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.violations__award-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.violations__award-winner {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.violations__award-detail {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
 .violations__rule-subheader {
   font-size: 10px;
   font-weight: normal;
@@ -129,7 +179,41 @@
 }
 
 /* --- Mobile --- */
+@media (max-width: 1200px) {
+  .violations__awards-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    width: min(960px, 100%);
+  }
+
+  .violations__awards-grid > * {
+    grid-column: span 2;
+  }
+
+  .violations__awards-grid > :nth-child(4) {
+    grid-column: 2 / span 2;
+  }
+
+  .violations__awards-grid > :nth-child(5) {
+    grid-column: 4 / span 2;
+  }
+}
+
 @media (max-width: 768px) {
+  .violations__awards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(620px, 100%);
+  }
+
+  .violations__awards-grid > :nth-child(4) {
+    grid-column: auto;
+  }
+
+  .violations__awards-grid > :nth-child(5) {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(300px, 100%);
+  }
+
   .violations__controls {
     flex-wrap: wrap;
   }
@@ -173,5 +257,18 @@
 
   .violations__tableWrap {
     overflow-x: hidden;
+  }
+}
+
+@media (max-width: 460px) {
+  .violations__awards-grid {
+    grid-template-columns: 1fr;
+    width: min(360px, 100%);
+  }
+
+  .violations__awards-grid > :nth-child(5) {
+    grid-column: auto;
+    width: 100%;
+    justify-self: stretch;
   }
 }

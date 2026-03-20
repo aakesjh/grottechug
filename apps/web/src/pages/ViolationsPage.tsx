@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
@@ -31,6 +31,37 @@ type ViolationEntry = {
   reason?: string | null;
 };
 
+type TableCell = {
+  seconds: number | null;
+  note: string | null;
+};
+
+type TableRow = {
+  participantId: string;
+  name: string;
+  isRegular: boolean;
+};
+
+type TableResp = {
+  columns: Array<{ sessionId: string; dateISO: string }>;
+  rows: TableRow[];
+  cells: Record<string, Record<string, TableCell>>;
+};
+
+type AwardCard = {
+  id: string;
+  title: string;
+  winner: string;
+  value: string;
+  detail: string;
+};
+
+const EXCLUDED_LOWEST_PERCENT_NAMES = new Set(["ake"]);
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 const RULE_ORDER = ["DNS", "DNF", "MM", "W", "VW", "P", "ABSENCE", "VOMIT", "KPR"];
 const RULE_LABELS: Record<string, string> = {
   DNS: "DNS", DNF: "DNF", MM: "MM", W: "W", VW: "VW",
@@ -50,33 +81,90 @@ function fmtDate(iso: string) {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+function normalizeName(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 export function ViolationsPage() {
   const nav = useNavigate();
   const { isAdmin } = useAuthSession();
   const [semester, setSemester] = useState<Semester>("all");
   const [detail, setDetail] = useState<DetailResp | null>(null);
+  const [tableData, setTableData] = useState<TableResp | null>(null);
   const [violations, setViolations] = useState<ViolationEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<Set<string>>(new Set());
   const [showGuests, setShowGuests] = useState(false);
 
-  async function loadDetail() {
+  const loadDetail = useCallback(async () => {
     setDetail(null);
-    const res = await apiFetch(`/api/crosses/detail?semester=${semester}`);
-    setDetail(await res.json());
-  }
+    try {
+      const res = await apiFetch(`/api/crosses/detail?semester=${semester}`);
+      const json: unknown = await res.json();
 
-  async function loadViolations() {
-    const res = await apiFetch(`/api/violations?semester=${semester}`);
-    setViolations(await res.json());
+      if (isObject(json) && Array.isArray(json.rows)) {
+        setDetail({
+          semester: typeof json.semester === "string" ? json.semester : semester,
+          rows: json.rows as DetailRow[],
+        });
+        return;
+      }
+    } catch {
+      // Keep UI stable on failed/malformed responses.
+    }
+
+    setDetail({ semester, rows: [] });
+  }, [semester]);
+
+  const loadViolations = useCallback(async () => {
+    try {
+      const res = await apiFetch(`/api/violations?semester=${semester}`);
+      const json: unknown = await res.json();
+      setViolations(Array.isArray(json) ? (json as ViolationEntry[]) : []);
+    } catch {
+      setViolations([]);
+    }
+  }, [semester]);
+
+  const loadTableData = useCallback(async () => {
+    try {
+      const res = await apiFetch(`/api/stats/table?semester=${semester}`);
+      const json: unknown = await res.json();
+
+      if (isObject(json) && Array.isArray(json.columns) && isObject(json.cells)) {
+        setTableData({
+          columns: json.columns as TableResp["columns"],
+          rows: Array.isArray(json.rows) ? (json.rows as TableRow[]) : [],
+          cells: json.cells as TableResp["cells"],
+        });
+        return;
+      }
+    } catch {
+      // Keep UI stable on failed/malformed responses.
+    }
+
+    setTableData({ columns: [], rows: [], cells: {} });
+  }, [semester]);
+
+  function handleSemesterChange(next: Semester) {
+    setExpandedId(null);
+    setMobileExpanded(new Set());
+    setSemester(next);
   }
 
   useEffect(() => {
-    setExpandedId(null);
-    setMobileExpanded(new Set());
-    loadDetail();
-    loadViolations();
-  }, [semester]);
+    const timer = setTimeout(() => {
+      void loadDetail();
+      void loadViolations();
+      void loadTableData();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [loadDetail, loadViolations, loadTableData]);
 
   async function deleteViolation(id: string) {
     if (!isAdmin) return;
@@ -86,9 +174,118 @@ export function ViolationsPage() {
     loadDetail();
   }
 
+  const detailRows = Array.isArray(detail?.rows) ? detail.rows : [];
+
   const visibleRows = showGuests
-    ? (detail?.rows ?? [])
-    : (detail?.rows.filter(r => r.isRegular) ?? []);
+    ? detailRows
+    : detailRows.filter(r => r.isRegular);
+
+  const awards = useMemo<AwardCard[]>(() => {
+    if (!visibleRows.length || !tableData) return [];
+
+    const absenceSessionsByParticipant = new Map<string, Set<string>>();
+    for (const violation of violations) {
+      if (violation.ruleCode !== "ABSENCE") continue;
+      const existing = absenceSessionsByParticipant.get(violation.participantId) ?? new Set<string>();
+      existing.add(violation.sessionId);
+      absenceSessionsByParticipant.set(violation.participantId, existing);
+    }
+
+    const rowsWithStats = visibleRows
+      .map((row) => {
+        const pCells = tableData.cells[row.participantId] ?? {};
+        const chugSessionIds = new Set(
+          Object.entries(pCells)
+            .filter(([, cell]) => cell.seconds != null)
+            .map(([sessionId]) => sessionId)
+        );
+        const absenceSessionIds = absenceSessionsByParticipant.get(row.participantId) ?? new Set<string>();
+        const denominatorSessionIds = new Set([...chugSessionIds, ...absenceSessionIds]);
+        const denominatorSessions = denominatorSessionIds.size;
+        const violationCount = Object.values(row.byRule).reduce((sum, count) => sum + count, 0);
+        const flooredCrossTotal = Math.floor(row.total);
+
+        return {
+          participantId: row.participantId,
+          name: row.name,
+          violationCount,
+          crossTotal: row.total,
+          flooredCrossTotal,
+          denominatorSessions,
+          weightedPerSession: denominatorSessions > 0 ? row.total / denominatorSessions : null,
+          weightedPercent: denominatorSessions > 0 ? (flooredCrossTotal / denominatorSessions) * 100 : null,
+        };
+      })
+      .filter((r) => r.denominatorSessions > 0);
+
+    if (!rowsWithStats.length) return [];
+
+    const mostViolations = rowsWithStats.reduce((best, current) => {
+      return current.violationCount > best.violationCount ? current : best;
+    });
+
+    const mostCrosses = rowsWithStats.reduce((best, current) => {
+      return current.crossTotal > best.crossTotal ? current : best;
+    });
+
+    const highestAvg = rowsWithStats.reduce((best, current) => {
+      if (current.weightedPerSession == null) return best;
+      if (best.weightedPerSession == null) return current;
+      return current.weightedPerSession > best.weightedPerSession ? current : best;
+    });
+
+    const eligibleLowestPercent = rowsWithStats.filter(
+      (row) => !EXCLUDED_LOWEST_PERCENT_NAMES.has(normalizeName(row.name))
+    );
+
+    const lowestPercentPool = eligibleLowestPercent.length ? eligibleLowestPercent : rowsWithStats;
+
+    const lowestPercent = lowestPercentPool.reduce((best, current) => {
+      if (current.weightedPercent == null) return best;
+      if (best.weightedPercent == null) return current;
+      return current.weightedPercent < best.weightedPercent ? current : best;
+    });
+
+    const totalWeightedViolations = rowsWithStats.reduce((sum, r) => sum + r.crossTotal, 0);
+
+    return [
+      {
+        id: "most-violations",
+        title: "Flest brudd",
+        winner: mostViolations.name,
+        value: `${mostViolations.violationCount}`,
+        detail: `Brudd i perioden`,
+      },
+      {
+        id: "most-crosses",
+        title: "Flest kryss",
+        winner: mostCrosses.name,
+        value: `${Math.floor(mostCrosses.crossTotal)}`,
+        detail: `Vektet sum`,
+      },
+      {
+        id: "highest-average",
+        title: "Høyest snitt",
+        winner: highestAvg.name,
+        value: `${(highestAvg.weightedPerSession ?? 0).toFixed(2)}`,
+        detail: `${Math.floor(highestAvg.crossTotal)}/${highestAvg.denominatorSessions} sesjoner`,
+      },
+      {
+        id: "lowest-percent",
+        title: "Lavest %",
+        winner: lowestPercent.name,
+        value: `${(lowestPercent.weightedPercent ?? 0).toFixed(1)}%`,
+        detail: `${lowestPercent.flooredCrossTotal}/${lowestPercent.denominatorSessions} sesjoner`,
+      },
+      {
+        id: "total-violations",
+        title: "Totalt",
+        winner: "Alle",
+        value: `${Math.floor(totalWeightedViolations)}`,
+        detail: `Alle kryss`,
+      },
+    ];
+  }, [visibleRows, tableData, violations]);
 
   const usedRules = new Set(visibleRows.flatMap(r => Object.keys(r.byRule)));
   const ruleCols = RULE_ORDER.filter(r => usedRules.has(r));
@@ -102,19 +299,19 @@ export function ViolationsPage() {
         <div className="tabs">
           <button
             className={`tab ${semester === "2025H" ? "tabActive" : ""}`}
-            onClick={() => setSemester("2025H")}
+            onClick={() => handleSemesterChange("2025H")}
           >
             2025 Høst
           </button>
           <button
             className={`tab ${semester === "2026V" ? "tabActive" : ""}`}
-            onClick={() => setSemester("2026V")}
+            onClick={() => handleSemesterChange("2026V")}
           >
             2026 Vår
           </button>
           <button
             className={`tab ${semester === "all" ? "tabActive" : ""}`}
-            onClick={() => setSemester("all")}
+            onClick={() => handleSemesterChange("all")}
           >
             Total
           </button>
@@ -125,6 +322,21 @@ export function ViolationsPage() {
           </button>
         </div>
       </div>
+
+      {!!awards.length && (
+        <div className="violations__awards-wrap u-mt-md u-mb-sm">
+          <div className="violations__awards-grid">
+            {awards.map((award) => (
+              <article key={award.id} className="card violations__award-card">
+                <div className="violations__award-title">{award.title}</div>
+                <div className="violations__award-value">{award.value}</div>
+                <div className="violations__award-winner">{award.winner}</div>
+                <div className="violations__award-detail">{award.detail}</div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card u-mt-md violations__card">
         {!detail ? (
@@ -161,9 +373,8 @@ export function ViolationsPage() {
                     ? violations.filter(v => v.participantId === r.participantId)
                     : [];
                   return (
-                    <>
+                    <Fragment key={r.participantId}>
                       <tr
-                        key={r.participantId}
                         style={{ cursor: "pointer" }}
                         className={`${expandedId === r.participantId ? "separatorRow" : ""} ${isMobileExpanded ? "violations__row-expanded" : ""}`}
                         onClick={() => {
@@ -256,7 +467,7 @@ export function ViolationsPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
                 {!visibleRows.length && (
