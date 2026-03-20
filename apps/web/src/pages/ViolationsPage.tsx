@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
 import { LoadingCard } from "../components/LoadingCard";
@@ -52,6 +52,7 @@ type AwardCard = {
   id: string;
   title: string;
   winner: string;
+  winnerId?: string;
   value: string;
   detail: string;
 };
@@ -253,6 +254,7 @@ export function ViolationsPage() {
         id: "most-violations",
         title: "Flest brudd",
         winner: mostViolations.name,
+        winnerId: mostViolations.participantId,
         value: `${mostViolations.violationCount}`,
         detail: `Brudd i perioden`,
       },
@@ -260,6 +262,7 @@ export function ViolationsPage() {
         id: "most-crosses",
         title: "Flest kryss",
         winner: mostCrosses.name,
+        winnerId: mostCrosses.participantId,
         value: `${Math.floor(mostCrosses.crossTotal)}`,
         detail: `Vektet sum`,
       },
@@ -267,6 +270,7 @@ export function ViolationsPage() {
         id: "highest-average",
         title: "Høyest snitt",
         winner: highestAvg.name,
+        winnerId: highestAvg.participantId,
         value: `${(highestAvg.weightedPerSession ?? 0).toFixed(2)}`,
         detail: `${Math.floor(highestAvg.crossTotal)}/${highestAvg.denominatorSessions} sesjoner`,
       },
@@ -274,6 +278,7 @@ export function ViolationsPage() {
         id: "lowest-percent",
         title: "Lavest %",
         winner: lowestPercent.name,
+        winnerId: lowestPercent.participantId,
         value: `${(lowestPercent.weightedPercent ?? 0).toFixed(1)}%`,
         detail: `${lowestPercent.flooredCrossTotal}/${lowestPercent.denominatorSessions} sesjoner`,
       },
@@ -330,7 +335,15 @@ export function ViolationsPage() {
               <article key={award.id} className="card violations__award-card">
                 <div className="violations__award-title">{award.title}</div>
                 <div className="violations__award-value">{award.value}</div>
-                <div className="violations__award-winner">{award.winner}</div>
+                <div className="violations__award-winner">
+                  {award.winnerId ? (
+                    <Link className="name-link" to={`/person/${award.winnerId}`}>
+                      {award.winner}
+                    </Link>
+                  ) : (
+                    award.winner
+                  )}
+                </div>
                 <div className="violations__award-detail">{award.detail}</div>
               </article>
             ))}
@@ -390,9 +403,9 @@ export function ViolationsPage() {
                         <td className="violations__col-rank">{i + 1}</td>
                         <td className="sticky">
                           <span className="violations__name-cell">
-                            <button className="name-link" onClick={(e) => { e.stopPropagation(); nav(`/person/${r.participantId}`); }}>
+                            <Link className="name-link" to={`/person/${r.participantId}`} onClick={(e) => e.stopPropagation()}>
                               {r.name}
-                            </button>
+                            </Link>
                             {!r.isRegular && <span className="badge violations__badge-inline">gjest</span>}
                           </span>
                         </td>
