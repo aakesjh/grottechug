@@ -90,9 +90,112 @@
   gap: 14px;
 }
 
+.navSearch {
+  position: relative;
+}
+
+.navSearchFieldWrap {
+  min-width: 140px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--overlay-subtle);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  transition: var(--transition-fast);
+}
+
+.navSearchFieldWrap:hover {
+  background: var(--overlay-light);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.navSearchField {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+.navSearchField::placeholder {
+  color: var(--muted);
+}
+
+.navSearchPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(380px, calc(100vw - 24px));
+  background: var(--dropdown-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  padding: 8px;
+  z-index: 2002;
+  animation: dropIn 120ms ease;
+}
+
+.navSearchList {
+  display: grid;
+  gap: 4px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.navSearchItem {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.navSearchItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.navSearchItemMain {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navSearchItemMeta {
+  color: var(--muted);
+  font-size: var(--font-xs);
+  flex-shrink: 0;
+}
+
+.navSearchHint {
+  color: var(--muted);
+  padding: 8px 10px;
+  font-size: var(--font-sm);
+}
+
 .compactMode .navControls {
   flex: 1;
   justify-content: flex-end;
+}
+
+.compactMode .navSearch {
+  margin-left: auto;
 }
 
 .navAuth {
@@ -392,6 +495,10 @@
   display: none;
 }
 
+.mobileDrawerSearch {
+  display: none;
+}
+
 /* --- Mid-range: profile goes inline with links (below 1350px) --- */
 @media (max-width: 1350px) {
   .profileMenu {
@@ -518,6 +625,33 @@
 
   .profileMenu {
     display: none;
+  }
+
+  .navSearch {
+    display: none;
+  }
+
+  .mobileDrawerSearch {
+    display: block;
+    padding: 12px 20px 10px;
+  }
+
+  .mobileDrawerSearchFieldWrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mobileDrawerSearchPanel {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .navSearchFieldWrap {
+    min-width: 120px;
   }
 
   .mobileDrawerProfile {
