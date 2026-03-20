@@ -363,7 +363,7 @@ export function Navbar() {
                 {searchOpen && (
                   <div className="navSearchPanel">
                     <div className="navSearchList">
-                      {!searchQuery.trim() && <div className="navSearchHint">Søk etter person, session eller side</div>}
+                      {!searchQuery.trim() && <div className="navSearchHint">Søk etter person, dato eller side</div>}
                       {searchLoading && <div className="navSearchHint">Søker...</div>}
                       {!searchLoading && searchQuery.trim() && searchResults.length === 0 && <div className="navSearchHint">Ingen treff</div>}
                       {!searchLoading && searchResults.map((item) => (
@@ -562,7 +562,7 @@ export function Navbar() {
             {searchOpen && (
               <div className="navSearchPanel mobileDrawerSearchPanel">
                 <div className="navSearchList">
-                  {!searchQuery.trim() && <div className="navSearchHint">Søk etter person, session eller side</div>}
+                  {!searchQuery.trim() && <div className="navSearchHint">Søk etter person, dato eller side</div>}
                   {searchLoading && <div className="navSearchHint">Søker...</div>}
                   {!searchLoading && searchQuery.trim() && searchResults.length === 0 && <div className="navSearchHint">Ingen treff</div>}
                   {!searchLoading && searchResults.map((item) => (
