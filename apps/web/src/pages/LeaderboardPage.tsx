@@ -197,6 +197,8 @@ export function LeaderboardPage() {
 
         <div className="leaderboard__search-wrap">
           <input
+            id="leaderboard-search"
+            name="leaderboardSearch"
             type="text"
             className="leaderboard__search"
             placeholder="Søk etter navn..."

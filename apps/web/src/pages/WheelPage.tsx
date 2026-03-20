@@ -16,6 +16,13 @@ type WinnerStats = {
   projectedNext: number | null;
 };
 
+const TAU = Math.PI * 2;
+
+function normalizeAngle(value: number) {
+  const normalized = value % TAU;
+  return normalized < 0 ? normalized + TAU : normalized;
+}
+
 function getInitials(name: string) {
   if (!name) return "?";
   const parts = name.trim().split(/\s+/);
@@ -107,7 +114,7 @@ export function WheelPage() {
     const idleSpin = (now: number) => {
       const dt = now - lastTime;
       lastTime = now;
-      angleRef.current += (dt * 0.0004); // Fart på idle-spinnet
+      angleRef.current = normalizeAngle(angleRef.current + (dt * 0.0004)); // Fart på idle-spinnet
       setAngle(angleRef.current);
       idleReqRef.current = requestAnimationFrame(idleSpin);
     };
@@ -210,7 +217,7 @@ export function WheelPage() {
     setSpinning(true);
 
     // Jevn deceleration fra start — én sammenhengende animasjon
-    const startAngle = angleRef.current;
+    const startAngle = normalizeAngle(angleRef.current);
     const v0 = 0.035; // start-fart (rad/ms) — høy nok til å føles rask
     const animStart = performance.now();
     let cancelled = false;
@@ -260,7 +267,9 @@ export function WheelPage() {
         if (t < 1) {
           requestAnimationFrame(animate);
         } else {
-          setAngle(targetEndAngle % (Math.PI * 2));
+          const finalAngle = normalizeAngle(targetEndAngle);
+          angleRef.current = finalAngle;
+          setAngle(finalAngle);
           cancelled = true;
           onSpinComplete();
         }
@@ -355,25 +364,25 @@ export function WheelPage() {
       // Beregn målvinkel for vinneren
       const idx = currentNames.findIndex(name => name === winnerName);
       const n = currentNames.length;
-      const step = (Math.PI * 2) / n;
+      const step = TAU / n;
       
       // "Near Miss" — pekeren lander nær kanten av segmentet
       const direction = Math.random() > 0.5 ? 1 : -1; 
       const nearMissOffset = (Math.random() * 0.1 + 0.35) * direction; 
       
       const targetLocalAngle = (idx * step) + (step / 2) + (nearMissOffset * step);
-      const baseAngle = (Math.PI * 2) - targetLocalAngle;
+      const baseAngle = TAU - targetLocalAngle;
 
       // Hent nåværende posisjon og fart fra fri-fasen
       const now = performance.now();
       const { pos: currentPos, speed: currentSpeed } = getFreePosAndSpeed(now);
 
-      let nextAngle = baseAngle + Math.floor(currentPos / (Math.PI * 2)) * Math.PI * 2;
-      if (nextAngle < currentPos) nextAngle += Math.PI * 2;
+      let nextAngle = baseAngle + Math.floor(currentPos / TAU) * TAU;
+      if (nextAngle < currentPos) nextAngle += TAU;
       
       // Legg til nok ekstra rotasjoner basert på nåværende fart
       const minExtraSpins = 5;
-      const endAngle = nextAngle + (Math.PI * 2 * (minExtraSpins + Math.floor(Math.random() * 3)));
+      const endAngle = nextAngle + (TAU * (minExtraSpins + Math.floor(Math.random() * 3)));
       const remainingDist = endAngle - currentPos;
       
       // Beregn varighet slik at startfarten matcher nåværende fart
@@ -483,6 +492,8 @@ export function WheelPage() {
             </div>
             <div className="wheel-page__search-row">
               <input
+                id="guest-query"
+                name="guestQuery"
                 className="input"
                 value={guestQuery}
                 onChange={e => setGuestQuery(e.target.value)}
@@ -526,6 +537,8 @@ export function WheelPage() {
               </h2>
               <label className="wheel-page__select-all">
                 <input
+                  id="select-all-regulars"
+                  name="selectAllRegulars"
                   type="checkbox"
                   checked={allRegularsSelected}
                   onChange={(e) => toggleAllRegulars(e.target.checked)}
@@ -538,6 +551,7 @@ export function WheelPage() {
               {regulars.map(p => (
                 <label key={p.id} className={`wheel-page__participant-row ${present[p.id] ? "wheel-page__participant-row--active" : ""}`}>
                   <input
+                    name={`present-${p.id}`}
                     type="checkbox"
                     checked={!!present[p.id]}
                     onChange={e => togglePresent(p, e.target.checked)}
@@ -564,6 +578,7 @@ export function WheelPage() {
                   <div key={p.id} className={`wheel-page__participant-row ${present[p.id] ? "wheel-page__participant-row--active" : ""}`}>
                     <label className="wheel-page__guest-inner">
                       <input
+                        name={`present-guest-${p.id}`}
                         type="checkbox"
                         checked={!!present[p.id]}
                         onChange={e => togglePresent(p, e.target.checked)}
