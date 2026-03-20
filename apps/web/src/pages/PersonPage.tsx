@@ -42,14 +42,16 @@ export function PersonPage() {
   const [compareId, setCompareId] = useState<string>("");
   const [compareData, setCompareData] = useState<Resp | null>(null);
   const chartAreaRef = useRef<HTMLDivElement | null>(null);
-  const [chartSize, setChartSize] = useState({ width: 640, height: 320 });
+  const [chartSize, setChartSize] = useState({ width: 0, height: 240 });
 
   useEffect(() => {
     const element = chartAreaRef.current;
     if (!element) return;
 
     const updateSize = () => {
-      const width = Math.floor(element.getBoundingClientRect().width);
+      const containerWidth = Math.floor(element.getBoundingClientRect().width);
+      const viewportWidth = Math.max(0, Math.floor(window.innerWidth - 24));
+      const width = Math.min(containerWidth, viewportWidth);
       if (width > 1) {
         const targetByWidth = Math.round(width * 0.52);
         const maxByViewport = Math.round(window.innerHeight * 0.46);
@@ -69,7 +71,7 @@ export function PersonPage() {
       observer.disconnect();
       window.removeEventListener("resize", updateSize);
     };
-  }, []);
+  }, [data]);
 
   // 1. Hent alle deltakere for sammenligning
   useEffect(() => {
@@ -301,12 +303,13 @@ export function PersonPage() {
           </div>
 
           <div className="person__chart-area" ref={chartAreaRef}>
-            <LineChart
-              width={chartSize.width}
-              height={chartSize.height}
-              data={chartData}
-              margin={{ top: 16, right: 20, bottom: 26, left: 8 }}
-            >
+            {chartSize.width > 1 && (
+              <LineChart
+                width={chartSize.width}
+                height={chartSize.height}
+                data={chartData}
+                margin={{ top: 16, right: 20, bottom: 26, left: 8 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis
                   dataKey="date"
@@ -365,6 +368,7 @@ export function PersonPage() {
                   />
                 )}
               </LineChart>
+            )}
           </div>
 
           <div className="hr person__divider" />
