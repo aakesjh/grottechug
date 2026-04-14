@@ -2,9 +2,10 @@
    Base Styles — Resets, body, global elements, links, headings
    ========================================================================== */
 
-/* --- Prevent horizontal scroll jitter --- */
+/* --- Scrollbar: only vertical when needed, never horizontal --- */
 html {
-  overflow-y: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 * {

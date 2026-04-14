@@ -10,8 +10,8 @@ export function HomePage() {
     }
 
     return () => {
-      document.documentElement.style.overflow = "scroll";
-      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
     };
   }, []);
 
