@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ChugList Page — Redesigned
+   ChugList Page — Session Cards Layout
    ========================================================================== */
 
 /* --- Page Wrapper --- */
@@ -90,9 +90,7 @@
   flex-wrap: wrap;
 }
 
-/* Tabs use global .tabs / .tab / .tabActive */
-
-/* --- Table Card --- */
+/* --- Table Card (container) --- */
 .chuglist__table-card {
   margin-top: 0;
 }
@@ -108,114 +106,6 @@
   background: color-mix(in srgb, var(--accent3) 5%, transparent);
 }
 
-/* --- Table --- */
-.chuglist__table {
-  min-width: 900px;
-  font-size: 12px;
-}
-
-.chuglist__table th {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.chuglist__table th,
-.chuglist__table td {
-  padding: 8px 6px;
-  border-right: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.chuglist__table th:last-child,
-.chuglist__table td:last-child {
-  border-right: none;
-}
-
-/* --- Sortable headers --- */
-.chuglist__sortable {
-  cursor: pointer;
-  user-select: none;
-  text-align: center;
-  white-space: nowrap;
-  transition: color var(--transition-fast);
-}
-
-.chuglist__sortable:hover {
-  color: var(--accent2);
-}
-
-/* --- History label --- */
-.chuglist__history-label {
-  color: var(--muted);
-  font-style: italic;
-  font-weight: 400 !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  opacity: 0.5;
-}
-
-/* --- Rank column --- */
-.chuglist__rank {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  width: 28px;
-  text-align: center;
-  opacity: 0.5;
-}
-
-.chuglist__rank--guest {
-  opacity: 0.35;
-}
-
-/* --- Name column --- */
-.chuglist__name-col {
-  min-width: 100px;
-  max-width: 160px;
-}
-
-/* --- Best / Avg columns --- */
-.chuglist__best {
-  color: var(--accent2);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.chuglist__avg {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- Spacer column --- */
-.chuglist__spacer {
-  width: 4px;
-  min-width: 4px;
-  padding: 0 !important;
-  border-bottom-color: transparent !important;
-}
-
-/* --- Row hover --- */
-.chuglist__row:hover td {
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-}
-
-.chuglist__row--guest:hover td {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-/* --- Sticky column edge shadow --- */
-.chuglist__table td.sticky,
-.chuglist__table th.sticky {
-  border-right: none;
-}
-
-.chuglist__table .chuglist__name-col {
-  border-right: 1px solid var(--border);
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
-  clip-path: inset(0 -16px 0 0);
-}
-
-/* --- Editor --- */
 .chuglist__editor-header {
   display: flex;
   justify-content: space-between;
@@ -285,24 +175,11 @@
   min-width: 120px;
 }
 
-.chuglist__session-icon {
-  margin-left: 4px;
-  opacity: 0.35;
-  cursor: pointer;
-  font-size: 12px;
-  vertical-align: middle;
-  transition: opacity var(--transition-fast);
-}
-
-.chuglist__session-icon:hover {
-  opacity: 1;
-}
-
 .chuglist__name-btn {
   min-width: 100px;
 }
 
-/* --- Shared name link (used in table + editor) --- */
+/* --- Shared name link (used in cards + editor) --- */
 .name-link {
   background: none;
   border: none;
@@ -329,7 +206,277 @@
   margin-top: 6px;
 }
 
-/* --- Mobile --- */
+/* ==========================================================================
+   Session Cards
+   ========================================================================== */
+
+.chuglist__sessions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* --- Session card --- */
+.chuglist__scard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.chuglist__scard--open {
+  border-color: var(--accent-border);
+}
+
+/* --- Session header (clickable) --- */
+.chuglist__scard-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  user-select: none;
+}
+
+.chuglist__scard-header:hover {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.chuglist__scard-date-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Date is now a clickable button linking to session */
+.chuglist__scard-date {
+  background: none;
+  border: none;
+  font: inherit;
+  font-weight: 800;
+  font-size: var(--font-md);
+  white-space: nowrap;
+  color: var(--text);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.chuglist__scard-date:hover {
+  color: var(--accent2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chuglist__scard-daynote {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+}
+
+.chuglist__scard-daynote:hover {
+  opacity: 1;
+}
+
+.chuglist__scard-edit-btn {
+  padding: 3px 7px;
+  opacity: 0.4;
+  transition: opacity var(--transition-fast);
+}
+
+.chuglist__scard-edit-btn:hover {
+  opacity: 1;
+}
+
+/* --- Session stats (collapsed summary) --- */
+.chuglist__scard-stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.chuglist__scard-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-sm);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chuglist__scard-stat--best {
+  color: var(--accent2);
+  font-weight: 700;
+}
+
+.chuglist__scard-stat--avg {
+  font-size: var(--font-xs);
+  opacity: 0.7;
+}
+
+/* --- Chevron --- */
+.chuglist__scard-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  transition: transform var(--transition-base);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.chuglist__scard-chevron--open {
+  transform: rotate(180deg);
+  opacity: 0.8;
+}
+
+/* --- Expanded body --- */
+.chuglist__scard-body {
+  padding: 0 16px 14px;
+  animation: chuglist-expand 0.2s ease;
+}
+
+@keyframes chuglist-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Day note (improved display) --- */
+.chuglist__scard-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: color-mix(in srgb, var(--accent3) 8%, transparent);
+  border-left: 3px solid var(--accent3);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: var(--font-sm);
+  color: var(--accent3);
+  line-height: 1.5;
+}
+
+.chuglist__scard-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  opacity: 0.7;
+}
+
+/* --- Participant list container --- */
+.chuglist__scard-list {
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+/* --- Participant row --- */
+.chuglist__scard-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+  font-size: 13px;
+  min-height: 38px;
+}
+
+.chuglist__scard-row:last-child {
+  border-bottom: none;
+}
+
+.chuglist__scard-row--guest {
+  opacity: 0.7;
+}
+
+.chuglist__scard-row-rank {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  opacity: 0.5;
+}
+
+.chuglist__scard-row-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.chuglist__scard-row-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent2);
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* --- Inline tags for violations & notes --- */
+.chuglist__scard-row-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chuglist__tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid;
+  white-space: nowrap;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.chuglist__tag--note {
+  color: var(--muted);
+  border-color: color-mix(in srgb, var(--muted) 40%, transparent);
+  cursor: default;
+  padding: 2px 6px;
+}
+
+.chuglist__prow-empty {
+  color: var(--muted);
+  font-size: var(--font-sm);
+  padding: 8px 0;
+  opacity: 0.6;
+  text-align: center;
+}
+
+/* --- Guest label inside session card --- */
+.chuglist__scard-guest-label {
+  padding: 8px 0 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  opacity: 0.6;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+
 @media (max-width: 768px) {
   .chuglist__hero {
     flex-direction: column;
@@ -359,11 +506,6 @@
     text-align: center;
   }
 
-  .chuglist__name-col {
-    min-width: 70px;
-    max-width: 110px;
-  }
-
   .chuglist__name-btn {
     min-width: 70px;
   }
@@ -371,7 +513,57 @@
   .name-link {
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100px;
+    max-width: 120px;
     display: inline-block;
+  }
+
+  /* Session card mobile */
+  .chuglist__scard-header {
+    padding: 10px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .chuglist__scard-stats {
+    gap: 10px;
+  }
+
+  .chuglist__scard-stat--avg {
+    display: none;
+  }
+
+  .chuglist__scard-body {
+    padding: 0 10px 10px;
+  }
+
+  .chuglist__scard-list {
+    max-width: none;
+  }
+
+  .chuglist__scard-row {
+    grid-template-columns: 24px 1fr auto auto;
+    gap: 6px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chuglist__scard-date {
+    font-size: var(--font-base);
+  }
+
+  .chuglist__scard-edit-btn {
+    display: none;
+  }
+
+  .chuglist__scard-row {
+    grid-template-columns: 22px 1fr auto auto;
+    gap: 4px;
+    padding: 6px 2px;
+  }
+
+  .chuglist__tag {
+    font-size: 9px;
+    padding: 1px 5px;
   }
 }

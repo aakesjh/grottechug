@@ -149,17 +149,18 @@ export function PersonPage() {
     }
 
     const dateMap = new Map<string, any>();
-    const addData = (points: Point[], key: string) => {
+    const addData = (points: Point[], key: string, sessionKey: string) => {
       points.forEach(p => {
         const d = fmtDDMMYYYY(p.dateISO);
         if (!dateMap.has(d)) {
           dateMap.set(d, { dateISO: p.dateISO, date: d });
         }
         dateMap.get(d)[key] = p.seconds;
+        dateMap.get(d)[sessionKey] = p.sessionId;
       });
     };
-    addData(data.points, "mainSeconds");
-    addData(compareData.points, "compSeconds");
+    addData(data.points, "mainSeconds", "mainSessionId");
+    addData(compareData.points, "compSeconds", "compSessionId");
 
     return Array.from(dateMap.values()).sort(
       (a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime()
@@ -340,14 +341,14 @@ export function PersonPage() {
                 
                 {compareData && <Legend verticalAlign="top" height={36} />}
 
-                <Line 
+                <Line
                   name={p.name}
-                  type="monotone" 
-                  dataKey={compareData ? "mainSeconds" : "seconds"} 
-                  stroke="var(--accent)" 
-                  strokeWidth={3} 
-                  dot={{ r: 4, fill: "var(--accent)" }} 
-                  activeDot={{ r: 6 }} 
+                  type="monotone"
+                  dataKey={compareData ? "mainSeconds" : "seconds"}
+                  stroke="var(--accent)"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "var(--accent)", cursor: "pointer" }}
+                  activeDot={{ r: 6, cursor: "pointer", onClick: (_: any, payload: any) => { const sid = payload?.payload?.sessionId || payload?.payload?.mainSessionId; if (sid) nav(`/session/${sid}`); } }}
                   connectNulls
                 />
                 
@@ -356,14 +357,14 @@ export function PersonPage() {
                 )}
 
                 {compareData && (
-                  <Line 
+                  <Line
                     name={compareData.participant.name}
-                    type="monotone" 
-                    dataKey="compSeconds" 
-                    stroke="#f59e0b" 
-                    strokeWidth={3} 
-                    dot={{ r: 4, fill: "#f59e0b" }} 
-                    activeDot={{ r: 6 }} 
+                    type="monotone"
+                    dataKey="compSeconds"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#f59e0b", cursor: "pointer" }}
+                    activeDot={{ r: 6, cursor: "pointer", onClick: (_: any, payload: any) => { const sid = payload?.payload?.compSessionId; if (sid) nav(`/session/${sid}`); } }}
                     connectNulls
                   />
                 )}

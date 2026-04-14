@@ -31,10 +31,13 @@
 
 .stats__row-wrap {
   flex-wrap: wrap;
+  align-items: stretch;
 }
 
 .stats__panel-col {
   flex: 1 1 400px;
+  display: flex;
+  flex-direction: column;
 }
 
 .stats__chart-area {
@@ -42,6 +45,7 @@
   height: 300px;
   min-width: 0;
   min-height: 300px;
+  flex: 1;
 }
 
 .stats__chart-area--sm {

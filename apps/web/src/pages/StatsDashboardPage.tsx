@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, Tooltip, CartesianGrid, ScatterChart, Scatter, Cell, Legend
@@ -72,6 +73,7 @@ function getColor(name: string) {
 }
 
 export function StatsDashboardPage() {
+  const navigate = useNavigate();
   const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<AnalyticsResp | null>(null);
   const [tableData, setTableData] = useState<TableResponse | null>(null);
@@ -135,7 +137,7 @@ export function StatsDashboardPage() {
 
     return base.map(day => {
       const col = tableData.columns.find(c => c.dateISO === day.dateISO);
-      
+
       let fastestTime = Infinity;
       let fastestPerson = "";
       let slowestTime = -Infinity;
@@ -159,6 +161,7 @@ export function StatsDashboardPage() {
 
       return {
         ...day,
+        sessionId: col?.sessionId ?? null,
         fastestTime: fastestTime !== Infinity ? fastestTime : null,
         fastestPerson,
         slowestTime: slowestTime !== -Infinity ? slowestTime : null,
@@ -214,6 +217,7 @@ export function StatsDashboardPage() {
   const scatterData = validParticipants
     .filter(p => p.isRegular || (showScatterGuests && !p.isRegular && p.attempts >= 3))
     .map(p => ({
+      participantId: p.participantId,
       name: p.name,
       attempts: p.attempts,
       avg: Number(p.avg?.toFixed(2)),
@@ -226,7 +230,7 @@ export function StatsDashboardPage() {
       const vCount = violations.filter(
         v => v.participantId === p.participantId && v.ruleCode !== "ABSENCE"
       ).length;
-      return { name: p.name, notePct: (vCount / p.attempts) * 100 };
+      return { participantId: p.participantId, name: p.name, notePct: (vCount / p.attempts) * 100 };
     })
     .sort((a, b) => b.notePct - a.notePct)
     .slice(0, 5);
@@ -238,7 +242,7 @@ export function StatsDashboardPage() {
         const wetCount = violations.filter(
           v => v.participantId === p.participantId && ["W", "VW", "MM", "P", "T"].includes(v.ruleCode)
         ).length;
-        return { name: p.name, wetPct: (wetCount / p.attempts) * 100 };
+        return { participantId: p.participantId, name: p.name, wetPct: (wetCount / p.attempts) * 100 };
       })
       .sort((a, b) => a.wetPct - b.wetPct)
       .slice(0, 5);
@@ -264,10 +268,11 @@ export function StatsDashboardPage() {
 
       const firstTwoAvg = (times[0] + times[1]) / 2;
       const lastTwoAvg = (times[times.length - 1] + times[times.length - 2]) / 2;
-      
+
       const improvementPct = ((firstTwoAvg - lastTwoAvg) / firstTwoAvg) * 100;
 
       return {
+        participantId: r.participantId,
         name: r.name,
         improvementPct,
         firstAvg: firstTwoAvg,
@@ -499,9 +504,9 @@ export function StatsDashboardPage() {
                 </label>
               </div>
 
-              <div className="stats__chart-area--sm">
+              <div className="stats__chart-area">
                 {hasParticipantStats ? (
-                  <ResponsiveContainer width="100%" height={280} minWidth={1} minHeight={280}>
+                  <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={280}>
                     <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: -20 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                       <XAxis
@@ -543,7 +548,7 @@ export function StatsDashboardPage() {
                           return null;
                         }}
                       />
-                      <Scatter data={scatterData}>
+                      <Scatter data={scatterData} style={{ cursor: "pointer" }} onClick={(data: any) => { if (data?.participantId) navigate(`/person/${data.participantId}`); }}>
                         {scatterData.map((entry, index) => (
                           <Cell key={`scatter-${index}`} fill={getColor(entry.name)} />
                         ))}
@@ -653,7 +658,7 @@ export function StatsDashboardPage() {
                         tickFormatter={(tick) => `${tick}%`}
                       />
                       <Tooltip content={<CustomImprovementTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
-                      <Bar dataKey="improvementPct" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="improvementPct" radius={[4, 4, 0, 0]} style={{ cursor: "pointer" }} onClick={(data: any) => { if (data?.participantId) navigate(`/person/${data.participantId}`); }}>
                         {improvementData.map((entry, index) => (
                           <Cell key={`bar-${index}`} fill={getColor(entry.name)} />
                         ))}
@@ -691,7 +696,7 @@ export function StatsDashboardPage() {
                       allowDecimals={false}
                     />
                     <Tooltip content={<CustomActivityTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
-                    <Bar dataKey="attempts" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="attempts" fill="var(--accent)" radius={[4, 4, 0, 0]} style={{ cursor: "pointer" }} onClick={(data: any) => { if (data?.sessionId) navigate(`/session/${data.sessionId}`); }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -726,7 +731,7 @@ export function StatsDashboardPage() {
                         tickFormatter={(tick) => `${tick}%`}
                       />
                       <Tooltip content={<CustomWetRateTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
-                      <Bar dataKey="wetPct" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="wetPct" radius={[4, 4, 0, 0]} style={{ cursor: "pointer" }} onClick={(data: any) => { if (data?.participantId) navigate(`/person/${data.participantId}`); }}>
                         {lowestWetRateData.map((entry, index) => (
                           <Cell key={`bar-${index}`} fill={getColor(entry.name)} />
                         ))}
@@ -766,7 +771,7 @@ export function StatsDashboardPage() {
                         tickFormatter={(tick) => `${tick}%`}
                       />
                       <Tooltip content={<CustomPunishmentTooltip />} cursor={{ fill: "rgba(255,255,255,0.05)" }} />
-                      <Bar dataKey="notePct" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="notePct" radius={[4, 4, 0, 0]} style={{ cursor: "pointer" }} onClick={(data: any) => { if (data?.participantId) navigate(`/person/${data.participantId}`); }}>
                         {noteRateData.map((entry, index) => (
                           <Cell key={`bar-${index}`} fill={getColor(entry.name)} />
                         ))}

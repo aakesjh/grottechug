@@ -61,6 +61,12 @@ function fmtDDMMYYYYFromYYYYMMDD(yyyyMmDd: string) {
   return `${d}/${m}/${y}`;
 }
 
+const RULE_COLORS: Record<string, string> = {
+  MM: "#10b981", W: "#3b82f6", VW: "#6366f1", P: "#ef4444", T: "#14b8a6",
+  DNS: "#f59e0b", DNF: "#f97316", VOMIT: "#ec4899", KPR: "#8b5cf6",
+  ABSENCE: "#94a3b8"
+};
+
 function inferSemesterFromYYYYMMDD(yyyyMmDd: string): "2026V" | "2025H" {
   const [yStr, mStr] = yyyyMmDd.split("-");
   const y = Number(yStr);
@@ -95,7 +101,7 @@ export function ChugListPage() {
   const [sortKey, setSortKey] = useState<SortKey>({ kind: "none" });
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const [showGuests, setShowGuests] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
 
   const [draftSeconds, setDraftSeconds] = useState<Record<string, string>>({});
@@ -161,6 +167,10 @@ export function ChugListPage() {
     setDirtyCells(new Set());
     setDirtySessionNote(false);
   }, [isAdmin]);
+
+  function toggleExpand(id: string) {
+    setExpandedIds(prev => prev.has(id) ? new Set() : new Set([id]));
+  }
 
   function clickSort(next: SortKey) {
     const same =
@@ -236,6 +246,30 @@ export function ChugListPage() {
       const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
       const b = (sumY - m * sumX) / n;
       result[r.participantId] = Math.max(0, m * n + b);
+    }
+    return result;
+  }, [data]);
+
+  const sessionStats = useMemo(() => {
+    if (!data) return {} as Record<string, { count: number; best: number | null; bestName: string | null; avg: number | null }>;
+    const result: Record<string, { count: number; best: number | null; bestName: string | null; avg: number | null }> = {};
+    for (const col of data.columns) {
+      let count = 0;
+      let best: number | null = null;
+      let bestName: string | null = null;
+      let total = 0;
+      for (const r of data.rows) {
+        const cell = data.cells?.[r.participantId]?.[col.sessionId];
+        if (cell?.seconds != null) {
+          count++;
+          total += cell.seconds;
+          if (best === null || cell.seconds < best) {
+            best = cell.seconds;
+            bestName = r.name;
+          }
+        }
+      }
+      result[col.sessionId] = { count, best, bestName, avg: count > 0 ? total / count : null };
     }
     return result;
   }, [data]);
@@ -416,7 +450,7 @@ export function ChugListPage() {
   }
 
   const sessionCount = data?.columns.length ?? 0;
-  const participantCount = regularRows.length + (showGuests ? guestRows.length : 0);
+  const participantCount = regularRows.length + guestRows.length;
 
   return (
     <div className="chuglist">
@@ -424,10 +458,6 @@ export function ChugListPage() {
       <div className="chuglist__hero">
         <h1 className="chuglist__title">Chuggelista</h1>
         <div className="chuglist__pills">
-          <span className="chuglist__pill chuglist__pill--accent">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-            {participantCount} deltakere
-          </span>
           <span className="chuglist__pill chuglist__pill--cyan">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
             {sessionCount} økter
@@ -449,9 +479,6 @@ export function ChugListPage() {
               Total
             </button>
           </div>
-          <button className={`btn ${showGuests ? "" : "btnGhost"}`} onClick={() => setShowGuests(g => !g)}>
-            {showGuests ? "Skjul gjester" : "Vis gjester"}
-          </button>
           {isAdmin && <button className="btn" onClick={() => setNewDayOpen(true)}>+ Ny dag</button>}
         </div>
 
@@ -475,7 +502,7 @@ export function ChugListPage() {
               </button>
             </>
           ) : (
-            isAdmin && <span className="chuglist__hint">Dobbeltklikk en dato for å redigere</span>
+            isAdmin && <span className="chuglist__hint">Klikk ✏️ på en økt for å redigere</span>
           )}
         </div>
       </div>
@@ -662,7 +689,7 @@ export function ChugListPage() {
         </div>
       )}
 
-      {/* Table view */}
+      {/* Session accordion view */}
       <div className="card chuglist__table-card">
         {!data ? (
           <LoadingCard
@@ -673,183 +700,164 @@ export function ChugListPage() {
             subtitle="Henter chuggeliste"
           />
         ) : (
-          <div className="tableWrap">
-            <table className="chuglist__table">
-              <thead>
-                <tr>
-                  <th className="sticky">#</th>
-                  <th className="sticky chuglist__name-col">Deltaker</th>
+          <div className="chuglist__sessions">
+            {[...data.columns].reverse().map((col) => {
+              const expanded = expandedIds.has(col.sessionId);
+              const stats = sessionStats[col.sessionId];
+              const hasDayNote = col.note && col.note.trim() !== "";
 
-                  <th className="chuglist__sortable" onClick={() => clickSort({ kind: "best" })}>
-                    Beste {sortKey.kind === "best" ? (sortDir === "asc" ? "▲" : "▼") : ""}
-                  </th>
+              // Get participants with times for this session, sorted by time
+              const participants = data.rows
+                .map(r => {
+                  const cell = data.cells?.[r.participantId]?.[col.sessionId];
+                  if (!cell || cell.seconds == null) return null;
+                  const cellViolations = allViolations.filter(
+                    v => v.participantId === r.participantId && v.sessionId === col.sessionId
+                  );
+                  return { ...r, cell, cellViolations };
+                })
+                .filter(Boolean)
+                .sort((a, b) => a!.cell.seconds! - b!.cell.seconds!) as Array<Row & { cell: Cell; cellViolations: ViolationEntry[] }>;
 
-                  <th className="chuglist__sortable" onClick={() => clickSort({ kind: "avg" })}>
-                    Snitt {sortKey.kind === "avg" ? (sortDir === "asc" ? "▲" : "▼") : ""}
-                  </th>
+              const guestParticipants = participants.filter(p => !p.isRegular);
+              const regularParticipants = participants.filter(p => p.isRegular);
 
-                  <th className="chuglist__history-label"></th>
-
-                  {data.columns.map(c => {
-                    const hasDayNote = c.note && c.note.trim() !== "";
-                    return (
-                      <th
-                        key={c.sessionId}
-                        className="cell chuglist__sortable"
-                        onClick={() => clickSort({ kind: "date", sessionId: c.sessionId })}
-                        onDoubleClick={() => {
-                          if (isAdmin) {
-                            openEditor(c.sessionId);
-                          }
-                        }}
+              return (
+                <div
+                  key={col.sessionId}
+                  className={`chuglist__scard ${expanded ? "chuglist__scard--open" : ""}`}
+                >
+                  {/* Session header */}
+                  <div
+                    className="chuglist__scard-header"
+                    onClick={() => toggleExpand(col.sessionId)}
+                  >
+                    <div className="chuglist__scard-date-row">
+                      <button
+                        className="chuglist__scard-date"
+                        onClick={(e) => { e.stopPropagation(); nav(`/session/${col.sessionId}`); }}
+                        title="Se dagsrapport"
                       >
-                        {fmtDDMM(c.dateISO)}
-                        {sortKey.kind === "date" && sortKey.sessionId === c.sessionId
-                          ? (sortDir === "asc" ? " ▲" : " ▼")
-                          : ""}
-                        
-                        {/* NYTT: Klikkbart ikon for å åpne Session-siden */}
-                        <span
-                          className="chuglist__session-icon"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            nav(`/session/${c.sessionId}`);
-                          }}
-                          title="Se dagsrapport og statistikk"
-                        >
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="18" y="3" width="4" height="18" /><rect x="10" y="8" width="4" height="13" /><rect x="2" y="13" width="4" height="8" /></svg>
+                        {fmtDDMMYYYY(col.dateISO)}
+                      </button>
+                      {hasDayNote && (
+                        <span className="chuglist__scard-daynote" title={col.note!} onClick={(e) => { e.stopPropagation(); nav(`/session/${col.sessionId}`); }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                         </span>
-                        
-                        {/* GUL PRIKK FOR DAGSNOTAT */}
-                        {hasDayNote && (
-                          <>
-                            <span className="noteDot noteDotYellow" style={{ top: 8, right: 6 }} />
-                            <div className="tooltip">
-                              <strong style={{ display: "block", marginBottom: "4px" }}>Dagsnotat:</strong>
-                              {c.note}
+                      )}
+                      {isAdmin && (
+                        <button
+                          className="btn chuglist__scard-edit-btn"
+                          onClick={(e) => { e.stopPropagation(); openEditor(col.sessionId); }}
+                          title="Rediger denne dagen"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="chuglist__scard-stats">
+                      <span className="chuglist__scard-stat" title="Deltakere">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                        {stats?.count ?? 0}
+                      </span>
+                      {stats?.best != null && (
+                        <span className="chuglist__scard-stat chuglist__scard-stat--best" title="Beste tid">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                          {stats.best.toFixed(2)}s
+                        </span>
+                      )}
+                      {stats?.avg != null && (
+                        <span className="chuglist__scard-stat chuglist__scard-stat--avg" title="Gjennomsnitt">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                          {stats.avg.toFixed(2)}s
+                        </span>
+                      )}
+                    </div>
+
+                    <span className={`chuglist__scard-chevron ${expanded ? "chuglist__scard-chevron--open" : ""}`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9" />
+                      </svg>
+                    </span>
+                  </div>
+
+                  {/* Expanded: participant list */}
+                  {expanded && (
+                    <div className="chuglist__scard-body">
+                      {hasDayNote && (
+                        <div className="chuglist__scard-note">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                          <span>{col.note}</span>
+                        </div>
+                      )}
+
+                      <div className="chuglist__scard-list">
+                        {regularParticipants.length === 0 && guestParticipants.length === 0 && (
+                          <div className="chuglist__prow-empty">Ingen registrerte tider</div>
+                        )}
+                        {regularParticipants.map((p, idx) => {
+                          const note = p.cell.note ?? null;
+                          return (
+                            <div key={p.participantId} className="chuglist__scard-row">
+                              <span className="chuglist__scard-row-rank">{idx + 1}</span>
+                              <button
+                                className="name-link chuglist__scard-row-name"
+                                onClick={() => nav(`/person/${p.participantId}`)}
+                              >
+                                {p.name}
+                              </button>
+                              <span className="chuglist__scard-row-tags">
+                                {p.cellViolations.map((v, i) => (
+                                  <span key={i} className="chuglist__tag" style={{ borderColor: RULE_COLORS[v.ruleCode], color: RULE_COLORS[v.ruleCode] }}>{v.ruleCode}</span>
+                                ))}
+                                {note && (
+                                  <span className="chuglist__tag chuglist__tag--note" title={note}>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                  </span>
+                                )}
+                              </span>
+                              <span className="chuglist__scard-row-time">{p.cell.seconds!.toFixed(2)}s</span>
                             </div>
+                          );
+                        })}
+                        {guestParticipants.length > 0 && (
+                          <>
+                            <div className="chuglist__scard-guest-label">Gjester</div>
+                            {guestParticipants.map((p, idx) => {
+                              const note = p.cell.note ?? null;
+                              return (
+                                <div key={p.participantId} className="chuglist__scard-row chuglist__scard-row--guest">
+                                  <span className="chuglist__scard-row-rank">{idx + 1}</span>
+                                  <button
+                                    className="name-link chuglist__scard-row-name"
+                                    onClick={() => nav(`/person/${p.participantId}`)}
+                                  >
+                                    {p.name}
+                                  </button>
+                                  <span className="chuglist__scard-row-tags">
+                                    {p.cellViolations.map((v, i) => (
+                                      <span key={i} className="chuglist__tag" style={{ borderColor: RULE_COLORS[v.ruleCode], color: RULE_COLORS[v.ruleCode] }}>{v.ruleCode}</span>
+                                    ))}
+                                    {note && (
+                                      <span className="chuglist__tag chuglist__tag--note" title={note}>
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="chuglist__scard-row-time">{p.cell.seconds!.toFixed(2)}s</span>
+                                </div>
+                              );
+                            })}
                           </>
                         )}
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-
-              <tbody>
-                {regularRows.map((r, idx) => (
-                  <tr key={r.participantId} className="chuglist__row">
-                    <td className="sticky chuglist__rank">{idx + 1}</td>
-                    <td className="sticky chuglist__name-col">
-                      <button className="name-link" onClick={() => nav(`/person/${r.participantId}`)}>
-                        {r.name}
-                      </button>
-                    </td>
-                    <td className="chuglist__best">{r.bestOverall == null ? "-" : `${r.bestOverall.toFixed(2)}s`}</td>
-                    <td className="chuglist__avg">{r.avgOverall == null ? "-" : `${r.avgOverall.toFixed(2)}s`}</td>
-                    <td className="chuglist__spacer" />
-                    {data.columns.map(c => {
-                      const cell = data.cells?.[r.participantId]?.[c.sessionId];
-                      const txt = cell?.seconds == null ? "" : `${cell.seconds.toFixed(2)}s`;
-                      const note = cell?.note ?? null;
-                      
-                      const cellViolations = allViolations.filter(
-                        v => v.participantId === r.participantId && v.sessionId === c.sessionId
-                      );
-                      const violationsStr = cellViolations.map(v => v.ruleCode).join(", ");
-                      const hasViolations = cellViolations.length > 0;
-
-                      return (
-                        <td key={c.sessionId} className="cell">
-                          {txt}
-                          
-                          {/* RØD PRIKK FOR ANMERKNING */}
-                          {hasViolations && (
-                            <span className="noteDot noteDotRed" style={{ right: note ? 12 : 4 }} />
-                          )}
-
-                          {/* GUL PRIKK FOR NOTAT */}
-                          {note && (
-                            <span className="noteDot noteDotYellow" />
-                          )}
-
-                          {/* FELLES TOOLTIP */}
-                          {(note || hasViolations) && (
-                            <div className="tooltip">
-                                {hasViolations && (
-                                  <div style={{ color: "#ef4444", marginBottom: note ? 6 : 0 }}>
-                                    {violationsStr}
-                                  </div>
-                                )}
-                                {note && <div>{note}</div>}
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-
-                {showGuests && guestRows.length > 0 && (
-                  <tr className="separatorRow">
-                    <td colSpan={5 + data.columns.length}>Gjester</td>
-                  </tr>
-                )}
-
-                {showGuests && guestRows.map((r, idx) => (
-                  <tr key={r.participantId} className="chuglist__row chuglist__row--guest">
-                    <td className="sticky chuglist__rank chuglist__rank--guest">{idx + 1}</td>
-                    <td className="sticky chuglist__name-col">
-                      <button className="name-link" onClick={() => nav(`/person/${r.participantId}`)}>
-                        {r.name}
-                      </button>
-                    </td>
-                    <td className="chuglist__best">{r.bestOverall == null ? "-" : `${r.bestOverall.toFixed(2)}s`}</td>
-                    <td className="chuglist__avg">{r.avgOverall == null ? "-" : `${r.avgOverall.toFixed(2)}s`}</td>
-                    <td className="chuglist__spacer" />
-                    {data.columns.map(c => {
-                      const cell = data.cells?.[r.participantId]?.[c.sessionId];
-                      const txt = cell?.seconds == null ? "" : `${cell.seconds.toFixed(2)}s`;
-                      const note = cell?.note ?? null;
-                      
-                      const cellViolations = allViolations.filter(
-                        v => v.participantId === r.participantId && v.sessionId === c.sessionId
-                      );
-                      const violationsStr = cellViolations.map(v => v.ruleCode).join(", ");
-                      const hasViolations = cellViolations.length > 0;
-
-                      return (
-                        <td key={c.sessionId} className="cell">
-                          {txt}
-                          
-                          {/* RØD PRIKK FOR ANMERKNING */}
-                          {hasViolations && (
-                            <span className="noteDot noteDotRed" style={{ right: note ? 12 : 4 }} />
-                          )}
-
-                          {/* GUL PRIKK FOR NOTAT */}
-                          {note && (
-                            <span className="noteDot noteDotYellow" />
-                          )}
-
-                          {/* FELLES TOOLTIP */}
-                          {(note || hasViolations) && (
-                            <div className="tooltip">
-                                {hasViolations && (
-                                  <div style={{ color: "#ef4444", marginBottom: note ? 6 : 0 }}>
-                                    {violationsStr}
-                                  </div>
-                                )}
-                                {note && <div>{note}</div>}
-                            </div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
