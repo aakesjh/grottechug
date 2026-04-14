@@ -36,13 +36,6 @@ type ViolationEntry = {
 const PERF_CODES = ["MM", "W", "VW", "P", "T", "DNS", "DNF", "VOMIT", "KPR"] as const;
 const WETNESS_CODES = new Set<string>(["MM", "W", "VW"]);
 
-type SortKey =
-  | { kind: "none" }
-  | { kind: "best" }
-  | { kind: "avg" }
-  | { kind: "date"; sessionId: string };
-
-type SortDir = "asc" | "desc";
 
 function fmtDDMMYYYY(iso: string) {
   const d = new Date(iso);
@@ -50,10 +43,6 @@ function fmtDDMMYYYY(iso: string) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = String(d.getFullYear());
   return `${dd}/${mm}/${yyyy}`;
-}
-function fmtDDMM(iso: string) {
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 function fmtDDMMYYYYFromYYYYMMDD(yyyyMmDd: string) {
   const [y, m, d] = yyyyMmDd.split("-");
@@ -97,9 +86,6 @@ export function ChugListPage() {
   const [data, setData] = useState<TableResponse | null>(null);
   
   const [allViolations, setAllViolations] = useState<ViolationEntry[]>([]);
-
-  const [sortKey, setSortKey] = useState<SortKey>({ kind: "none" });
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [editSessionId, setEditSessionId] = useState<string | null>(null);
@@ -172,54 +158,6 @@ export function ChugListPage() {
     setExpandedIds(prev => prev.has(id) ? new Set() : new Set([id]));
   }
 
-  function clickSort(next: SortKey) {
-    const same =
-      sortKey.kind === next.kind &&
-      (sortKey.kind !== "date" ||
-        (next.kind === "date" && sortKey.sessionId === next.sessionId));
-
-    if (!same) {
-      setSortKey(next);
-      setSortDir("asc");
-      return;
-    }
-    setSortDir(d => (d === "asc" ? "desc" : "asc"));
-  }
-
-  const sortedRows = useMemo(() => {
-    const rows = data?.rows ?? [];
-    const copy = [...rows];
-
-    const getVal = (r: Row): number => {
-      if (!data) return Number.POSITIVE_INFINITY;
-
-      if (sortKey.kind === "best") return r.bestOverall ?? Number.POSITIVE_INFINITY;
-      if (sortKey.kind === "avg") return r.avgOverall ?? Number.POSITIVE_INFINITY;
-
-      if (sortKey.kind === "date") {
-        const cell = data.cells?.[r.participantId]?.[sortKey.sessionId];
-        return cell?.seconds ?? Number.POSITIVE_INFINITY;
-      }
-      return 0;
-    };
-
-    if (sortKey.kind === "none") return copy;
-
-    copy.sort((a, b) => {
-      const va = getVal(a);
-      const vb = getVal(b);
-      return sortDir === "asc" ? va - vb : vb - va;
-    });
-
-    return copy;
-  }, [data, sortKey, sortDir]);
-
-  const { regularRows, guestRows } = useMemo(() => {
-    return {
-      regularRows: sortedRows.filter(r => r.isRegular),
-      guestRows: sortedRows.filter(r => !r.isRegular)
-    };
-  }, [sortedRows]);
 
   const editSession = useMemo(() => {
     if (!data || !editSessionId) return null;
@@ -450,7 +388,6 @@ export function ChugListPage() {
   }
 
   const sessionCount = data?.columns.length ?? 0;
-  const participantCount = regularRows.length + guestRows.length;
 
   return (
     <div className="chuglist">
