@@ -879,7 +879,22 @@ export function SessionPage() {
                 <XAxis
                   dataKey="name"
                   stroke="var(--text)"
-                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                  tick={(props: any) => {
+                    const entry = validProjected[props.index];
+                    return (
+                      <text
+                        {...props}
+                        className="session__chart-tick-link"
+                        onClick={() => entry && nav(`/person/${entry.participantId}`)}
+                        style={{ cursor: entry ? "pointer" : "default" }}
+                        fill="var(--accent)"
+                        fontSize={12}
+                        fontWeight={600}
+                      >
+                        {props.payload?.value}
+                      </text>
+                    );
+                  }}
                   tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
                   tickMargin={8}
                   minTickGap={12}
@@ -906,7 +921,15 @@ export function SessionPage() {
                   }}
                 />
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.22)" strokeWidth={2} />
-                <Bar dataKey="diffProjected" radius={[8, 8, 0, 0]}>
+                <Bar
+                  dataKey="diffProjected"
+                  radius={[8, 8, 0, 0]}
+                  onClick={(_data: any, index: number) => {
+                    const entry = validProjected[index];
+                    if (entry) nav(`/person/${entry.participantId}`);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
                   {validProjected.map((entry, i) => (
                     <Cell
                       key={i}
@@ -932,7 +955,22 @@ export function SessionPage() {
                   <XAxis
                     dataKey="name"
                     stroke="var(--text)"
-                    tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                    tick={(props: any) => {
+                      const entry = pbData[props.index];
+                      return (
+                        <text
+                          {...props}
+                          className="session__chart-tick-link"
+                          onClick={() => entry && nav(`/person/${entry.participantId}`)}
+                          style={{ cursor: entry ? "pointer" : "default" }}
+                          fill="var(--accent)"
+                          fontSize={12}
+                          fontWeight={600}
+                        >
+                          {props.payload?.value}
+                        </text>
+                      );
+                    }}
                     tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
                     tickMargin={8}
                     minTickGap={12}
@@ -959,7 +997,15 @@ export function SessionPage() {
                     }}
                   />
                   <ReferenceLine y={0} stroke="rgba(255,255,255,0.22)" strokeWidth={2} />
-                  <Bar dataKey="pbDelta" radius={[8, 8, 0, 0]}>
+                  <Bar
+                    dataKey="pbDelta"
+                    radius={[8, 8, 0, 0]}
+                    onClick={(_data: any, index: number) => {
+                      const entry = pbData[index];
+                      if (entry) nav(`/person/${entry.participantId}`);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     {pbData.map((entry, i) => (
                       <Cell key={i} fill={entry.pbDelta < 0 ? "#facc15" : "#94a3b8"} />
                     ))}
@@ -1076,7 +1122,22 @@ export function SessionPage() {
               <XAxis
                 dataKey="name"
                 stroke="var(--text)"
-                tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                tick={(props: any) => {
+                  const entry = sessionStats.attempts[props.index];
+                  return (
+                    <text
+                      {...props}
+                      className="session__chart-tick-link"
+                      onClick={() => entry && nav(`/person/${entry.participantId}`)}
+                      style={{ cursor: entry ? "pointer" : "default" }}
+                      fill="var(--accent)"
+                      fontSize={12}
+                      fontWeight={600}
+                    >
+                      {props.payload?.value}
+                    </text>
+                  );
+                }}
                 tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
                 tickMargin={8}
                 minTickGap={12}
@@ -1112,7 +1173,16 @@ export function SessionPage() {
                   }}
                 />
               )}
-              <Bar dataKey="seconds" fill="var(--accent)" radius={[8, 8, 0, 0]}>
+              <Bar
+                dataKey="seconds"
+                fill="var(--accent)"
+                radius={[8, 8, 0, 0]}
+                onClick={(_data: any, index: number) => {
+                  const entry = sessionStats.attempts[index];
+                  if (entry) nav(`/person/${entry.participantId}`);
+                }}
+                style={{ cursor: "pointer" }}
+              >
                 {sessionStats.attempts.map((entry, i) => (
                   <Cell key={i} fill={getColor(entry.name)} />
                 ))}
