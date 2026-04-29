@@ -484,115 +484,102 @@ export function WheelPage() {
 
       <div className="wheel-page__row">
         <div className="wheel-page__sidebar" style={{ display: isExpanded ? "none" : undefined }}>
-          {/* --- Søk / legg til gjest --- */}
-          <div className="wheel-page__section card">
-            <div className="wheel-page__section-header">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              <h2 className="wheel-page__section-title">Legg til gjest</h2>
-            </div>
-            <div className="wheel-page__search-row">
-              <input
-                id="guest-query"
-                name="guestQuery"
-                className="input"
-                value={guestQuery}
-                onChange={e => setGuestQuery(e.target.value)}
-                placeholder={isAdmin ? "Søk eller skriv nytt navn…" : "Søk etter gjest…"}
-              />
-              {isAdmin && (
-                <button className="btn" onClick={() => addGuestByName(guestQuery)} disabled={!guestQuery.trim()}>
-                  Opprett
-                </button>
-              )}
+          <div className="wheel-page__sidebar-main">
+            {/* --- Faste deltakere --- */}
+            <div className="wheel-page__section wheel-page__section--regulars card">
+              <div className="wheel-page__section-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
+                <h2 className="wheel-page__section-title">
+                  Faste medlemmer
+                  <span className="wheel-page__member-count">{presentCount}/{regulars.length}</span>
+                </h2>
+                <label className="wheel-page__select-all">
+                  <input
+                    id="select-all-regulars"
+                    name="selectAllRegulars"
+                    type="checkbox"
+                    checked={allRegularsSelected}
+                    onChange={(e) => toggleAllRegulars(e.target.checked)}
+                  />
+                  Alle
+                </label>
+              </div>
+
+              <div className="wheel-page__regular-grid" role="list">
+                {regulars.map((p) => {
+                  const isActive = !!present[p.id];
+
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      role="listitem"
+                      aria-pressed={isActive}
+                      aria-label={`${p.name} ${isActive ? "er med" : "er krysset ut"}`}
+                      className={`wheel-page__member-card ${isActive ? "wheel-page__member-card--active" : "wheel-page__member-card--crossed"}`}
+                      onClick={() => togglePresent(p, !isActive)}
+                    >
+                      <span className="wheel-page__member-image-wrap">
+                        {p.imageUrl ? (
+                          <img src={p.imageUrl} alt="" className="wheel-page__member-image" />
+                        ) : (
+                          <span className="wheel-page__member-fallback" aria-hidden="true">{getInitials(p.name)}</span>
+                        )}
+                        <span className="wheel-page__member-name">{p.name}</span>
+                        <span className="wheel-page__member-cross" aria-hidden="true" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {guestQuery.trim() && (
-              <div className="wheel-page__suggestions">
-                {guestLoading && <div className="wheel-page__search-loading">Søker…</div>}
-                {guestSuggestions.map(s => (
-                  <button key={s.id} className="wheel-page__suggestion-btn" onClick={() => addExistingGuest(s)}>
-                    {s.imageUrl ? (
-                      <img src={s.imageUrl} alt="" className="wheel-page__suggestion-avatar-img" />
-                    ) : (
-                      <span className="wheel-page__suggestion-avatar">{getInitials(s.name)}</span>
+            {/* --- Søk / legg til gjest --- */}
+            <div className="wheel-page__section wheel-page__section--search card">
+              <div className="wheel-page__section-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                <h2 className="wheel-page__section-title">Legg til gjest</h2>
+              </div>
+              <div className="wheel-page__search-shell">
+                <div className="wheel-page__search-row">
+                  <input
+                    id="guest-query"
+                    name="guestQuery"
+                    className="input"
+                    value={guestQuery}
+                    onChange={e => setGuestQuery(e.target.value)}
+                    placeholder={isAdmin ? "Søk eller skriv nytt navn…" : "Søk etter gjest…"}
+                  />
+                  {isAdmin && (
+                    <button className="btn" onClick={() => addGuestByName(guestQuery)} disabled={!guestQuery.trim()}>
+                      Opprett
+                    </button>
+                  )}
+                </div>
+
+                {guestQuery.trim() && (
+                  <div className="wheel-page__suggestions">
+                    {guestLoading && <div className="wheel-page__search-loading">Søker…</div>}
+                    {guestSuggestions.map(s => (
+                      <button key={s.id} className="wheel-page__suggestion-btn" onClick={() => addExistingGuest(s)}>
+                        {s.imageUrl ? (
+                          <img src={s.imageUrl} alt="" className="wheel-page__suggestion-avatar-img" />
+                        ) : (
+                          <span className="wheel-page__suggestion-avatar">{getInitials(s.name)}</span>
+                        )}
+                        <span className="wheel-page__suggestion-name">{s.name}</span>
+                        <span className="wheel-page__suggestion-type">{s.isRegular ? "fast" : "gjest"}</span>
+                      </button>
+                    ))}
+                    {!guestLoading && guestSuggestions.length === 0 && (
+                      <div className="wheel-page__search-loading">Ingen treff</div>
                     )}
-                    <span className="wheel-page__suggestion-name">{s.name}</span>
-                    <span className="wheel-page__suggestion-type">{s.isRegular ? "fast" : "gjest"}</span>
-                  </button>
-                ))}
-                {!guestLoading && guestSuggestions.length === 0 && (
-                  <div className="wheel-page__search-loading">Ingen treff</div>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {/* --- Faste deltakere --- */}
-          <div className="wheel-page__section card">
-            <div className="wheel-page__section-header">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-              <h2 className="wheel-page__section-title">
-                Faste medlemmer
-                <span className="wheel-page__member-count">{presentCount}/{regulars.length}</span>
-              </h2>
-              <label className="wheel-page__select-all">
-                <input
-                  id="select-all-regulars"
-                  name="selectAllRegulars"
-                  type="checkbox"
-                  checked={allRegularsSelected}
-                  onChange={(e) => toggleAllRegulars(e.target.checked)}
-                />
-                Alle
-              </label>
-            </div>
-
-            <div className="wheel-page__participant-list">
-              {regulars.map(p => (
-                <label key={p.id} className={`wheel-page__participant-row ${present[p.id] ? "wheel-page__participant-row--active" : ""}`}>
-                  <input
-                    name={`present-${p.id}`}
-                    type="checkbox"
-                    checked={!!present[p.id]}
-                    onChange={e => togglePresent(p, e.target.checked)}
-                    className="wheel-page__checkbox"
-                  />
-                  <span className="wheel-page__participant-name">{p.name}</span>
-                </label>
-              ))}
             </div>
           </div>
 
-          {/* --- Gjester i dag --- */}
-          {selectedGuests.length > 0 && (
-            <div className="wheel-page__section card">
-              <div className="wheel-page__section-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                <h2 className="wheel-page__section-title">
-                  Gjester i dag
-                  <span className="wheel-page__member-count">{selectedGuests.filter(g => !!present[g.id]).length}</span>
-                </h2>
-              </div>
-              <div className="wheel-page__participant-list">
-                {selectedGuests.map(p => (
-                  <div key={p.id} className={`wheel-page__participant-row ${present[p.id] ? "wheel-page__participant-row--active" : ""}`}>
-                    <label className="wheel-page__guest-inner">
-                      <input
-                        name={`present-guest-${p.id}`}
-                        type="checkbox"
-                        checked={!!present[p.id]}
-                        onChange={e => togglePresent(p, e.target.checked)}
-                        className="wheel-page__checkbox"
-                      />
-                      <span className="wheel-page__participant-name">{p.name}</span>
-                      <span className="wheel-page__guest-badge">gjest</span>
-                    </label>
-                    {isAdmin && <button className="wheel-page__remove-btn" onClick={() => removeSelectedGuest(p.id)} title="Fjern gjest">✕</button>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div
@@ -696,6 +683,49 @@ export function WheelPage() {
           </div>
         </div>
       </div>
+
+      {/* --- Gjester i dag --- */}
+      {selectedGuests.length > 0 && !isExpanded && (
+        <div className="wheel-page__guest-section wheel-page__section card">
+          <div className="wheel-page__section-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            <h2 className="wheel-page__section-title">
+              Gjester i dag
+              <span className="wheel-page__member-count">{selectedGuests.length}</span>
+            </h2>
+          </div>
+          <div className="wheel-page__guest-pill-list" role="list">
+            {selectedGuests.map(p => (
+              <div
+                key={p.id}
+                role="listitem"
+                className={`wheel-page__guest-pill ${present[p.id] ? "wheel-page__guest-pill--active" : ""}`}
+              >
+                <label className="wheel-page__guest-pill-toggle">
+                  <input
+                    name={`present-guest-${p.id}`}
+                    type="checkbox"
+                    checked={!!present[p.id]}
+                    onChange={e => togglePresent(p, e.target.checked)}
+                    className="wheel-page__guest-pill-checkbox"
+                  />
+                  <span className="wheel-page__guest-pill-check" aria-hidden="true" />
+                  <span className="wheel-page__guest-pill-name">{p.name}</span>
+                </label>
+                <button
+                  type="button"
+                  className="wheel-page__guest-pill-remove-btn"
+                  onClick={() => removeSelectedGuest(p.id)}
+                  aria-label={`Fjern gjest ${p.name} fra runden`}
+                  title={`Fjern ${p.name} fra runden`}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
