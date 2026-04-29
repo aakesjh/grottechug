@@ -127,6 +127,84 @@ function ruleCodeClass(code: string) {
   return `session__rule-code--${code.trim().toLowerCase()}`;
 }
 
+function shortenAxisNameSegment(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(1, maxLength - 1))}…`;
+}
+
+function formatParticipantAxisLabel(name: string, compact = false) {
+  const trimmed = name.trim();
+  if (!trimmed) return "—";
+
+  const maxLength = compact ? 9 : 10;
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  const firstName = parts[0] ?? trimmed;
+
+  if (compact) {
+    return shortenAxisNameSegment(firstName, maxLength);
+  }
+
+  if (parts.length === 1) {
+    return shortenAxisNameSegment(firstName, maxLength);
+  }
+
+  const shortFirstName = shortenAxisNameSegment(firstName, maxLength);
+  const lastInitial = parts[parts.length - 1]?.charAt(0)?.toUpperCase();
+
+  if (!lastInitial) return shortFirstName;
+
+  const combined = `${shortFirstName} ${lastInitial}.`;
+  return combined.length <= maxLength + 3
+    ? combined
+    : `${shortenAxisNameSegment(shortFirstName, Math.max(4, maxLength - 2))} ${lastInitial}.`;
+}
+
+type ParticipantAxisTickProps = {
+  x?: number;
+  y?: number;
+  payload?: { value?: string };
+  fullName?: string;
+  participantId?: string;
+  compact?: boolean;
+  onSelect: (participantId: string) => void;
+};
+
+function ParticipantAxisTick({
+  x = 0,
+  y = 0,
+  payload,
+  fullName,
+  participantId,
+  compact = false,
+  onSelect,
+}: ParticipantAxisTickProps) {
+  const name = fullName ?? String(payload?.value ?? "");
+  const label = formatParticipantAxisLabel(name, compact);
+  const rotation = compact ? -42 : -34;
+
+  return (
+    <g
+      transform={`translate(${x},${y}) rotate(${rotation})`}
+      className="session__chart-tick-link"
+      onClick={() => participantId && onSelect(participantId)}
+      style={{ cursor: participantId ? "pointer" : "default" }}
+    >
+      <title>{name}</title>
+      <text
+        x={0}
+        y={0}
+        dy={10}
+        textAnchor="end"
+        fill="var(--accent)"
+        fontSize={compact ? 10 : 11}
+        fontWeight={700}
+      >
+        {label}
+      </text>
+    </g>
+  );
+}
+
 const CustomBarLabel = (props: any) => {
   const { x, y, width, violations, note } = props;
   const hasViolations = Array.isArray(violations) && violations.length > 0;
@@ -549,6 +627,10 @@ export function SessionPage() {
     (a) => a.diffPb !== null && a.diffPb > 0 && a.diffPb <= 0.3
   );
 
+  const projectedAxisCompact = validProjected.length > 10;
+  const pbAxisCompact = pbData.length > 10;
+  const attemptsAxisCompact = sessionStats.attempts.length > 12;
+
   const closestCall =
     closeCalls.length > 0
       ? closeCalls.reduce((prev, curr) => (curr.diffPb! < prev.diffPb! ? curr : prev))
@@ -882,25 +964,20 @@ export function SessionPage() {
                   tick={(props: any) => {
                     const entry = validProjected[props.index];
                     return (
-                      <text
+                      <ParticipantAxisTick
                         {...props}
-                        className="session__chart-tick-link"
-                        onClick={() => entry && nav(`/person/${entry.participantId}`)}
-                        style={{ cursor: entry ? "pointer" : "default" }}
-                        fill="var(--accent)"
-                        fontSize={12}
-                        fontWeight={600}
-                      >
-                        {props.payload?.value}
-                      </text>
+                        fullName={entry?.name}
+                        participantId={entry?.participantId}
+                        compact={projectedAxisCompact}
+                        onSelect={(participantId) => nav(`/person/${participantId}`)}
+                      />
                     );
                   }}
                   tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
-                  tickMargin={8}
-                  minTickGap={12}
-                  angle={-45}
-                  textAnchor="end"
-                  height={70}
+                  tickMargin={12}
+                  minTickGap={0}
+                  interval={0}
+                  height={projectedAxisCompact ? 84 : 74}
                 />
                 <YAxis
                   stroke="var(--text)"
@@ -958,25 +1035,20 @@ export function SessionPage() {
                     tick={(props: any) => {
                       const entry = pbData[props.index];
                       return (
-                        <text
+                        <ParticipantAxisTick
                           {...props}
-                          className="session__chart-tick-link"
-                          onClick={() => entry && nav(`/person/${entry.participantId}`)}
-                          style={{ cursor: entry ? "pointer" : "default" }}
-                          fill="var(--accent)"
-                          fontSize={12}
-                          fontWeight={600}
-                        >
-                          {props.payload?.value}
-                        </text>
+                          fullName={entry?.name}
+                          participantId={entry?.participantId}
+                          compact={pbAxisCompact}
+                          onSelect={(participantId) => nav(`/person/${participantId}`)}
+                        />
                       );
                     }}
                     tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
-                    tickMargin={8}
-                    minTickGap={12}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
+                    tickMargin={12}
+                    minTickGap={0}
+                    interval={0}
+                    height={pbAxisCompact ? 84 : 74}
                   />
                   <YAxis
                     stroke="var(--text)"
@@ -1125,25 +1197,20 @@ export function SessionPage() {
                 tick={(props: any) => {
                   const entry = sessionStats.attempts[props.index];
                   return (
-                    <text
+                    <ParticipantAxisTick
                       {...props}
-                      className="session__chart-tick-link"
-                      onClick={() => entry && nav(`/person/${entry.participantId}`)}
-                      style={{ cursor: entry ? "pointer" : "default" }}
-                      fill="var(--accent)"
-                      fontSize={12}
-                      fontWeight={600}
-                    >
-                      {props.payload?.value}
-                    </text>
+                      fullName={entry?.name}
+                      participantId={entry?.participantId}
+                      compact={attemptsAxisCompact}
+                      onSelect={(participantId) => nav(`/person/${participantId}`)}
+                    />
                   );
                 }}
                 tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
-                tickMargin={8}
-                minTickGap={12}
-                angle={-45}
-                textAnchor="end"
-                height={70}
+                tickMargin={12}
+                minTickGap={0}
+                interval={0}
+                height={attemptsAxisCompact ? 88 : 76}
               />
               <YAxis
                 stroke="var(--text)"

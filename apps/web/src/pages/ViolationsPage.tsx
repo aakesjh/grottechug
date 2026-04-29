@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthSession } from "../auth/useAuthSession";
 import { apiFetch } from "../lib/api";
 import { LoadingCard } from "../components/LoadingCard";
@@ -92,14 +92,26 @@ function normalizeName(value: string) {
 
 export function ViolationsPage() {
   const nav = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { isAdmin } = useAuthSession();
-  const [semester, setSemester] = useState<Semester>("all");
+  const initialSemester = (() => {
+    const value = searchParams.get("semester");
+    return value === "2025H" || value === "2026V" || value === "all" ? value : "all";
+  })();
+  const [semester, setSemester] = useState<Semester>(initialSemester);
   const [detail, setDetail] = useState<DetailResp | null>(null);
   const [tableData, setTableData] = useState<TableResp | null>(null);
   const [violations, setViolations] = useState<ViolationEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<Set<string>>(new Set());
-  const [showGuests, setShowGuests] = useState(false);
+  const [showGuests, setShowGuests] = useState(searchParams.get("includeGuests") === "1");
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    next.set("semester", semester);
+    if (showGuests) next.set("includeGuests", "1");
+    setSearchParams(next, { replace: true });
+  }, [semester, setSearchParams, showGuests]);
 
   const loadDetail = useCallback(async () => {
     setDetail(null);

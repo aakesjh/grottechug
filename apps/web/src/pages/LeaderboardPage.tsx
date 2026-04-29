@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Avatar } from "../components/Avatar";
 import { LoadingCard } from "../components/LoadingCard";
 import { apiFetch } from "../lib/api";
@@ -92,11 +92,23 @@ function MedalStand({ rows }: { rows: Row[] }) {
 
 export function LeaderboardPage() {
   const nav = useNavigate();
-  const [semester, setSemester] = useState<Semester>("2026V");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSemester = (() => {
+    const value = searchParams.get("semester");
+    return value === "2025H" || value === "2026V" || value === "all" ? value : "2026V";
+  })();
+  const [semester, setSemester] = useState<Semester>(initialSemester);
   const [data, setData] = useState<Resp | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showGuests, setShowGuests] = useState<boolean>(false);
+  const [showGuests, setShowGuests] = useState<boolean>(searchParams.get("includeGuests") === "1");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const next = new URLSearchParams();
+    next.set("semester", semester);
+    if (showGuests) next.set("includeGuests", "1");
+    setSearchParams(next, { replace: true });
+  }, [semester, setSearchParams, showGuests]);
 
   useEffect(() => {
     let cancelled = false;

@@ -460,6 +460,18 @@
   color: #e2e8f0 !important;
 }
 
+.session__chart-tick-link {
+  pointer-events: all;
+}
+
+.session__chart-tick-link text {
+  transition: fill 120ms ease;
+}
+
+.session__chart-tick-link:hover text {
+  fill: var(--accent2);
+}
+
 /* --- Person Link --- */
 .session__person-link {
   background: transparent;

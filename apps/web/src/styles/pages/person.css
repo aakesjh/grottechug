@@ -75,13 +75,64 @@
   margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+}
+
+.person__stats-panel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025));
 }
 
 .person__stat-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.person__stat-row + .person__stat-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.person__stat-label {
+  min-width: 0;
+  font-size: var(--font-md);
+}
+
+.person__stat-content {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  text-align: right;
+}
+
+.person__stat-value {
   font-size: var(--font-lg);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.person__stat-value--accent {
+  color: var(--accent);
+}
+
+.person__stat-link,
+.person__stat-link:visited {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.person__stat-link:hover {
+  color: var(--accent2);
+  text-decoration: underline;
 }
 
 /* --- Development Chart --- */
@@ -157,22 +208,35 @@
 /* --- Bottom Stats Grid --- */
 .person__bottom-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 16px;
-  text-align: center;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   padding-bottom: 4px;
   margin-top: auto;
+}
+
+.person__bottom-stat-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 96px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.025));
+  text-align: left;
 }
 
 .person__bottom-stat-label {
   font-size: 0.80rem;
   color: var(--muted);
-  margin-bottom: 4px;
+  line-height: 1.35;
 }
 
 .person__bottom-stat-value {
   font-size: 1.1rem;
   font-weight: 900;
+  line-height: 1.2;
 }
 
 .person__bottom-stat-value--better {
@@ -181,6 +245,10 @@
 
 .person__bottom-stat-value--worse {
   color: var(--danger);
+}
+
+.person__bottom-stat-value--accent {
+  color: var(--accent);
 }
 
 /* --- History Table --- */
@@ -392,6 +460,16 @@
 /* ==========================================================================
    Responsive
    ========================================================================== */
+@media (max-width: 1200px) {
+  .person__bottom-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .person__bottom-stat-card {
+    min-height: 88px;
+  }
+}
+
 @media (max-width: 900px) {
   .person__chart-area {
     min-height: 220px;
@@ -402,7 +480,28 @@
   }
 }
 
+@media (max-width: 640px) {
+  .person__bottom-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .person__bottom-stat-card {
+    min-height: 0;
+    padding: 13px 14px;
+  }
+}
+
 @media (max-width: 500px) {
+  .person__stat-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .person__stat-content {
+    align-items: flex-start;
+    text-align: left;
+  }
+
   .person__badges-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;

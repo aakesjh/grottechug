@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from "recharts";
@@ -12,11 +12,22 @@ type Semester = "2026V" | "2025H" | "all";
 // NYTT: Inkludert sessionId i typen
 type Point = { sessionId: string; dateISO: string; seconds: number; note: string | null };
 type Badge = { id: string; title: string; description: string; icon: string; category: string; earned: boolean };
+type ProfileRanking = {
+  bestCleanRank: number | null;
+  violationCount: number;
+  violationRank: number | null;
+};
+type BottomStat = {
+  label: string;
+  value: string;
+  tone?: "better" | "worse" | "accent";
+};
 type Resp = {
   participant: { id: string; name: string; isRegular: boolean; imageUrl?: string | null };
   semester: string;
   points: Point[];
   stats: { attempts: number; best: number | null; avg: number | null; bestClean: number | null };
+  profileRanking: ProfileRanking;
   badges: Badge[];
 };
 
@@ -179,15 +190,32 @@ export function PersonPage() {
 
   const p = data.participant;
   const bestClean = data.stats.bestClean;
+  const profileRanking = data.profileRanking;
+  const rankingQuery = new URLSearchParams({ semester });
+  if (!p.isRegular) {
+    rankingQuery.set("includeGuests", "1");
+  }
+  const leaderboardHref = `/leaderboard?${rankingQuery.toString()}`;
+  const violationsHref = `/violations?${rankingQuery.toString()}`;
 
   let changeSinceStart = null;
   let last3Avg = null;
   let projectedNext = null;
-  let totalTime = 0;
+  let trendPerAttempt = null;
+  let medianTime = null;
+  let timeSpread = null;
+  let standardDeviation = null;
+  let recentVsAverage = null;
 
   if (data.points.length > 0) {
     const pts = data.points;
-    totalTime = pts.reduce((sum, pt) => sum + pt.seconds, 0);
+    const sortedTimes = pts.map((pt) => pt.seconds).sort((left, right) => left - right);
+    const medianIndex = Math.floor(sortedTimes.length / 2);
+
+    medianTime = sortedTimes.length % 2 === 0
+      ? (sortedTimes[medianIndex - 1] + sortedTimes[medianIndex]) / 2
+      : sortedTimes[medianIndex];
+
     if (pts.length >= 2) {
       changeSinceStart = pts[0].seconds - pts[pts.length - 1].seconds; 
       const n = pts.length;
@@ -198,15 +226,25 @@ export function PersonPage() {
       const denom = n * sumXX - sumX * sumX;
       const m = denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
       const b = (sumY - m * sumX) / n;
+      const mean = sumY / n;
+
+      trendPerAttempt = m;
+      timeSpread = sortedTimes[sortedTimes.length - 1] - sortedTimes[0];
+      standardDeviation = Math.sqrt(
+        pts.reduce((sum, pt) => sum + (pt.seconds - mean) ** 2, 0) / n
+      );
       projectedNext = Math.max(0, m * n + b); 
     }
     const last3 = pts.slice(-3);
     last3Avg = last3.reduce((sum, pt) => sum + pt.seconds, 0) / last3.length;
+    recentVsAverage = data.stats.avg == null ? null : data.stats.avg - last3Avg;
   }
 
   let headToHeadAvg = "Uavgjort / Mangler data";
   let headToHeadBest = "Uavgjort / Mangler data";
   let headToHeadConsistency = "Uavgjort / Mangler data";
+  let headToHeadRecentForm = "Uavgjort / Mangler data";
+  let headToHeadVolume = "Like mange";
 
   if (compareData) {
     if (data.stats.avg && compareData.stats.avg) {
@@ -227,16 +265,129 @@ export function PersonPage() {
       else if (myGap > compGap) headToHeadConsistency = compareData.participant.name;
       else headToHeadConsistency = "Likt gap";
     }
+
+    const compareLast3 = compareData.points.slice(-3);
+    const compareLast3Avg = compareLast3.length
+      ? compareLast3.reduce((sum, pt) => sum + pt.seconds, 0) / compareLast3.length
+      : null;
+
+    if (last3Avg != null && compareLast3Avg != null) {
+      const diff = last3Avg - compareLast3Avg;
+      if (diff < 0) headToHeadRecentForm = `${p.name} (-${Math.abs(diff).toFixed(2)}s)`;
+      else if (diff > 0) headToHeadRecentForm = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
+      else headToHeadRecentForm = "Lik form";
+    }
+
+    if (data.points.length !== compareData.points.length) {
+      headToHeadVolume = data.points.length > compareData.points.length ? p.name : compareData.participant.name;
+    } else if (!data.points.length && !compareData.points.length) {
+      headToHeadVolume = "Mangler data";
+    }
   }
 
-  const changeSinceStartClass =
-    changeSinceStart == null
-      ? ""
-      : changeSinceStart > 0
-        ? "person__bottom-stat-value--better"
-        : changeSinceStart < 0
-          ? "person__bottom-stat-value--worse"
-          : "";
+    const performanceStats: BottomStat[] = [
+      {
+        label: "Endring siden start",
+        value:
+          changeSinceStart == null
+            ? "—"
+            : changeSinceStart > 0
+              ? `Bedre (${changeSinceStart.toFixed(2)}s)`
+              : changeSinceStart < 0
+                ? `Tregere (${Math.abs(changeSinceStart).toFixed(2)}s)`
+                : "Uendret",
+        tone:
+          changeSinceStart == null
+            ? undefined
+            : changeSinceStart > 0
+              ? "better"
+              : changeSinceStart < 0
+                ? "worse"
+                : undefined,
+      },
+      {
+        label: "Snitt siste 3 forsøk",
+        value: last3Avg == null ? "—" : `${last3Avg.toFixed(2)}s`,
+      },
+      {
+        label: "Siste 3 mot snitt",
+        value:
+          recentVsAverage == null
+            ? "—"
+            : recentVsAverage > 0
+              ? `${recentVsAverage.toFixed(2)}s raskere`
+              : recentVsAverage < 0
+                ? `${Math.abs(recentVsAverage).toFixed(2)}s tregere`
+                : "Lik snittfart",
+        tone:
+          recentVsAverage == null
+            ? undefined
+            : recentVsAverage > 0
+              ? "better"
+              : recentVsAverage < 0
+                ? "worse"
+                : undefined,
+      },
+      {
+        label: "Trend per forsøk",
+        value:
+          trendPerAttempt == null
+            ? "—"
+            : trendPerAttempt < 0
+              ? `${Math.abs(trendPerAttempt).toFixed(2)}s raskere`
+              : trendPerAttempt > 0
+                ? `${trendPerAttempt.toFixed(2)}s tregere`
+                : "Flat trend",
+        tone:
+          trendPerAttempt == null
+            ? undefined
+            : trendPerAttempt < 0
+              ? "better"
+              : trendPerAttempt > 0
+                ? "worse"
+                : undefined,
+      },
+      {
+        label: "Median tid",
+        value: medianTime == null ? "—" : `${medianTime.toFixed(2)}s`,
+      },
+      {
+        label: "Standardavvik",
+        value: standardDeviation == null ? "—" : `${standardDeviation.toFixed(2)}s`,
+      },
+      {
+        label: "Spenn",
+        value: timeSpread == null ? "—" : `${timeSpread.toFixed(2)}s`,
+      },
+      {
+        label: "Projisert neste tid",
+        value: projectedNext == null ? "—" : `${projectedNext.toFixed(2)}s`,
+        tone: projectedNext == null ? undefined : "accent",
+      },
+    ];
+
+    const comparisonStats: BottomStat[] = [
+      {
+        label: "Raskest i snitt (totalt)",
+        value: headToHeadAvg,
+      },
+      {
+        label: "Beste clean tid",
+        value: headToHeadBest,
+      },
+      {
+        label: "Form siste 3",
+        value: headToHeadRecentForm,
+      },
+      {
+        label: "Mest konsekvent",
+        value: headToHeadConsistency,
+      },
+      {
+        label: "Flest forsøk",
+        value: headToHeadVolume,
+      },
+    ];
 
   return (
     <div>
@@ -260,21 +411,45 @@ export function PersonPage() {
 
           <div className="person__stats-list">
             <h2 className="u-mb-0">Statistikk</h2>
-            <div className="person__stat-row">
-              <span className="u-text-muted">Antall forsøk:</span> 
-              <b>{data.stats.attempts}</b>
-            </div>
-            <div className="person__stat-row">
-              <span className="u-text-muted">Beste tid:</span> 
-              <b>{data.stats.best == null ? "-" : `${data.stats.best.toFixed(2)}s`}</b>
-            </div>
-            <div className="person__stat-row">
-              <span className="u-text-muted">Gjennomsnitt:</span> 
-              <b>{data.stats.avg == null ? "-" : `${data.stats.avg.toFixed(2)}s`}</b>
-            </div>
-            <div className="person__stat-row">
-              <span className="u-text-muted">Beste (uten anm):</span> 
-              <b className="u-text-accent">{bestClean == null ? "-" : `${bestClean.toFixed(2)}s`}</b>
+            <div className="person__stats-panel">
+              <div className="person__stat-row">
+                <span className="u-text-muted person__stat-label">Antall forsøk</span>
+                <div className="person__stat-content">
+                  <b className="person__stat-value">{data.stats.attempts}</b>
+                </div>
+              </div>
+              <div className="person__stat-row">
+                <span className="u-text-muted person__stat-label">Beste tid</span>
+                <div className="person__stat-content">
+                  <b className="person__stat-value">
+                    {data.stats.best == null ? "-" : `${data.stats.best.toFixed(2)}s`}
+                  </b>
+                  {profileRanking.bestCleanRank != null && (
+                    <Link className="person__stat-link" to={leaderboardHref}>
+                      #{profileRanking.bestCleanRank} raskest på topplista
+                    </Link>
+                  )}
+                </div>
+              </div>
+              <div className="person__stat-row">
+                <span className="u-text-muted person__stat-label">Gjennomsnitt</span>
+                <div className="person__stat-content">
+                  <b className="person__stat-value">
+                    {data.stats.avg == null ? "-" : `${data.stats.avg.toFixed(2)}s`}
+                  </b>
+                </div>
+              </div>
+              <div className="person__stat-row">
+                <span className="u-text-muted person__stat-label">Kryss</span>
+                <div className="person__stat-content">
+                  <b className="person__stat-value">{profileRanking.violationCount}</b>
+                  {profileRanking.violationRank != null && (
+                    <Link className="person__stat-link" to={violationsHref}>
+                      #{profileRanking.violationRank} flest på krysslista
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -374,49 +549,23 @@ export function PersonPage() {
 
           <div className="hr person__divider" />
           <div className="person__bottom-stats">
-            {!compareData ? (
-              <>
-                <div>
-                  <div className="person__bottom-stat-label">Endring siden start</div>
-                  <div className={`person__bottom-stat-value ${changeSinceStartClass}`}>
-                    {changeSinceStart == null ? "—" : changeSinceStart > 0 ? `Bedre (${changeSinceStart.toFixed(2)}s)` : `Tregere (${Math.abs(changeSinceStart).toFixed(2)}s)`}
-                  </div>
-                </div>
-                <div>
-                  <div className="person__bottom-stat-label">Snitt siste 3 forsøk</div>
-                  <div className="person__bottom-stat-value">
-                    {last3Avg == null ? "—" : `${last3Avg.toFixed(2)}s`}
-                  </div>
-                </div>
-                <div>
-                  <div className="person__bottom-stat-label">Projisert neste tid</div>
-                  <div className="person__bottom-stat-value u-text-accent">
-                    {projectedNext == null ? "—" : `${projectedNext.toFixed(2)}s`}
-                  </div>
-                </div>
-                <div>
-                  <div className="person__bottom-stat-label">Total chuggetid</div>
-                  <div className="person__bottom-stat-value">
-                    {totalTime > 0 ? `${totalTime.toFixed(1)}s` : "—"}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <div className="person__bottom-stat-label">Raskest i snitt (Totalt)</div>
-                  <div className="person__bottom-stat-value">{headToHeadAvg}</div>
-                </div>
-                <div>
-                  <div className="person__bottom-stat-label">Beste Clean Tid</div>
-                  <div className="person__bottom-stat-value">{headToHeadBest}</div>
-                </div>
-                <div>
-                  <div className="person__bottom-stat-label">Mest konsekvent</div>
-                  <div className="person__bottom-stat-value">{headToHeadConsistency}</div>
-                </div>
-              </>
-            )}
+            {(compareData ? comparisonStats : performanceStats).map((stat) => {
+              const toneClass =
+                stat.tone === "better"
+                  ? "person__bottom-stat-value--better"
+                  : stat.tone === "worse"
+                    ? "person__bottom-stat-value--worse"
+                    : stat.tone === "accent"
+                      ? "person__bottom-stat-value--accent"
+                      : "";
+
+              return (
+                <article key={stat.label} className="person__bottom-stat-card">
+                  <div className="person__bottom-stat-label">{stat.label}</div>
+                  <div className={`person__bottom-stat-value ${toneClass}`}>{stat.value}</div>
+                </article>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -455,7 +604,7 @@ export function PersonPage() {
             </thead>
             <tbody>
               {data.points.map((pt, i) => {
-                const isPB = !pt.note && bestClean !== null && pt.seconds === bestClean;
+                const isPB = bestClean !== null && pt.seconds === bestClean;
                 return (
                   <tr key={`${pt.dateISO}-${i}`}>
                     <td className="person__history-cell">

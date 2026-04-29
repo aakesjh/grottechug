@@ -3,6 +3,28 @@ import { prisma } from "../prisma.js";
 
 export const personRouter = Router();
 
+function hasNoViolations(codes: string[]) {
+  return codes.length === 0;
+}
+
+function isMmOnlyViolation(codes: string[]) {
+  return codes.length > 0 && codes.every((code) => code === "MM");
+}
+
+function isPbEligible(codes: string[]) {
+  return hasNoViolations(codes) || isMmOnlyViolation(codes);
+}
+
+function isSpillViolation(codes: string[]) {
+  return codes.some((code) => code === "MM" || code === "W" || code === "VW");
+}
+
+type ProfileRanking = {
+  bestCleanRank: number | null;
+  violationCount: number;
+  violationRank: number | null;
+};
+
 // GET /api/person/:id?semester=2026V|2025H|all
 personRouter.get("/:id", async (req, res) => {
   const id = req.params.id;
@@ -53,14 +75,85 @@ personRouter.get("/:id", async (req, res) => {
 
   // bestClean: attempts with no violations, or only MM violations
   const cleanTimes = points
-    .filter(x => {
-      if (!x.note) return true;
-      const codes = x.note.split(", ").map(c => c.toUpperCase());
-      return codes.every(c => c === "MM");
+    .filter((point) => {
+      if (!point.note) return true;
+      const codes = point.note.split(", ").map((code) => code.toUpperCase());
+      return isMmOnlyViolation(codes);
     })
-    .map(x => x.seconds);
-    
+    .map((point) => point.seconds);
   const bestClean = cleanTimes.length ? Math.min(...cleanTimes) : null;
+
+  const includeGuestsInRankings = !p.isRegular;
+  const profileRanking: ProfileRanking = {
+    bestCleanRank: null,
+    violationCount: violations.length,
+    violationRank: null,
+  };
+
+  if (sessionIds.length > 0) {
+    const [rankingAttempts, rankingViolations] = await Promise.all([
+      prisma.attempt.findMany({
+        where: {
+          sessionId: { in: sessionIds },
+          OR: [
+            { note: null },
+            { note: "" },
+            { note: "mm-chug" },
+            { note: "mm" }
+          ]
+        },
+        select: {
+          participantId: true,
+          seconds: true,
+          participant: { select: { isRegular: true } },
+        },
+      }),
+      prisma.violation.findMany({
+        where: { sessionId: { in: sessionIds } },
+        select: {
+          participantId: true,
+          crosses: true,
+          participant: { select: { isRegular: true } },
+        },
+      }),
+    ]);
+
+    const bestByParticipant = new Map<string, number>();
+    for (const attempt of rankingAttempts) {
+      if (!includeGuestsInRankings && !attempt.participant.isRegular) continue;
+      const previousBest = bestByParticipant.get(attempt.participantId);
+      if (previousBest == null || attempt.seconds < previousBest) {
+        bestByParticipant.set(attempt.participantId, attempt.seconds);
+      }
+    }
+
+    const leaderboardRows = Array.from(bestByParticipant.entries()).sort((left, right) => left[1] - right[1]);
+    const bestCleanRankIndex = leaderboardRows.findIndex(([participantId]) => participantId === id);
+    profileRanking.bestCleanRank = bestCleanRankIndex >= 0 ? bestCleanRankIndex + 1 : null;
+
+    const violationsByParticipant = new Map<string, { count: number; weightedTotal: number; isRegular: boolean }>();
+    for (const violation of rankingViolations) {
+      const current = violationsByParticipant.get(violation.participantId) ?? {
+        count: 0,
+        weightedTotal: 0,
+        isRegular: violation.participant.isRegular,
+      };
+      current.count += 1;
+      current.weightedTotal += violation.crosses;
+      violationsByParticipant.set(violation.participantId, current);
+    }
+
+    const violationRows = Array.from(violationsByParticipant.entries())
+      .filter(([, entry]) => includeGuestsInRankings || entry.isRegular)
+      .sort((left, right) => {
+        const countDiff = right[1].count - left[1].count;
+        if (countDiff !== 0) return countDiff;
+        return right[1].weightedTotal - left[1].weightedTotal;
+      });
+
+    const violationRankIndex = violationRows.findIndex(([participantId]) => participantId === id);
+    profileRanking.violationRank = violationRankIndex >= 0 ? violationRankIndex + 1 : null;
+  }
 
   // --- Badge computation (always all-time) ---
   let badgeAttemptList: { sessionId: string; seconds: number }[];
@@ -70,7 +163,7 @@ personRouter.get("/:id", async (req, res) => {
     badgeAttemptList = attempts.map(a => ({ sessionId: a.sessionId, seconds: a.seconds }));
     badgeViolationCodes = new Map();
     for (const [sid, vs] of violationsBySession) {
-      badgeViolationCodes.set(sid, vs.map(v => v.ruleCode));
+      badgeViolationCodes.set(sid, vs.map((v) => v.ruleCode.toUpperCase()));
     }
   } else {
     const allAttempts = await prisma.attempt.findMany({
@@ -86,7 +179,7 @@ personRouter.get("/:id", async (req, res) => {
     badgeViolationCodes = new Map();
     for (const v of allViolations) {
       const list = badgeViolationCodes.get(v.sessionId) ?? [];
-      list.push(v.ruleCode);
+      list.push(v.ruleCode.toUpperCase());
       badgeViolationCodes.set(v.sessionId, list);
     }
   }
@@ -99,15 +192,15 @@ personRouter.get("/:id", async (req, res) => {
   });
 
   const badgeCleanTimes = badgePoints
-    .filter(p => p.codes.length === 0 || p.codes.every(c => c === "MM"))
-    .map(p => p.seconds);
+    .filter((point) => isPbEligible(point.codes))
+    .map((point) => point.seconds);
   const badgeBestClean = badgeCleanTimes.length ? Math.min(...badgeCleanTimes) : null;
 
   // Clean streak: 3 consecutive clean attempts
   let hasCleanStreak = false;
   let streak = 0;
   for (const pt of badgePoints) {
-    const isClean = pt.codes.length === 0 || pt.codes.every(c => c === "MM");
+    const isClean = hasNoViolations(pt.codes);
     if (isClean) {
       streak++;
       if (streak >= 3) { hasCleanStreak = true; break; }
@@ -198,7 +291,7 @@ personRouter.get("/:id", async (req, res) => {
   }
 
   const hasVomit = allViolationCodes.includes("VOMIT");
-  const hasSpill = allViolationCodes.includes("W") || allViolationCodes.includes("VW");
+  const hasSpill = isSpillViolation(allViolationCodes);
   const totalViolationCount = allViolationCodes.length;
   const totalChugTime = allBadgeTimes.reduce((a, b) => a + b, 0);
 
@@ -207,7 +300,7 @@ personRouter.get("/:id", async (req, res) => {
     { id: "first-chug", title: "Jomfruchug", description: "Deltok på første grottechug", icon: "🍺", category: "milestone", earned: numAttempts >= 1 },
     { id: "session-loser", title: "Skuffet mest", description: "Størst prosentvis avvik bak raskeste tid i en chug", icon: "🐌", category: "negative", earned: isSessionLoser },
     { id: "puker", title: "Brekker'n", description: "Har fått VOMIT-anmerkning", icon: "🤮", category: "negative", earned: hasVomit },
-    { id: "spiller", title: "Søl!", description: "Har sølt (W/VW-anmerkning)", icon: "💧", category: "negative", earned: hasSpill },
+    { id: "spiller", title: "Søl!", description: "Har sølt (MM/W/VW-anmerkning)", icon: "💧", category: "negative", earned: hasSpill },
     { id: "sinner", title: "Syndaren", description: "Samlet 5+ anmerkninger totalt", icon: "😈", category: "negative", earned: totalViolationCount >= 5 },
     // Row 2: Tiered chug count
     { id: "five-chugs", title: "Femmer'n", description: "Gjennomført 5 chugs", icon: "🖐️", category: "milestone", earned: numAttempts >= 5 },
@@ -239,6 +332,7 @@ personRouter.get("/:id", async (req, res) => {
       avg,
       bestClean
     },
+    profileRanking,
     badges
   });
 });
