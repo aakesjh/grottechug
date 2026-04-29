@@ -64,11 +64,19 @@ export function Navbar() {
   const [searchSessionsLoading, setSearchSessionsLoading] = useState(false);
   const [searchPeople, setSearchPeople] = useState<SearchPerson[]>([]);
   const [searchSessions, setSearchSessions] = useState<SearchSession[]>([]);
+  const [songPlaying, setSongPlaying] = useState(false);
+  const [songPanelOpen, setSongPanelOpen] = useState(false);
+  const [songCurrentTime, setSongCurrentTime] = useState(0);
+  const [songDuration, setSongDuration] = useState(0);
+  const [songVolume, setSongVolume] = useState(0.8);
   const menuRef = useRef<HTMLDivElement>(null);
   const searchDesktopRef = useRef<HTMLDivElement>(null);
   const searchDrawerRef = useRef<HTMLDivElement>(null);
+  const songDesktopRef = useRef<HTMLDivElement>(null);
+  const songDrawerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const drawerSearchInputRef = useRef<HTMLInputElement>(null);
+  const songAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // LØSNINGEN: Er vi på forsiden, er den ALLTID i hero-modus (låst).
   // På andre sider bytter den til kompakt.
@@ -138,6 +146,42 @@ export function Navbar() {
       clearTimeout(timer);
     };
   }, [searchQuery]);
+
+  useEffect(() => {
+    const audio = new Audio("/GrotteChug.wav");
+    audio.preload = "metadata";
+    audio.volume = 0.8;
+
+    const handlePlay = () => setSongPlaying(true);
+    const handlePause = () => setSongPlaying(false);
+    const handleEnded = () => setSongPlaying(false);
+    const handleTimeUpdate = () => setSongCurrentTime(audio.currentTime || 0);
+    const handleDurationChange = () => setSongDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const handleVolumeChange = () => setSongVolume(audio.volume);
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("timeupdate", handleTimeUpdate);
+    audio.addEventListener("loadedmetadata", handleDurationChange);
+    audio.addEventListener("durationchange", handleDurationChange);
+    audio.addEventListener("volumechange", handleVolumeChange);
+
+    songAudioRef.current = audio;
+    setSongVolume(audio.volume);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      audio.removeEventListener("loadedmetadata", handleDurationChange);
+      audio.removeEventListener("durationchange", handleDurationChange);
+      audio.removeEventListener("volumechange", handleVolumeChange);
+      songAudioRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     const q = searchQuery.trim();
@@ -237,19 +281,216 @@ export function Navbar() {
       }
       const inDesktopSearch = !!searchDesktopRef.current?.contains(e.target as Node);
       const inDrawerSearch = !!searchDrawerRef.current?.contains(e.target as Node);
+      const inDesktopSong = !!songDesktopRef.current?.contains(e.target as Node);
+      const inDrawerSong = !!songDrawerRef.current?.contains(e.target as Node);
       if (!inDesktopSearch && !inDrawerSearch) {
         setSearchOpen(false);
       }
+      if (!inDesktopSong && !inDrawerSong) {
+        setSongPanelOpen(false);
+      }
     }
-    if (menuOpen || searchOpen) {
+    if (menuOpen || searchOpen || songPanelOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen, searchOpen]);
+  }, [menuOpen, searchOpen, songPanelOpen]);
 
   async function handleSignOut() {
     await authClient.signOut();
     navigate("/");
+  }
+
+  function fmtSongTime(value: number) {
+    if (!Number.isFinite(value) || value < 0) return "0:00";
+    const minutes = Math.floor(value / 60);
+    const seconds = Math.floor(value % 60);
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  function handleSongPanelToggle() {
+    setSongPanelOpen((isOpen) => !isOpen);
+  }
+
+  async function handleSongToggle() {
+    const audio = songAudioRef.current;
+    if (!audio) return;
+
+    try {
+      setSongPanelOpen(true);
+      if (audio.paused) {
+        if (audio.ended) {
+          audio.currentTime = 0;
+        }
+        await audio.play();
+      } else {
+        audio.pause();
+      }
+    } catch (error) {
+      console.error("Kunne ikke spille av GrotteChug-sangen", error);
+    }
+  }
+
+  async function handleSongRestart() {
+    const audio = songAudioRef.current;
+    if (!audio) return;
+
+    audio.currentTime = 0;
+    setSongCurrentTime(0);
+    setSongPanelOpen(true);
+
+    try {
+      await audio.play();
+    } catch (error) {
+      console.error("Kunne ikke starte GrotteChug-sangen på nytt", error);
+    }
+  }
+
+  function handleSongStop() {
+    const audio = songAudioRef.current;
+    if (!audio) return;
+
+    audio.pause();
+    audio.currentTime = 0;
+    setSongCurrentTime(0);
+  }
+
+  function handleSongSeek(nextValue: number) {
+    const audio = songAudioRef.current;
+    if (!audio) return;
+
+    audio.currentTime = nextValue;
+    setSongCurrentTime(nextValue);
+  }
+
+  function handleSongVolume(nextValue: number) {
+    const audio = songAudioRef.current;
+    if (!audio) return;
+
+    audio.volume = nextValue;
+    setSongVolume(nextValue);
+  }
+
+  const songButtonLabel = songPanelOpen ? "Lukk GrotteChug-spilleren" : "Åpne GrotteChug-spilleren";
+
+  function renderSongPlayer(panelClassName?: string) {
+    return (
+      <div className={`navSongPlayer${panelClassName ? ` ${panelClassName}` : ""}`}>
+        <div className="navSongPlayerHeader">
+          <div className="navSongPlayerText">
+            <div className="navSongPlayerTitle">GrotteChug</div>
+            <div className="navSongPlayerArtist">feat. KNUT • Uberliga</div>
+          </div>
+          <button
+            type="button"
+            className="navSongPlayerClose"
+            onClick={() => setSongPanelOpen(false)}
+            aria-label="Lukk minispiller"
+            title="Lukk minispiller"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="navSongControls">
+          <button
+            type="button"
+            className="navSongControlBtn"
+            onClick={handleSongToggle}
+            aria-label={songPlaying ? "Pause sangen" : "Spill sangen"}
+            title={songPlaying ? "Pause sangen" : "Spill sangen"}
+          >
+            {songPlaying ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="6" y="5" width="4" height="14" rx="1" />
+                <rect x="14" y="5" width="4" height="14" rx="1" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            className="navSongControlBtn"
+            onClick={handleSongStop}
+            aria-label="Stopp sangen"
+            title="Stopp sangen"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="navSongControlBtn"
+            onClick={handleSongRestart}
+            aria-label="Start sangen på nytt"
+            title="Start sangen på nytt"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.708" />
+              <path d="M3 3v6h6" />
+            </svg>
+          </button>
+
+          <div className="navSongVolumeControl">
+            <button
+              type="button"
+              className="navSongControlBtn"
+              aria-label="Volumkontroll"
+              title="Volum"
+            >
+              {songVolume > 0 ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+                  <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="m23 9-6 6" />
+                  <path d="m17 9 6 6" />
+                </svg>
+              )}
+            </button>
+
+            <div className="navSongVolumePopover">
+              <input
+                className="navSongRange navSongRange--volume"
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={songVolume}
+                onChange={(event) => handleSongVolume(Number(event.target.value))}
+                aria-label="Endre volum"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="navSongTimeline">
+          <span className="navSongTime">{fmtSongTime(songCurrentTime)}</span>
+          <input
+            className="navSongRange"
+            type="range"
+            min={0}
+            max={songDuration > 0 ? songDuration : 0}
+            step={0.1}
+            value={Math.min(songCurrentTime, songDuration || 0)}
+            onChange={(event) => handleSongSeek(Number(event.target.value))}
+            aria-label="Spol i sangen"
+          />
+          <span className="navSongTime">{fmtSongTime(songDuration)}</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -379,6 +620,34 @@ export function Navbar() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              <div className="navSong navSong--desktop" ref={songDesktopRef}>
+                <button
+                  type="button"
+                  className={`navSongBtn navSongBtn--desktop ${songPlaying ? "navSongBtnActive" : ""}`}
+                  onClick={handleSongPanelToggle}
+                  aria-label={songButtonLabel}
+                  aria-pressed={songPanelOpen}
+                >
+                  <svg
+                    className="navSongBtnIcon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M9 18V5l10-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                  </svg>
+                </button>
+                {songPanelOpen && renderSongPlayer()}
               </div>
             </div>
 
@@ -578,6 +847,35 @@ export function Navbar() {
                 </div>
               </div>
             )}
+          </div>
+          <div className="mobileDrawerSong" ref={songDrawerRef}>
+            <div className="navSong navSong--drawer">
+              <button
+                type="button"
+                className={`navSongBtn navSongBtn--drawer ${songPlaying ? "navSongBtnActive" : ""}`}
+                onClick={handleSongPanelToggle}
+                aria-label={songButtonLabel}
+                aria-pressed={songPanelOpen}
+              >
+                <svg
+                  className="navSongBtnIcon"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M9 18V5l10-2v13" />
+                  <circle cx="6" cy="18" r="3" />
+                  <circle cx="18" cy="16" r="3" />
+                </svg>
+              </button>
+            </div>
+            {songPanelOpen && renderSongPlayer("navSongPlayer--drawer")}
           </div>
           <div className="mobileDrawerLinks">
             <NavLink to="/wheel" className={({ isActive }) => `navLink ${isActive ? "navLinkActive" : ""}`} onClick={() => setDrawerOpen(false)}>Hjulet</NavLink>
