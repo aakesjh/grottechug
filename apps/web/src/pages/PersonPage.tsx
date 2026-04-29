@@ -17,6 +17,12 @@ type ProfileRanking = {
   violationCount: number;
   violationRank: number | null;
 };
+
+const EMPTY_PROFILE_RANKING: ProfileRanking = {
+  bestCleanRank: null,
+  violationCount: 0,
+  violationRank: null,
+};
 type BottomStat = {
   label: string;
   value: string;
@@ -27,7 +33,7 @@ type Resp = {
   semester: string;
   points: Point[];
   stats: { attempts: number; best: number | null; avg: number | null; bestClean: number | null };
-  profileRanking: ProfileRanking;
+  profileRanking?: ProfileRanking;
   badges: Badge[];
 };
 
@@ -41,6 +47,19 @@ function fmtDDMMYYYY(iso: string) {
 
 function ruleCodeClass(code: string) {
   return `person__note-code--${code.trim().toLowerCase()}`;
+}
+
+function countViolationsFromPoints(points: Point[]) {
+  return points.reduce((total, point) => {
+    if (!point.note) return total;
+
+    const count = point.note
+      .split(",")
+      .map((code) => code.trim())
+      .filter(Boolean).length;
+
+    return total + count;
+  }, 0);
 }
 
 export function PersonPage() {
@@ -190,7 +209,10 @@ export function PersonPage() {
 
   const p = data.participant;
   const bestClean = data.stats.bestClean;
-  const profileRanking = data.profileRanking;
+  const profileRanking = data.profileRanking ?? {
+    ...EMPTY_PROFILE_RANKING,
+    violationCount: countViolationsFromPoints(data.points),
+  };
   const rankingQuery = new URLSearchParams({ semester });
   if (!p.isRegular) {
     rankingQuery.set("includeGuests", "1");
