@@ -379,20 +379,8 @@ export function Navbar() {
         <div className="navSongPlayerHeader">
           <div className="navSongPlayerText">
             <div className="navSongPlayerTitle">GrotteChug</div>
-            <div className="navSongPlayerArtist">feat. KNUT • Uberliga</div>
+            <div className="navSongPlayerArtist">KNUT • Uberliga</div>
           </div>
-          <button
-            type="button"
-            className="navSongPlayerClose"
-            onClick={() => setSongPanelOpen(false)}
-            aria-label="Lukk minispiller"
-            title="Lukk minispiller"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
         </div>
 
         <div className="navSongControls">
