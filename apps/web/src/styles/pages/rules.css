@@ -59,8 +59,11 @@
 .rules__heroTop {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: end;
+  gap: 20px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
 }
 
 .rules__heroTitleBlock {
@@ -68,79 +71,98 @@
   gap: 8px;
 }
 
+.rules__heroTitleBlock h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+}
+
 .rules__eyebrow {
+  position: relative;
   display: inline-flex;
   width: fit-content;
-  padding: 6px 10px;
-  border-radius: var(--radius-pill);
+  padding: 0 0 0 16px;
   font-size: var(--font-xs);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent2);
-  background: var(--accent2-subtle);
-  border: 1px solid var(--accent2-border);
+  color: var(--accent);
+}
+
+.rules__eyebrow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 30%, transparent);
+  transform: translateY(-50%);
 }
 
 .rules__heroLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--accent2) 28%, var(--border));
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent2) 18%, var(--border));
   color: var(--text);
   font-weight: 700;
   background: linear-gradient(
     140deg,
-    color-mix(in srgb, var(--accent2-subtle) 62%, transparent),
-    color-mix(in srgb, var(--accent-subtle) 58%, transparent)
+    color-mix(in srgb, var(--accent2-subtle) 28%, transparent),
+    color-mix(in srgb, var(--accent-subtle) 34%, transparent)
   );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 10px 22px color-mix(in srgb, var(--accent2) 16%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 12px 24px color-mix(in srgb, var(--bg) 72%, transparent);
   transition: transform var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
-  white-space: nowrap;
   text-decoration: none;
 }
 
 .rules__heroLink:hover {
-  transform: translateY(-1px) scale(1.01);
+  transform: translateY(-2px);
   background: linear-gradient(
     140deg,
-    color-mix(in srgb, var(--accent2-subtle) 78%, transparent),
-    color-mix(in srgb, var(--accent-subtle) 72%, transparent)
+    color-mix(in srgb, var(--accent2-subtle) 38%, transparent),
+    color-mix(in srgb, var(--accent-subtle) 44%, transparent)
   );
-  border-color: color-mix(in srgb, var(--accent2) 40%, var(--border));
+  border-color: color-mix(in srgb, var(--accent2) 28%, var(--border));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.24),
-    0 14px 28px color-mix(in srgb, var(--accent2) 22%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 16px 28px color-mix(in srgb, var(--accent2) 12%, transparent);
 }
 
 .rules__heroLinkLabel {
-  font-size: 0.92rem;
-  letter-spacing: 0.01em;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--text);
 }
 
 .rules__heroLinkHint {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
+  padding: 0;
+  border-radius: 0;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: color-mix(in srgb, var(--bg) 62%, transparent);
-  color: color-mix(in srgb, var(--text) 86%, transparent);
+  letter-spacing: 0.1em;
+  background: none;
+  color: var(--muted);
 }
 
 .rules__heroLinkHint::after {
-  content: "->";
-  font-size: 0.75rem;
+  content: "↗";
+  font-size: 0.78rem;
+  color: color-mix(in srgb, var(--accent2) 70%, var(--text));
 }
 
 .rules__summaryGrid {
@@ -151,13 +173,16 @@
 }
 
 .rules__summaryCard {
+  display: grid;
+  align-content: start;
+  grid-template-rows: auto minmax(42px, auto) auto;
   padding: 14px;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--accent2) 30%);
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   background:
-    linear-gradient(165deg, color-mix(in srgb, var(--accent2-subtle) 46%, transparent), transparent 45%),
-    linear-gradient(180deg, var(--overlay-light), rgba(255, 255, 255, 0.02));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    linear-gradient(165deg, color-mix(in srgb, var(--accent2-subtle) 34%, transparent), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .rules__summaryCard:nth-child(2n) {
@@ -187,9 +212,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
-  color: color-mix(in srgb, var(--text) 75%, var(--accent2));
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--accent2-subtle) 72%, transparent);
+  color: color-mix(in srgb, var(--text) 70%, var(--accent2));
+}
+
+.rules__summaryCard:nth-child(2n) .rules__summaryIcon {
+  background: color-mix(in srgb, var(--accent-subtle) 70%, transparent);
+  color: color-mix(in srgb, var(--text) 70%, var(--accent));
 }
 
 .rules__summaryIcon svg {
@@ -200,15 +232,17 @@
 .rules__summaryValue {
   display: block;
   width: 100%;
+  min-height: 42px;
   font-size: 1.02rem;
   font-weight: 800;
   color: var(--text);
 }
 
 .rules__summaryValueLink {
-  display: inline-block;
-  align-items: center;
+  display: inline-flex;
+  align-items: flex-start;
   max-width: 100%;
+  min-height: 42px;
   color: var(--text);
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--accent2) 45%, transparent);
@@ -218,7 +252,7 @@
 
 .rules__summaryValueLink--place {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   text-decoration: none;
 }
@@ -234,8 +268,8 @@
 }
 
 .rules__summaryPlaceLogo {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   flex: 0 0 auto;
   filter: brightness(0) invert(1);
   opacity: 0.96;
@@ -258,7 +292,8 @@
 }
 
 .rules__summaryNote {
-  margin: 6px 0 0;
+  margin: 0;
+  align-self: end;
   font-size: var(--font-sm);
   line-height: 1.5;
 }
@@ -324,11 +359,11 @@
 
 .rules__sectionHeader h2::before {
   content: "";
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent2) 18%, transparent);
+  width: 4px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  box-shadow: none;
 }
 
 .rules__crossList {
@@ -340,17 +375,17 @@
 .rules__crossRow {
   --rule-color: var(--accent2);
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr) 64px;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
   grid-template-areas: "code body count";
   gap: 14px;
   align-items: center;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border: 1px solid color-mix(in srgb, var(--rule-color) 34%, var(--border));
-  border-radius: 16px;
+  border-radius: 18px;
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--rule-color) 14%, transparent), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--rule-color) 12%, transparent);
+    linear-gradient(90deg, color-mix(in srgb, var(--rule-color) 12%, transparent), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--rule-color) 10%, transparent);
   transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
@@ -364,18 +399,30 @@
   display: flex;
   align-items: center;
   grid-area: code;
-  width: 100%;
+  width: min(100%, 92px);
 }
 
 .rules__crossCode .badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  max-width: 100%;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  border-width: 1px;
   text-align: center;
-  background: color-mix(in srgb, var(--rule-color) 14%, transparent);
-  border-color: color-mix(in srgb, var(--rule-color) 66%, var(--border));
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rule-color) 18%, transparent), color-mix(in srgb, var(--rule-color) 10%, transparent)),
+    rgba(255, 255, 255, 0.03);
+  border-color: color-mix(in srgb, var(--rule-color) 54%, var(--border));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .rules__crossBody {
@@ -386,32 +433,40 @@
 .rules__crossCount {
   display: grid;
   grid-area: count;
-  justify-items: end;
+  justify-items: center;
+  align-content: center;
   gap: 2px;
-  min-width: 56px;
+  min-width: 84px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--bg) 26%, transparent);
 }
 
 .rules__crossEditBtn {
   margin-top: 8px;
-  padding: 6px 10px;
+  min-height: 34px;
+  padding: 0 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text);
   font-size: var(--font-xs);
   font-weight: 700;
   cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
+  transition: background var(--transition-fast), transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .rules__crossEditBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
   transform: translateY(-1px);
 }
 
 .rules__crossActions {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 8px;
 }
 
@@ -420,10 +475,11 @@
 }
 
 .rules__crossDeleteBtn {
-  padding: 6px 10px;
+  min-height: 34px;
+  padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
   color: color-mix(in srgb, var(--danger) 86%, var(--text));
   font-size: var(--font-xs);
   font-weight: 700;
@@ -432,7 +488,7 @@
 }
 
 .rules__crossDeleteBtn:hover {
-  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
   transform: translateY(-1px);
 }
 
@@ -484,7 +540,7 @@
 .rules__ruleCard {
   display: grid;
   align-content: start;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
   position: relative;
   overflow: hidden;
@@ -533,7 +589,7 @@
 
 .rules__absenceOption {
   padding: 16px;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--border) 68%, var(--accent) 32%);
   background:
     linear-gradient(160deg, color-mix(in srgb, var(--accent-subtle) 42%, transparent), transparent 55%),
@@ -577,10 +633,13 @@
   .rules__heroTop {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
   }
 
   .rules__heroLink {
-    white-space: normal;
+    min-width: 0;
+    width: 100%;
   }
 
   .rules__crossList {
@@ -598,13 +657,13 @@
   }
 
   .rules__crossCode {
-    width: auto;
+    width: min(100%, 84px);
   }
 
   .rules__crossCount {
     justify-items: end;
     align-self: start;
-    min-width: auto;
+    min-width: 74px;
   }
 
   .rules__crossTitle {
@@ -645,8 +704,9 @@
   }
 
   .rules__crossCode .badge {
-    padding: 3px 7px;
-    font-size: 0.68rem;
+    min-height: 48px;
+    padding: 6px 5px;
+    font-size: 0.66rem;
   }
 
   .rules__summaryGrid {
