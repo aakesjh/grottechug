@@ -193,18 +193,24 @@ export function StatsDashboardPage() {
     }))
     .sort((a, b) => b.count - a.count);
 
-  const overallWetRate = useMemo(() => {
-    if (!data?.overview?.attempts) return 0;
-    const wetCount = violations.filter(v => ["W", "VW", "MM", "P", "T"].includes(v.ruleCode)).length;
-    return (wetCount / data.overview.attempts) * 100;
-  }, [violations, data]);
-
   const chugsPerSession = data?.overview.sessions ? (data.overview.attempts / data.overview.sessions) : 0;
 
   const validParticipants = participantStats.filter(p => p.attempts > 0 && p.avg !== null);
   const hasParticipantStats = validParticipants.length > 0;
+
+  const overallAverageTime = useMemo(() => {
+    const totals = validParticipants.reduce(
+      (acc, participant) => ({
+        attempts: acc.attempts + participant.attempts,
+        seconds: acc.seconds + (participant.avg ?? 0) * participant.attempts,
+      }),
+      { attempts: 0, seconds: 0 }
+    );
+
+    return totals.attempts > 0 ? totals.seconds / totals.attempts : null;
+  }, [validParticipants]);
   
-  const qualifiedForAwards = validParticipants.filter(p => p.attempts >= 3);
+  const qualifiedForAwards = validParticipants.filter(p => p.attempts >= 6);
   
   const slowestPerson = qualifiedForAwards.length > 0 
     ? qualifiedForAwards.reduce((prev, current) => ((current.avg || 0) > (prev.avg || 0) ? current : prev))
@@ -389,10 +395,6 @@ export function StatsDashboardPage() {
     return null;
   };
 
-  const overallWetRateClass = overallWetRate > 20
-    ? "stats__wet-rate-value--danger"
-    : "stats__wet-rate-value--good";
-
   return (
     <div>
       <h1>Dashbord & Statistikk</h1>
@@ -419,17 +421,17 @@ export function StatsDashboardPage() {
               <div className="stat-box__value">{data.overview.attempts}</div>
             </div>
             <div className="card stat-box">
-              <div className="stat-box__label">Aktive Dager</div>
+              <div className="stat-box__label">Chuggedager</div>
               <div className="stat-box__value">{data.overview.sessions}</div>
             </div>
             <div className="card stat-box">
-              <div className="stat-box__label">Snitt per dag</div>
+              <div className="stat-box__label">Deltakere per dag</div>
               <div className="stat-box__value">{chugsPerSession.toFixed(1)}</div>
             </div>
             <div className="card stat-box">
-              <div className="stat-box__label">Total Wet-Rate</div>
-              <div className={`stat-box__value ${overallWetRateClass}`}>
-                {overallWetRate.toFixed(1)}%
+              <div className="stat-box__label">Snittid alle chugs</div>
+              <div className="stat-box__value">
+                {overallAverageTime != null ? `${overallAverageTime.toFixed(2)}s` : "-"}
               </div>
             </div>
             
@@ -453,7 +455,7 @@ export function StatsDashboardPage() {
           {/* RAD 1: Tid og Kvantitet vs Kvalitet */}
           <div className="row u-mt-sm stats__row-wrap">
             <div className="col card stats__panel-col">
-              <h2>Raskest/snitt/treigest per dag</h2>
+              <h2>Diverse tider per dag</h2>
               <div className="stats__chart-area">
                 <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
                   <LineChart data={timeSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
@@ -487,7 +489,7 @@ export function StatsDashboardPage() {
             </div>
 
             <div className="col card stats__panel-col">
-              <h2>Kvantitet vs Kvalitet</h2>
+              <h2>Kvantitet vs kvalitet</h2>
               
               <div className="stats__scatter-header">
                 <div className="stats__chart-desc stats__chart-desc--tight">
@@ -565,7 +567,7 @@ export function StatsDashboardPage() {
           {/* RAD 2: Wet-rate og Anmerkninger */}
           <div className="row u-mt-sm stats__row-wrap">
             <div className="col card stats__panel-col">
-              <h2>Søle-prosent (Wet-rate) per dag</h2>
+              <h2>Wet-rate per dag</h2>
               <div className="stats__chart-desc">Basert på MM, W, VW, P og T-kryss.</div>
               <div className="stats__chart-area">
                 <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
@@ -598,7 +600,7 @@ export function StatsDashboardPage() {
             </div>
 
             <div className="col card stats__panel-col">
-              <h2>Anmerkningstyper Totalt</h2>
+              <h2>Anmerkningstyper totalt</h2>
               <div className="stats__chart-desc">Fordeling av alle registrerte anmerkninger.</div>
               <div className="stats__chart-area">
                 <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
@@ -635,7 +637,7 @@ export function StatsDashboardPage() {
             
             {/* Prosentvis forbedring */}
             <div className="col card stats__panel-col">
-              <h2>Største Forbedring (%)</h2>
+              <h2>Største forbedring (%)</h2>
               <div className="stats__chart-desc">Snitt av to første chugs vs to siste (krever ≥ 4 chugs).</div>
               <div className="stats__chart-area--sm">
                 {improvementData.length > 0 ? (
