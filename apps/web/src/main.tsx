@@ -26,6 +26,7 @@ import "./styles/pages/person.css";
 import "./styles/pages/grotta.css";
 import "./styles/pages/stats.css";
 import "./styles/pages/session.css";
+import "./styles/pages/session-extras.css";
 import "./styles/pages/chuglist.css";
 import "./styles/pages/violations.css";
 import "./styles/pages/rules.css";

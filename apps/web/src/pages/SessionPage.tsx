@@ -16,6 +16,12 @@ import {
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { LoadingCard } from "../components/LoadingCard";
+import { SessionPodium } from "../components/session/SessionPodium";
+import { SessionRaceReplay } from "../components/session/SessionRaceReplay";
+import { SessionFormTrend } from "../components/session/SessionFormTrend";
+import { SessionBeeswarm } from "../components/session/SessionBeeswarm";
+import { SessionStories, type Story } from "../components/session/SessionStories";
+import { SessionPosterButton } from "../components/session/SessionPosterButton";
 
 type SessionCol = { sessionId: string; dateISO: string; note?: string | null; id?: string };
 type CellData = { seconds: number | null; note: string | null };
@@ -96,6 +102,26 @@ function fmtDate(iso: string) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = String(d.getFullYear());
   return `${dd}/${mm}/${yyyy}`;
+}
+
+const NB_MONTHS = [
+  "januar",
+  "februar",
+  "mars",
+  "april",
+  "mai",
+  "juni",
+  "juli",
+  "august",
+  "september",
+  "oktober",
+  "november",
+  "desember",
+];
+
+function fmtDateLong(iso: string) {
+  const d = new Date(iso);
+  return `${d.getDate()}. ${NB_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function fmtSeconds(value: number | null | undefined) {
@@ -278,6 +304,7 @@ export function SessionPage() {
   const [sessions, setSessions] = useState<SessionCol[]>([]);
   const [violations, setViolations] = useState<ViolationEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showStories, setShowStories] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -501,6 +528,32 @@ export function SessionPage() {
     };
   }, [tableData, sessions, violations, currentSessionViolations, id]);
 
+  const personHistoryThroughToday = useMemo(() => {
+    const out: Record<string, number[]> = {};
+    if (!tableData || !sessions.length || !id) return out;
+    const sortedSessions = [...sessions].sort(
+      (a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime()
+    );
+    const currentIndex = sortedSessions.findIndex((s) => (s.id || s.sessionId) === id);
+    if (currentIndex === -1) return out;
+    const upTo = sortedSessions.slice(0, currentIndex + 1);
+    tableData.rows.forEach((r) => {
+      const series = upTo
+        .map((s) => tableData.cells[r.participantId]?.[s.id || s.sessionId]?.seconds)
+        .filter((v): v is number => typeof v === "number" && v > 0);
+      if (series.length > 0) out[r.participantId] = series;
+    });
+    return out;
+  }, [tableData, sessions, id]);
+
+  const allHistoricalTimes = useMemo(() => {
+    if (!tableData) return [] as number[];
+    return Object.values(tableData.cells)
+      .flatMap((c) => Object.values(c))
+      .map((c) => c.seconds)
+      .filter((v): v is number => typeof v === "number" && v > 0);
+  }, [tableData]);
+
   const groupedViolations = useMemo(() => {
     const map = new Map<
       string,
@@ -650,6 +703,94 @@ export function SessionPage() {
   const isAllTimeFastest = sessionStats.fastestGlobalRank === 1;
   const isAllTimeSlowest = sessionStats.slowestGlobalRank === 1;
 
+  const stories: Story[] = [];
+  stories.push({
+    id: "intro",
+    kind: "title",
+    emoji: "🍻",
+    heading: "Grottechug",
+    big: fmtDateLong(sessionStats.dateISO),
+    sub: sessionStats.note ? `«${sessionStats.note}»` : "Dagens oppsummering",
+    meta: `${sessionStats.participantCount} chuggere`,
+  });
+  if (sessionStats.avgTime != null) {
+    stories.push({
+      id: "avg",
+      kind: "stat",
+      emoji: "⏱️",
+      heading: "Dagens snitt",
+      big: `${sessionStats.avgTime.toFixed(2)}s`,
+      sub:
+        sessionStats.avgRank === 1
+          ? "🏆 Raskeste snitt noensinne!"
+          : `#${sessionStats.avgRank} av ${sessionStats.totalSessionsWithAvg} raskeste snitt`,
+    });
+  }
+  if (sessionStats.fastest) {
+    stories.push({
+      id: "fast",
+      kind: "award",
+      emoji: isAllTimeFastest ? "🏆" : "⚡",
+      heading: isAllTimeFastest ? "All-time rekord" : "Raskest i dag",
+      big: `${sessionStats.fastest.seconds.toFixed(2)}s`,
+      sub: sessionStats.fastest.name,
+      meta: `#${sessionStats.fastestGlobalRank} av ${sessionStats.totalHistoricalAttempts} noensinne`,
+    });
+  }
+  if (bestPbSmasher && bestPbSmasher.diffPb! < 0) {
+    stories.push({
+      id: "pb",
+      kind: "award",
+      emoji: "🔥",
+      heading: "PB knust",
+      big: `−${Math.abs(bestPbSmasher.diffPb!).toFixed(2)}s`,
+      sub: bestPbSmasher.name,
+      meta: `Ny PB: ${bestPbSmasher.seconds.toFixed(2)}s`,
+    });
+  }
+  if (biggestComeback) {
+    stories.push({
+      id: "comeback",
+      kind: "award",
+      emoji: "🚀",
+      heading: "Dagens comeback",
+      big: `+${(biggestComeback.lastTime! - biggestComeback.seconds).toFixed(2)}s`,
+      sub: biggestComeback.name,
+      meta: `Mye bedre enn forrige forsøk`,
+    });
+  }
+  if (sessionStats.wetRate > 0) {
+    stories.push({
+      id: "wet",
+      kind: "shame",
+      emoji: "💧",
+      heading: "Wet-rate",
+      big: `${sessionStats.wetRate.toFixed(0)}%`,
+      sub:
+        sessionStats.wetRateRank === 1
+          ? "Tidenes våteste dag!"
+          : `${wetBreakdownData[0]?.count ?? 0} av ${sessionStats.participantCount} hadde anmerkning`,
+    });
+  }
+  if (sessionStats.slowest) {
+    stories.push({
+      id: "slow",
+      kind: "shame",
+      emoji: isAllTimeSlowest ? "💀" : "🐢",
+      heading: isAllTimeSlowest ? "All-time bunnrekord" : "Tregest i dag",
+      big: `${sessionStats.slowest.seconds.toFixed(2)}s`,
+      sub: sessionStats.slowest.name,
+    });
+  }
+  stories.push({
+    id: "outro",
+    kind: "wrap",
+    emoji: "🍺",
+    heading: "Skål",
+    big: "Til neste gang",
+    sub: "grottechug.no",
+  });
+
   const PersonName = ({
     personId,
     name,
@@ -691,7 +832,28 @@ export function SessionPage() {
               Neste dag »
             </button>
           )}
+
+          <SessionPosterButton
+            dateLabel={fmtDate(sessionStats.dateISO)}
+            note={sessionStats.note ?? null}
+            avgTime={sessionStats.avgTime}
+            participantCount={sessionStats.participantCount}
+            wetRate={sessionStats.wetRate}
+            fastest={sessionStats.fastest}
+            slowest={sessionStats.slowest}
+            top={sessionStats.attempts.slice(0, 3)}
+          />
         </div>
+      </div>
+
+      <div className="session-actions">
+        <button
+          type="button"
+          className="btn session-actions__primary"
+          onClick={() => setShowStories(true)}
+        >
+          🎬 Spill av oppsummering
+        </button>
       </div>
 
       <div className="card session__header">
@@ -822,6 +984,16 @@ export function SessionPage() {
           </div>
         )}
       </div>
+
+      <SessionPodium
+        top3={sessionStats.attempts.slice(0, 3).map((a) => ({
+          participantId: a.participantId,
+          name: a.name,
+          seconds: a.seconds,
+        }))}
+        onSelect={(pid) => nav(`/person/${pid}`)}
+        isRecord={isAllTimeFastest}
+      />
 
       <div className="session__award-grid">
         {bestProjected && bestProjected.diffProjected! < 0 && (
@@ -1089,6 +1261,26 @@ export function SessionPage() {
         )}
       </div>
 
+      <SessionBeeswarm
+        attempts={sessionStats.attempts.map((a) => ({
+          participantId: a.participantId,
+          name: a.name,
+          seconds: a.seconds,
+        }))}
+        allHistoricalTimes={allHistoricalTimes}
+        onSelect={(pid) => nav(`/person/${pid}`)}
+      />
+
+      <SessionFormTrend
+        attempts={sessionStats.attempts.map((a) => ({
+          participantId: a.participantId,
+          name: a.name,
+          seconds: a.seconds,
+        }))}
+        history={personHistoryThroughToday}
+        onSelect={(pid) => nav(`/person/${pid}`)}
+      />
+
       <div className="session__chart-grid">
         <div className="card session__chart-card">
           <h2 className="session__chart-title">Type kryss i dag</h2>
@@ -1260,6 +1452,15 @@ export function SessionPage() {
         </div>
       </div>
 
+      <SessionRaceReplay
+        racers={sessionStats.attempts.map((a) => ({
+          participantId: a.participantId,
+          name: a.name,
+          seconds: a.seconds,
+        }))}
+        onSelect={(pid) => nav(`/person/${pid}`)}
+      />
+
       <div className="card">
         <h2>Kryss og anmerkninger</h2>
         {groupedViolations.length === 0 ? (
@@ -1314,6 +1515,11 @@ export function SessionPage() {
           </div>
         )}
       </div>
+
+      {showStories && (
+        <SessionStories stories={stories} onClose={() => setShowStories(false)} />
+      )}
+
     </div>
   );
 }
