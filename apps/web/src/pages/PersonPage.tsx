@@ -562,6 +562,13 @@ export function PersonPage() {
     : null;
 
   // --- Head-to-head (per sammenligning, basert på felles sesjoner) ---
+  type H2HMatch = {
+    sessionId: string;
+    dateISO: string;
+    meSec: number;
+    themSec: number;
+    winner: "me" | "them" | "tie";
+  };
   type H2H = {
     id: string;
     name: string;
@@ -573,22 +580,36 @@ export function PersonPage() {
     ties: number;
     meAvg: number | null;
     themAvg: number | null;
+    matches: H2HMatch[];
   };
   const headToHead: H2H[] = compares.map((c, i) => {
-    const mineBySession = new Map<string, number>();
-    data.points.forEach((pt) => mineBySession.set(pt.sessionId, pt.seconds));
+    const mineBySession = new Map<string, { sec: number; dateISO: string }>();
+    data.points.forEach((pt) =>
+      mineBySession.set(pt.sessionId, { sec: pt.seconds, dateISO: pt.dateISO })
+    );
     let meetings = 0, meWins = 0, themWins = 0, ties = 0;
     let meSum = 0, themSum = 0;
+    const matches: H2HMatch[] = [];
     c.points.forEach((pt) => {
       const my = mineBySession.get(pt.sessionId);
-      if (my == null) return;
+      if (!my) return;
       meetings++;
-      meSum += my;
+      meSum += my.sec;
       themSum += pt.seconds;
-      if (my < pt.seconds) meWins++;
-      else if (my > pt.seconds) themWins++;
+      const winner: "me" | "them" | "tie" =
+        my.sec < pt.seconds ? "me" : my.sec > pt.seconds ? "them" : "tie";
+      if (winner === "me") meWins++;
+      else if (winner === "them") themWins++;
       else ties++;
+      matches.push({
+        sessionId: pt.sessionId,
+        dateISO: my.dateISO,
+        meSec: my.sec,
+        themSec: pt.seconds,
+        winner,
+      });
     });
+    matches.sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime());
     return {
       id: String(c.participant.id),
       name: c.participant.name,
@@ -600,6 +621,7 @@ export function PersonPage() {
       ties,
       meAvg: meetings ? meSum / meetings : null,
       themAvg: meetings ? themSum / meetings : null,
+      matches,
     };
   });
 
@@ -1285,7 +1307,7 @@ export function PersonPage() {
                     <div className="person-h2h__score">
                       <div className="person-h2h__score-side person-h2h__score-side--me">
                         <div className="person-h2h__num">{h.meWins}</div>
-                        <div className="person-h2h__lbl">deg</div>
+                        <div className="person-h2h__lbl">{p.name.split(/\s+/)[0]}</div>
                       </div>
                       {h.ties > 0 && (
                         <div className="person-h2h__score-side person-h2h__score-side--tie">
@@ -1322,7 +1344,7 @@ export function PersonPage() {
 
                     <div className="person-h2h__avg">
                       <span>
-                        Snitt deg:{" "}
+                        Snitt {p.name.split(/\s+/)[0]}:{" "}
                         <strong>
                           {h.meAvg == null ? "—" : `${h.meAvg.toFixed(2)}s`}
                         </strong>
@@ -1335,9 +1357,68 @@ export function PersonPage() {
                       </span>
                     </div>
 
+                    {h.matches.length > 0 && (
+                      <ul className="person-h2h__matches">
+                        {h.matches.map((m) => {
+                          const diff = Math.abs(m.meSec - m.themSec);
+                          return (
+                            <li
+                              key={m.sessionId}
+                              className={`person-h2h__match person-h2h__match--${m.winner}`}
+                              onClick={() => nav(`/session/${m.sessionId}`)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  nav(`/session/${m.sessionId}`);
+                                }
+                              }}
+                              title={`Gå til økt ${fmtDDMMYYYY(m.dateISO)}`}
+                            >
+                              <span className="person-h2h__match-date">
+                                {fmtDDMMYYYY(m.dateISO)}
+                              </span>
+                              <span className="person-h2h__match-times">
+                                <span
+                                  className={`person-h2h__match-sec ${
+                                    m.winner === "me"
+                                      ? "person-h2h__match-sec--win"
+                                      : ""
+                                  }`}
+                                >
+                                  {m.meSec.toFixed(2)}s
+                                </span>
+                                <span className="person-h2h__match-vs">vs</span>
+                                <span
+                                  className={`person-h2h__match-sec ${
+                                    m.winner === "them"
+                                      ? "person-h2h__match-sec--win"
+                                      : ""
+                                  }`}
+                                  style={
+                                    m.winner === "them"
+                                      ? { color: h.color }
+                                      : undefined
+                                  }
+                                >
+                                  {m.themSec.toFixed(2)}s
+                                </span>
+                              </span>
+                              <span className="person-h2h__match-diff">
+                                {m.winner === "tie"
+                                  ? "="
+                                  : `${m.winner === "me" ? "−" : "+"}${diff.toFixed(2)}s`}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+
                     <div className="person-h2h__verdict">
                       {leading === "me" &&
-                        `Du leder ${h.meWins}–${h.themWins}`}
+                        `${p.name.split(/\s+/)[0]} leder ${h.meWins}–${h.themWins}`}
                       {leading === "them" &&
                         `${h.name.split(/\s+/)[0]} leder ${h.themWins}–${h.meWins}`}
                       {leading === "tie" && `Helt likt ${h.meWins}–${h.themWins}`}
