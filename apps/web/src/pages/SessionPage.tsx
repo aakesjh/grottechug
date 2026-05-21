@@ -16,12 +16,12 @@ import {
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { LoadingCard } from "../components/LoadingCard";
-import { SessionPodium } from "../components/session/SessionPodium";
 import { SessionRaceReplay } from "../components/session/SessionRaceReplay";
 import { SessionFormTrend } from "../components/session/SessionFormTrend";
 import { SessionBeeswarm } from "../components/session/SessionBeeswarm";
 import { SessionStories, type Story } from "../components/session/SessionStories";
 import { SessionPosterButton } from "../components/session/SessionPosterButton";
+import { LeaderboardPodium } from "../components/LeaderboardPodium";
 
 type SessionCol = { sessionId: string; dateISO: string; note?: string | null; id?: string };
 type CellData = { seconds: number | null; note: string | null };
@@ -303,6 +303,7 @@ export function SessionPage() {
   const [tableData, setTableData] = useState<TableResponse | null>(null);
   const [sessions, setSessions] = useState<SessionCol[]>([]);
   const [violations, setViolations] = useState<ViolationEntry[]>([]);
+  const [participantImages, setParticipantImages] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [showStories, setShowStories] = useState(false);
 
@@ -313,11 +314,19 @@ export function SessionPage() {
       apiFetch(`/api/stats/table?semester=all`).then((r) => r.json()),
       apiFetch(`/api/sessions`).then((r) => r.json()),
       apiFetch(`/api/violations?semester=all`).then((r) => r.json()),
+      apiFetch(`/api/participants?includeGuests=true`).then((r) => r.json()),
     ])
-      .then(([tData, sData, vData]) => {
+      .then(([tData, sData, vData, pData]) => {
         setTableData(tData);
         setSessions(sData);
         setViolations(vData);
+        const imgMap: Record<string, string | null> = {};
+        if (Array.isArray(pData)) {
+          for (const p of pData) {
+            imgMap[String(p.id)] = p.imageUrl ?? null;
+          }
+        }
+        setParticipantImages(imgMap);
         setLoading(false);
       })
       .catch((e) => {
@@ -833,6 +842,14 @@ export function SessionPage() {
             </button>
           )}
 
+          <button
+            type="button"
+            className="btn session__nav-btn"
+            onClick={() => setShowStories(true)}
+          >
+            🎬 Spill av oppsummering
+          </button>
+
           <SessionPosterButton
             dateLabel={fmtDate(sessionStats.dateISO)}
             note={sessionStats.note ?? null}
@@ -844,16 +861,6 @@ export function SessionPage() {
             top={sessionStats.attempts.slice(0, 3)}
           />
         </div>
-      </div>
-
-      <div className="session-actions">
-        <button
-          type="button"
-          className="btn session-actions__primary"
-          onClick={() => setShowStories(true)}
-        >
-          🎬 Spill av oppsummering
-        </button>
       </div>
 
       <div className="card session__header">
@@ -985,15 +992,20 @@ export function SessionPage() {
         )}
       </div>
 
-      <SessionPodium
-        top3={sessionStats.attempts.slice(0, 3).map((a) => ({
-          participantId: a.participantId,
-          name: a.name,
-          seconds: a.seconds,
-        }))}
-        onSelect={(pid) => nav(`/person/${pid}`)}
-        isRecord={isAllTimeFastest}
-      />
+      <div className="card" style={{ marginTop: 12, marginBottom: 18 }}>
+        <LeaderboardPodium
+          title="🏆 Dagens pall"
+          badge={isAllTimeFastest ? "All-time rekord!" : undefined}
+          celebrate={isAllTimeFastest}
+          top3={sessionStats.attempts.slice(0, 3).map((a) => ({
+            participantId: a.participantId,
+            name: a.name,
+            imageUrl: participantImages[a.participantId] ?? null,
+            seconds: a.seconds,
+          }))}
+          onSelect={(pid) => nav(`/person/${pid}`)}
+        />
+      </div>
 
       <div className="session__award-grid">
         {bestProjected && bestProjected.diffProjected! < 0 && (

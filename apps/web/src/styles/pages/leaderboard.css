@@ -10,6 +10,47 @@
   margin-top: 12px;
 }
 
+/* --- Reusable podium wrapper (title/badge optional) --- */
+.leaderboard-podium {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.leaderboard-podium__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-podium__title {
+  margin: 0;
+  font-size: var(--font-lg, 1.1rem);
+}
+
+.leaderboard-podium__badge {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill, 999px);
+  background: linear-gradient(90deg, #f97316, #facc15);
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: none;
+}
+
+.leaderboard-podium__badge--celebrate {
+  animation: leaderboard-podium-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes leaderboard-podium-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
 /* --- Podium (medal stand) --- */
 .podium {
   display: flex;

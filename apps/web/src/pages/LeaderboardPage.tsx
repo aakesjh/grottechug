@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Avatar } from "../components/Avatar";
 import { LoadingCard } from "../components/LoadingCard";
+import { LeaderboardPodium } from "../components/LeaderboardPodium";
 import { apiFetch } from "../lib/api";
 
 type Semester = "2026V" | "2025H" | "all";
@@ -24,70 +24,6 @@ function fmtDDMMYYYY(iso: string) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const yyyy = String(d.getFullYear());
   return `${dd}/${mm}/${yyyy}`;
-}
-
-const MEDAL = ["🥇", "🥈", "🥉"] as const;
-const PODIUM_COLORS = [
-  { bg: "linear-gradient(180deg, rgba(255,215,0,0.18), rgba(255,215,0,0.06))", border: "#FFD700", glow: "0 0 20px rgba(255,215,0,0.2)" },
-  { bg: "linear-gradient(180deg, rgba(192,192,192,0.14), rgba(192,192,192,0.04))", border: "#C0C0C0", glow: "0 0 16px rgba(192,192,192,0.15)" },
-  { bg: "linear-gradient(180deg, rgba(205,127,50,0.14), rgba(205,127,50,0.04))", border: "#CD7F32", glow: "0 0 16px rgba(205,127,50,0.15)" },
-];
-const STAND_HEIGHTS = [100, 72, 52];
-
-function MedalStand({ rows }: { rows: Row[] }) {
-  const nav = useNavigate();
-  const top3 = rows.slice(0, 3);
-  // Display order: 2nd, 1st, 3rd
-  const order = [1, 0, 2];
-
-  return (
-    <div className="podium">
-      {order.map(pos => {
-        const r = top3[pos];
-        const colors = PODIUM_COLORS[pos];
-        const standH = STAND_HEIGHTS[pos];
-
-        if (!r) {
-          return (
-            <div key={pos} className="podium__slot">
-              <div className="podium__medal">{MEDAL[pos]}</div>
-              <div className="podium__avatar-wrap podium__avatar-wrap--empty">—</div>
-              <div className="podium__stand podium__stand--empty" style={{ height: standH }} />
-            </div>
-          );
-        }
-
-        return (
-          <button
-            key={pos}
-            className="podium__slot podium__slot--clickable"
-            onClick={() => nav(`/person/${r.participantId}`)}
-          >
-            <div className="podium__medal">{MEDAL[pos]}</div>
-            <div
-              className="podium__avatar-wrap"
-              style={{ borderColor: colors.border, boxShadow: colors.glow }}
-            >
-              {r.imageUrl
-                ? <img src={r.imageUrl} alt={r.name} className="podium__avatar-img" />
-                : <Avatar name={r.name} size={56} />
-              }
-            </div>
-            <div className="podium__details">
-              <div className="podium__name">{r.name}</div>
-              <div className="podium__time">{r.bestClean.toFixed(2)}s</div>
-            </div>
-            <div
-              className="podium__stand"
-              style={{ height: standH, background: colors.bg, borderColor: colors.border }}
-            >
-              <span className="podium__stand-rank">{pos + 1}</span>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 export function LeaderboardPage() {
@@ -173,6 +109,13 @@ export function LeaderboardPage() {
     );
   }
 
+  const podiumRows = (showGuests ? rows : topRegular).slice(0, 3).map(r => ({
+    participantId: r.participantId,
+    name: r.name,
+    imageUrl: r.imageUrl,
+    seconds: r.bestClean,
+  }));
+
   return (
     <div className="leaderboard">
       <h1>Toppliste</h1>
@@ -180,9 +123,9 @@ export function LeaderboardPage() {
 
       <div className="tabs u-mt-sm">
         {["2025H", "2026V", "all"].map((s) => (
-          <button 
+          <button
             key={s}
-            className={`tab ${semester === s ? "tabActive" : ""}`} 
+            className={`tab ${semester === s ? "tabActive" : ""}`}
             onClick={() => setSemester(s as Semester)}
           >
             {s === "all" ? "Total" : s === "2025H" ? "2025 Høst" : "2026 Vår"}
@@ -198,7 +141,7 @@ export function LeaderboardPage() {
 
       {/* Podium */}
       <div className="card u-mt-sm">
-        <MedalStand rows={showGuests ? rows : topRegular} />
+        <LeaderboardPodium top3={podiumRows} />
       </div>
 
       {/* Table */}
@@ -245,8 +188,8 @@ export function LeaderboardPage() {
                       {globalIdx === 0 ? "🥇" : globalIdx === 1 ? "🥈" : globalIdx === 2 ? "🥉" : globalIdx + 1}
                     </td>
                     <td className="leaderboard__name-cell">
-                      <button 
-                        className="leaderboard__name-btn" 
+                      <button
+                        className="leaderboard__name-btn"
                         onClick={() => nav(`/person/${r.participantId}`)}
                       >
                         {r.name}
