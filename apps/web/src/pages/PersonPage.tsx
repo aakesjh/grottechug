@@ -291,6 +291,7 @@ export function PersonPage() {
     rankingQuery.set("includeGuests", "1");
   }
   const violationsHref = `/violations?${rankingQuery.toString()}`;
+  const leaderboardHref = `/leaderboard?${rankingQuery.toString()}`;
 
   let changeSinceStart = null;
   let last3Avg = null;
@@ -973,6 +974,20 @@ export function PersonPage() {
             <div className="person-hero__stat">
               <div className="person-hero__stat-num">{data.stats.attempts}</div>
               <div className="person-hero__stat-lbl">Forsøk</div>
+            </div>
+            <div className="person-hero__stat">
+              <div className="person-hero__stat-num">
+                {data.stats.bestClean == null ? "—" : `${data.stats.bestClean.toFixed(2)}s`}
+              </div>
+              <div className="person-hero__stat-lbl">
+                {profileRanking.bestCleanRank != null ? (
+                  <Link to={leaderboardHref} className="person-hero__stat-link">
+                    Beste · #{profileRanking.bestCleanRank}
+                  </Link>
+                ) : (
+                  "Beste"
+                )}
+              </div>
             </div>
             <div className="person-hero__stat">
               <div className="person-hero__stat-num">
