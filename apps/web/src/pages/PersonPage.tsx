@@ -62,6 +62,32 @@ function countViolationsFromPoints(points: Point[]) {
   }, 0);
 }
 
+const PERSON_PALETTE = [
+  "#ef4444", "#f97316", "#f59e0b", "#84cc16", "#10b981",
+  "#06b6d4", "#3b82f6", "#6366f1", "#a855f7", "#ec4899",
+];
+
+function personColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return PERSON_PALETTE[Math.abs(hash) % PERSON_PALETTE.length];
+}
+
+function personInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+const SEMESTER_LABEL: Record<Semester, string> = {
+  "2025H": "2025 Høst",
+  "2026V": "2026 Vår",
+  all: "Total",
+};
+
 export function PersonPage() {
   const { id } = useParams();
   const nav = useNavigate(); // NYTT: For navigering
@@ -71,20 +97,7 @@ export function PersonPage() {
   const [participants, setParticipants] = useState<{id: string, name: string}[]>([]);
   const [compareId, setCompareId] = useState<string>("");
   const [compareData, setCompareData] = useState<Resp | null>(null);
-  const [chartHeight, setChartHeight] = useState(() => {
-    if (typeof window === "undefined") return 280;
-    return Math.max(240, Math.min(Math.round(window.innerHeight * 0.46), 420));
-  });
 
-  useEffect(() => {
-    const updateHeight = () => {
-      const maxByViewport = Math.round(window.innerHeight * 0.46);
-      setChartHeight(Math.max(240, Math.min(maxByViewport, 420)));
-    };
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-    return () => window.removeEventListener("resize", updateHeight);
-  }, []);
 
   // 1. Hent alle deltakere for sammenligning
   useEffect(() => {
@@ -394,208 +407,368 @@ export function PersonPage() {
       },
     ];
 
+  // --- Derived UI values ---
+  const accent = personColor(p.name);
+  const initials = personInitials(p.name);
+  const semesterLabel = SEMESTER_LABEL[semester];
+  const earnedBadges = (data.badges ?? []).filter((b) => b.earned).length;
+  const totalBadges = (data.badges ?? []).length;
+
+  const pbPoint =
+    bestClean != null ? data.points.find((pt) => pt.seconds === bestClean) ?? null : null;
+
+  const trendChip =
+    trendPerAttempt == null
+      ? null
+      : trendPerAttempt < -0.005
+        ? {
+            icon: "📈",
+            text: `${Math.abs(trendPerAttempt).toFixed(2)}s raskere per forsøk`,
+            tone: "better" as const,
+          }
+        : trendPerAttempt > 0.005
+          ? {
+              icon: "📉",
+              text: `${trendPerAttempt.toFixed(2)}s tregere per forsøk`,
+              tone: "worse" as const,
+            }
+          : { icon: "➡️", text: "Stabil utvikling", tone: "neutral" as const };
+
+  const highlights = [
+    {
+      key: "pb",
+      icon: "🏆",
+      label: "Personlig rekord",
+      value: bestClean == null ? "—" : `${bestClean.toFixed(2)}s`,
+      sub: pbPoint
+        ? `${fmtDDMMYYYY(pbPoint.dateISO)}${
+            profileRanking.bestCleanRank != null ? ` · #${profileRanking.bestCleanRank} totalt` : ""
+          }`
+        : "Ingen ren tid registrert",
+      onClick: pbPoint ? () => nav(`/session/${pbPoint.sessionId}`) : undefined,
+      tone: "gold" as const,
+    },
+    {
+      key: "form",
+      icon: "🔥",
+      label: "Form siste 3",
+      value: last3Avg == null ? "—" : `${last3Avg.toFixed(2)}s`,
+      sub:
+        recentVsAverage == null
+          ? "—"
+          : recentVsAverage > 0
+            ? `${recentVsAverage.toFixed(2)}s raskere enn snitt`
+            : recentVsAverage < 0
+              ? `${Math.abs(recentVsAverage).toFixed(2)}s tregere enn snitt`
+              : "Lik snittfart",
+      tone:
+        recentVsAverage == null
+          ? ("neutral" as const)
+          : recentVsAverage > 0
+            ? ("better" as const)
+            : recentVsAverage < 0
+              ? ("worse" as const)
+              : ("neutral" as const),
+    },
+    {
+      key: "consistency",
+      icon: "📊",
+      label: "Konsistens",
+      value: standardDeviation == null ? "—" : `±${standardDeviation.toFixed(2)}s`,
+      sub: timeSpread == null ? "—" : `Spenn ${timeSpread.toFixed(2)}s`,
+      tone: "neutral" as const,
+    },
+    {
+      key: "projected",
+      icon: "🎯",
+      label: "Projisert neste",
+      value: projectedNext == null ? "—" : `${projectedNext.toFixed(2)}s`,
+      sub: trendChip ? trendChip.text : "—",
+      tone: "accent" as const,
+    },
+  ];
+
+  const detailStats = compareData ? comparisonStats : performanceStats;
+
   return (
-    <div>
-      <div className="row person__top-row">
-        
-        <div className="col card person__profile-col">
-          <div className="person__header">
-            <h1 className="u-mb-0">{p.name}</h1>
-            <span className="badge">{p.isRegular ? "fast" : "gjest"}</span>
+    <div className="person" style={{ ["--person-accent" as any]: accent }}>
+      {/* ── HERO ── */}
+      <section className="person-hero card">
+        <div className="person-hero__bg" aria-hidden="true" />
+        <div className="person-hero__photo">
+          {p.imageUrl ? (
+            <img src={p.imageUrl} alt={p.name} />
+          ) : (
+            <span className="person-hero__initials">{initials || "?"}</span>
+          )}
+        </div>
+        <div className="person-hero__info">
+          <div className="person-hero__pills">
+            <span className="person-hero__pill person-hero__pill--role">
+              {p.isRegular ? "👑 Fast" : "🎉 Gjest"}
+            </span>
+            <span className="person-hero__pill">{semesterLabel}</span>
           </div>
-          
-          <div className="person__photo-frame">
-            {p.imageUrl ? (
-              <img src={p.imageUrl} alt={p.name} className="person__photo" />
-            ) : (
-              <div className="person__no-photo">Ingen bilde</div>
-            )}
-          </div>
+          <h1 className="person-hero__name">{p.name}</h1>
 
-          <div className="hr person__divider person__divider--tight" />
-
-          <div className="person__stats-list">
-            <h2 className="u-mb-0">Statistikk</h2>
-            <div className="person__stats-panel">
-              <div className="person__stat-row">
-                <span className="u-text-muted person__stat-label">Antall forsøk</span>
-                <div className="person__stat-content">
-                  <b className="person__stat-value">{data.stats.attempts}</b>
-                </div>
+          <div className="person-hero__quick">
+            <div className="person-hero__stat">
+              <div className="person-hero__stat-num">{data.stats.attempts}</div>
+              <div className="person-hero__stat-lbl">Forsøk</div>
+            </div>
+            <div className="person-hero__stat">
+              <div className="person-hero__stat-num">
+                {data.stats.best == null ? "—" : `${data.stats.best.toFixed(2)}s`}
               </div>
-              <div className="person__stat-row">
-                <span className="u-text-muted person__stat-label">Beste tid</span>
-                <div className="person__stat-content">
-                  <b className="person__stat-value">
-                    {data.stats.best == null ? "-" : `${data.stats.best.toFixed(2)}s`}
-                  </b>
-                  {profileRanking.bestCleanRank != null && (
-                    <Link className="person__stat-link" to={leaderboardHref}>
-                      #{profileRanking.bestCleanRank} raskest på topplista
-                    </Link>
-                  )}
-                </div>
+              <div className="person-hero__stat-lbl">
+                {profileRanking.bestCleanRank != null ? (
+                  <Link to={leaderboardHref} className="person-hero__stat-link">
+                    PB · #{profileRanking.bestCleanRank}
+                  </Link>
+                ) : (
+                  "PB"
+                )}
               </div>
-              <div className="person__stat-row">
-                <span className="u-text-muted person__stat-label">Gjennomsnitt</span>
-                <div className="person__stat-content">
-                  <b className="person__stat-value">
-                    {data.stats.avg == null ? "-" : `${data.stats.avg.toFixed(2)}s`}
-                  </b>
-                </div>
+            </div>
+            <div className="person-hero__stat">
+              <div className="person-hero__stat-num">
+                {data.stats.avg == null ? "—" : `${data.stats.avg.toFixed(2)}s`}
               </div>
-              <div className="person__stat-row">
-                <span className="u-text-muted person__stat-label">Kryss</span>
-                <div className="person__stat-content">
-                  <b className="person__stat-value">{profileRanking.violationCount}</b>
-                  {profileRanking.violationRank != null && (
-                    <Link className="person__stat-link" to={violationsHref}>
-                      #{profileRanking.violationRank} flest på krysslista
-                    </Link>
-                  )}
-                </div>
+              <div className="person-hero__stat-lbl">Snitt</div>
+            </div>
+            <div className="person-hero__stat">
+              <div className="person-hero__stat-num">{profileRanking.violationCount}</div>
+              <div className="person-hero__stat-lbl">
+                {profileRanking.violationRank != null ? (
+                  <Link to={violationsHref} className="person-hero__stat-link">
+                    Kryss · #{profileRanking.violationRank}
+                  </Link>
+                ) : (
+                  "Kryss"
+                )}
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <div className="col card person__chart-col">
-          <div className="person__chart-header">
-            <h2 className="u-mb-0">Utvikling</h2>
-            
-            <div className="person__chart-controls">
-              <select 
-                className="input person__compare-select"
-                value={compareId}
-                onChange={(e) => setCompareId(e.target.value)}
-              >
-                <option value="">Sammenlign med...</option>
-                {participants.map(pt => (
-                  <option key={pt.id} value={pt.id}>{pt.name}</option>
-                ))}
-              </select>
-
-              <div className="tabs">
-                <button className={`tab ${semester === "2025H" ? "tabActive" : ""}`} onClick={() => setSemester("2025H")}>2025 Høst</button>
-                <button className={`tab ${semester === "2026V" ? "tabActive" : ""}`} onClick={() => setSemester("2026V")}>2026 Vår</button>
-                <button className={`tab ${semester === "all" ? "tabActive" : ""}`} onClick={() => setSemester("all")}>Total</button>
-              </div>
-            </div>
-          </div>
-
-          <div className="person__chart-area" style={{ height: chartHeight }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={chartData}
-                margin={{ top: 16, right: 20, bottom: 26, left: 8 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                <XAxis
-                  dataKey="date"
-                  stroke="var(--text)"
-                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
-                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
-                  minTickGap={16}
-                  tickMargin={8}
-                />
-                <YAxis
-                  domain={["auto", "auto"]}
-                  stroke="var(--text)"
-                  tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
-                  tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
-                  width={56}
-                  tickFormatter={(tick: any) => `${tick}s`}
-                />
-                <Tooltip
-                  wrapperClassName="person__chart-tooltip"
-                  formatter={(v: any, name: any) => {
-                    if (name === "trend") return [`${Number(v).toFixed(2)}s`, "Trend"];
-                    if (name === "seconds" || name === "mainSeconds") return [`${Number(v).toFixed(2)}s`, p.name];
-                    if (name === "compSeconds" && compareData) return [`${Number(v).toFixed(2)}s`, compareData.participant.name];
-                    return [String(v), String(name)];
-                  }}
-                  labelFormatter={(label: any) => `${label}`}
-                />
-                
-                {compareData && <Legend verticalAlign="top" height={36} />}
-
-                <Line
-                  name={p.name}
-                  type="monotone"
-                  dataKey={compareData ? "mainSeconds" : "seconds"}
-                  stroke="var(--accent)"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "var(--accent)", cursor: "pointer" }}
-                  activeDot={{ r: 6, cursor: "pointer", onClick: (_: any, payload: any) => { const sid = payload?.payload?.sessionId || payload?.payload?.mainSessionId; if (sid) nav(`/session/${sid}`); } }}
-                  connectNulls
-                />
-                
-                {!compareData && (
-                  <Line type="monotone" dataKey="trend" dot={false} stroke="var(--accent2)" strokeDasharray="5 5" strokeWidth={2} />
-                )}
-
-                {compareData && (
-                  <Line
-                    name={compareData.participant.name}
-                    type="monotone"
-                    dataKey="compSeconds"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    dot={{ r: 4, fill: "#f59e0b", cursor: "pointer" }}
-                    activeDot={{ r: 6, cursor: "pointer", onClick: (_: any, payload: any) => { const sid = payload?.payload?.compSessionId; if (sid) nav(`/session/${sid}`); } }}
-                    connectNulls
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="hr person__divider" />
-          <div className="person__bottom-stats">
-            {(compareData ? comparisonStats : performanceStats).map((stat) => {
-              const toneClass =
-                stat.tone === "better"
-                  ? "person__bottom-stat-value--better"
-                  : stat.tone === "worse"
-                    ? "person__bottom-stat-value--worse"
-                    : stat.tone === "accent"
-                      ? "person__bottom-stat-value--accent"
-                      : "";
-
-              return (
-                <article key={stat.label} className="person__bottom-stat-card">
-                  <div className="person__bottom-stat-label">{stat.label}</div>
-                  <div className={`person__bottom-stat-value ${toneClass}`}>{stat.value}</div>
-                </article>
-              );
-            })}
-          </div>
+      {/* ── TOOLBAR ── */}
+      <div className="person-toolbar card">
+        <div className="tabs person-toolbar__tabs">
+          <button
+            className={`tab ${semester === "2025H" ? "tabActive" : ""}`}
+            onClick={() => setSemester("2025H")}
+          >
+            2025 Høst
+          </button>
+          <button
+            className={`tab ${semester === "2026V" ? "tabActive" : ""}`}
+            onClick={() => setSemester("2026V")}
+          >
+            2026 Vår
+          </button>
+          <button
+            className={`tab ${semester === "all" ? "tabActive" : ""}`}
+            onClick={() => setSemester("all")}
+          >
+            Total
+          </button>
         </div>
+        <select
+          className="input person-toolbar__compare"
+          value={compareId}
+          onChange={(e) => setCompareId(e.target.value)}
+        >
+          <option value="">Sammenlign med...</option>
+          {participants.map((pt) => (
+            <option key={pt.id} value={pt.id}>
+              {pt.name}
+            </option>
+          ))}
+        </select>
       </div>
 
-      <div className="person__lower-row">
-        <div className="card person__lower-col--badges">
-          <h2>Badges</h2>
-          <p className="u-text-muted person__badge-summary">
-            {(data.badges ?? []).filter(b => b.earned).length} / {(data.badges ?? []).length} oppnådd
-          </p>
-          <div className="person__badges-grid">
-            {(data.badges ?? []).map(badge => (
-              <div
-                key={badge.id}
-                className={`person__badge ${badge.earned ? 'person__badge--earned' : 'person__badge--locked'}`}
-                data-category={badge.category}
-                data-tooltip={badge.description}
-              >
-                <BadgeMedal badgeId={badge.id} category={badge.category} icon={badge.icon} />
-                <div className="person__badge-title">{badge.title}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* ── HIGHLIGHTS ── */}
+      <section className="person-highlights">
+        {highlights.map((h) => (
+          <article
+            key={h.key}
+            className={`card person-highlight person-highlight--${h.tone} ${
+              h.onClick ? "person-highlight--clickable" : ""
+            }`}
+            onClick={h.onClick}
+            role={h.onClick ? "button" : undefined}
+            tabIndex={h.onClick ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (h.onClick && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                h.onClick();
+              }
+            }}
+          >
+            <div className="person-highlight__icon" aria-hidden="true">
+              {h.icon}
+            </div>
+            <div className="person-highlight__body">
+              <div className="person-highlight__label">{h.label}</div>
+              <div className="person-highlight__value">{h.value}</div>
+              <div className="person-highlight__sub">{h.sub}</div>
+            </div>
+          </article>
+        ))}
+      </section>
 
-        <div className="card person__lower-col--history">
-          <h2>Historikk</h2>
+      {/* ── CHART ── */}
+      <section className="card person-chart-card">
+        <div className="person-chart-card__head">
+          <h2 className="u-mb-0">Utvikling</h2>
+          {trendChip && (
+            <span className={`person-chart-card__chip person-chart-card__chip--${trendChip.tone}`}>
+              <span aria-hidden="true">{trendChip.icon}</span> {trendChip.text}
+            </span>
+          )}
+        </div>
+        <div className="person-chart-card__area">
+          <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
+            <LineChart data={chartData} margin={{ top: 16, right: 20, bottom: 26, left: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <XAxis
+                dataKey="date"
+                stroke="var(--text)"
+                tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                minTickGap={16}
+                tickMargin={8}
+              />
+              <YAxis
+                domain={["auto", "auto"]}
+                stroke="var(--text)"
+                tick={{ fill: "var(--text)", fontSize: 12, fontWeight: 600 }}
+                tickLine={{ stroke: "rgba(255,255,255,0.35)" }}
+                width={56}
+                tickFormatter={(tick: any) => `${tick}s`}
+              />
+              <Tooltip
+                wrapperClassName="person__chart-tooltip"
+                formatter={(v: any, name: any) => {
+                  if (name === "trend") return [`${Number(v).toFixed(2)}s`, "Trend"];
+                  if (name === "seconds" || name === "mainSeconds")
+                    return [`${Number(v).toFixed(2)}s`, p.name];
+                  if (name === "compSeconds" && compareData)
+                    return [`${Number(v).toFixed(2)}s`, compareData.participant.name];
+                  return [String(v), String(name)];
+                }}
+                labelFormatter={(label: any) => `${label}`}
+              />
+
+              {compareData && <Legend verticalAlign="top" height={36} />}
+
+              <Line
+                name={p.name}
+                type="monotone"
+                dataKey={compareData ? "mainSeconds" : "seconds"}
+                stroke={accent}
+                strokeWidth={3}
+                dot={{ r: 4, fill: accent, cursor: "pointer" }}
+                activeDot={{
+                  r: 6,
+                  cursor: "pointer",
+                  onClick: (_: any, payload: any) => {
+                    const sid = payload?.payload?.sessionId || payload?.payload?.mainSessionId;
+                    if (sid) nav(`/session/${sid}`);
+                  },
+                }}
+                connectNulls
+              />
+
+              {!compareData && (
+                <Line
+                  type="monotone"
+                  dataKey="trend"
+                  dot={false}
+                  stroke="var(--accent2)"
+                  strokeDasharray="5 5"
+                  strokeWidth={2}
+                />
+              )}
+
+              {compareData && (
+                <Line
+                  name={compareData.participant.name}
+                  type="monotone"
+                  dataKey="compSeconds"
+                  stroke="#f59e0b"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: "#f59e0b", cursor: "pointer" }}
+                  activeDot={{
+                    r: 6,
+                    cursor: "pointer",
+                    onClick: (_: any, payload: any) => {
+                      const sid = payload?.payload?.compSessionId;
+                      if (sid) nav(`/session/${sid}`);
+                    },
+                  }}
+                  connectNulls
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* ── DETAIL STATS ── */}
+      <section className="card person-detail">
+        <h2 className="u-mb-0 person-detail__title">
+          {compareData ? `Mot ${compareData.participant.name}` : "Detaljert statistikk"}
+        </h2>
+        <div className="person-detail__grid">
+          {detailStats.map((stat) => {
+            const toneClass =
+              stat.tone === "better"
+                ? "person-detail__card--better"
+                : stat.tone === "worse"
+                  ? "person-detail__card--worse"
+                  : stat.tone === "accent"
+                    ? "person-detail__card--accent"
+                    : "";
+            return (
+              <article key={stat.label} className={`person-detail__card ${toneClass}`}>
+                <div className="person-detail__label">{stat.label}</div>
+                <div className="person-detail__value">{stat.value}</div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── BADGES ── */}
+      <section className="card person-badges-card">
+        <div className="person-badges-card__head">
+          <h2 className="u-mb-0">Badges</h2>
+          <span className="person-badges-card__count">
+            {earnedBadges} / {totalBadges} oppnådd
+          </span>
+        </div>
+        <div className="person__badges-grid">
+          {(data.badges ?? []).map((badge) => (
+            <div
+              key={badge.id}
+              className={`person__badge ${
+                badge.earned ? "person__badge--earned" : "person__badge--locked"
+              }`}
+              data-category={badge.category}
+              data-tooltip={badge.description}
+            >
+              <BadgeMedal badgeId={badge.id} category={badge.category} icon={badge.icon} />
+              <div className="person__badge-title">{badge.title}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── HISTORY ── */}
+      <section className="card">
+        <h2>Historikk</h2>
         <div className="tableWrap">
           <table className="person__history-table">
             <thead>
@@ -609,10 +782,10 @@ export function PersonPage() {
               {data.points.map((pt, i) => {
                 const isPB = bestClean !== null && pt.seconds === bestClean;
                 return (
-                  <tr key={`${pt.dateISO}-${i}`}>
+                  <tr key={`${pt.dateISO}-${i}`} className={isPB ? "person__history-row--pb" : ""}>
                     <td className="person__history-cell">
-                      <button 
-                        className="btnGhost person__history-date-btn" 
+                      <button
+                        className="btnGhost person__history-date-btn"
                         onClick={() => nav(`/session/${pt.sessionId}`)}
                         title="Se detaljer for denne dagen"
                       >
@@ -642,13 +815,16 @@ export function PersonPage() {
                 );
               })}
               {!data.points.length && (
-                <tr><td colSpan={3} className="u-text-muted u-text-center person__history-empty">Ingen data</td></tr>
+                <tr>
+                  <td colSpan={3} className="u-text-muted u-text-center person__history-empty">
+                    Ingen data
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
