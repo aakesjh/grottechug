@@ -59,3 +59,72 @@ statsRouter.get("/table", async (req, res) => {
     cells
   });
 });
+
+/**
+ * GET /api/stats/peers?semester=2026V|2025H|all&includeGuests=true|false
+ * Returns per-person aggregate stats for the whole peer group, suitable for
+ * percentile rank and consistency-score comparisons on the client.
+ */
+statsRouter.get("/peers", async (req, res) => {
+  const semester = String(req.query.semester ?? "all");
+  const includeGuests = req.query.includeGuests === "true";
+
+  const sessions = await prisma.session.findMany({
+    where: semester === "all" ? {} : { semester },
+    select: { id: true }
+  });
+  const sessionIds = sessions.map((s) => s.id);
+
+  if (!sessionIds.length) {
+    return res.json({ semester, peers: [] });
+  }
+
+  const people = await prisma.participant.findMany({
+    where: includeGuests ? {} : { isRegular: true },
+    select: { id: true, name: true, isRegular: true }
+  });
+
+  const attempts = await prisma.attempt.findMany({
+    where: { sessionId: { in: sessionIds } },
+    select: { participantId: true, seconds: true, note: true }
+  });
+
+  const isClean = (note: string | null) => {
+    if (!note) return true;
+    const t = note.trim().toLowerCase();
+    return t === "" || t === "mm-chug" || t === "mm";
+  };
+
+  const byPerson: Record<string, { all: number[]; clean: number[] }> = {};
+  for (const a of attempts) {
+    const bucket = (byPerson[a.participantId] ||= { all: [], clean: [] });
+    bucket.all.push(a.seconds);
+    if (isClean(a.note)) bucket.clean.push(a.seconds);
+  }
+
+  const peers = people
+    .map((p) => {
+      const b = byPerson[p.id] ?? { all: [], clean: [] };
+      const n = b.all.length;
+      if (!n) return null;
+      const sum = b.all.reduce((x, y) => x + y, 0);
+      const avg = sum / n;
+      const variance = b.all.reduce((s, v) => s + (v - avg) ** 2, 0) / n;
+      const stddev = Math.sqrt(variance);
+      const bestClean = b.clean.length ? Math.min(...b.clean) : null;
+      const best = Math.min(...b.all);
+      return {
+        id: p.id,
+        name: p.name,
+        isRegular: p.isRegular,
+        attempts: n,
+        avg,
+        best,
+        bestClean,
+        stddev,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+
+  res.json({ semester, peers });
+});

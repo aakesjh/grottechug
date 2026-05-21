@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer,
+  BarChart, Bar, Cell, ReferenceLine,
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { BadgeMedal } from "../components/BadgeMedal";
@@ -88,70 +89,146 @@ const SEMESTER_LABEL: Record<Semester, string> = {
   all: "Total",
 };
 
+const COMPARE_COLORS = [
+  "#f59e0b", "#06b6d4", "#a855f7", "#10b981", "#ec4899", "#f87171", "#84cc16",
+];
+
 export function PersonPage() {
   const { id } = useParams();
-  const nav = useNavigate(); // NYTT: For navigering
+  const nav = useNavigate();
   const [semester, setSemester] = useState<Semester>("2026V");
   const [data, setData] = useState<Resp | null>(null);
-  
-  const [participants, setParticipants] = useState<{id: string, name: string}[]>([]);
-  const [compareId, setCompareId] = useState<string>("");
-  const [compareData, setCompareData] = useState<Resp | null>(null);
 
+  const [participants, setParticipants] = useState<{ id: string; name: string }[]>([]);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [compareDataMap, setCompareDataMap] = useState<Record<string, Resp>>({});
+
+  type Peer = {
+    id: string; name: string; isRegular: boolean;
+    attempts: number; avg: number; best: number; bestClean: number | null; stddev: number;
+  };
+  const [peers, setPeers] = useState<Peer[]>([]);
+
+
+  // 0. Nullstill data ved bytte av aktiv person, og fjern aktiv fra sammenligningslista
+  useEffect(() => {
+    setData(null);
+    setCompareDataMap({});
+    setCompareIds((prev) => prev.filter((cid) => String(cid) !== String(id)));
+  }, [id]);
+
+  // Når semester endres: invalidér cache for sammenligninger så de re-hentes
+  useEffect(() => {
+    setCompareDataMap({});
+  }, [semester]);
 
   // 1. Hent alle deltakere for sammenligning
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const res = await apiFetch(`/api/participants?includeGuests=true`);
         const json = await res.json();
-        
+        if (cancelled) return;
+
         const list = json
           .filter((r: any) => {
             if (String(r.id) === String(id)) return false;
             return r.isRegular || (r.attempts >= 4);
           })
-          .map((r: any) => ({ 
-            id: String(r.id), 
-            name: r.isRegular ? r.name : `${r.name} (Gjest)` 
+          .map((r: any) => ({
+            id: String(r.id),
+            name: r.isRegular ? r.name : `${r.name} (Gjest)`,
           }));
-        
+
         const uniqueList = Array.from(new Map(list.map((item: any) => [item.id, item])).values())
           .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
-        setParticipants(uniqueList as {id: string, name: string}[]);
+        setParticipants(uniqueList as { id: string; name: string }[]);
       } catch (e) {
         console.error("Kunne ikke hente deltakere", e);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   // 2. Hent hovedpersonens data
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const res = await apiFetch(`/api/person/${id}?semester=${semester}`);
       const json: Resp = await res.json();
+      if (cancelled) return;
       setData(json);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [id, semester]);
 
-  // 3. Hent sammenligningspersonens data
+  // 2b. Hent peer-aggregater for percentile & konsistens-score
   useEffect(() => {
-    if (!compareId) {
-      setCompareData(null);
-      return;
-    }
+    let cancelled = false;
     (async () => {
-      const res = await apiFetch(`/api/person/${compareId}?semester=${semester}`);
-      const json: Resp = await res.json();
-      setCompareData(json);
+      try {
+        const res = await apiFetch(
+          `/api/stats/peers?semester=${semester}&includeGuests=true`
+        );
+        const json = await res.json();
+        if (cancelled) return;
+        setPeers(Array.isArray(json.peers) ? json.peers : []);
+      } catch (e) {
+        console.error("Kunne ikke hente peer-stats", e);
+        if (!cancelled) setPeers([]);
+      }
     })();
-  }, [compareId, semester]);
+    return () => {
+      cancelled = true;
+    };
+  }, [semester]);
+
+  // 3. Hent data for alle sammenligningspersoner
+  useEffect(() => {
+    const wanted = compareIds.filter((cid) => String(cid) !== String(id));
+    if (wanted.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        wanted.map(async (cid) => {
+          const res = await apiFetch(`/api/person/${cid}?semester=${semester}`);
+          const json: Resp = await res.json();
+          return [cid, json] as const;
+        })
+      );
+      if (cancelled) return;
+      setCompareDataMap((prev) => {
+        const next: Record<string, Resp> = {};
+        for (const cid of wanted) {
+          if (prev[cid]) next[cid] = prev[cid];
+        }
+        for (const [cid, json] of results) next[cid] = json;
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [compareIds, semester, id]);
+
+  const compares: Resp[] = useMemo(
+    () =>
+      compareIds
+        .map((cid) => compareDataMap[cid])
+        .filter((c): c is Resp => Boolean(c)),
+    [compareIds, compareDataMap]
+  );
 
   const chartData = useMemo(() => {
     if (!data) return [];
 
-    if (!compareData) {
+    if (compares.length === 0) {
       const pts = data.points.map((p, i) => ({
         ...p,
         idx: i,
@@ -175,23 +252,23 @@ export function PersonPage() {
     }
 
     const dateMap = new Map<string, any>();
-    const addData = (points: Point[], key: string, sessionKey: string) => {
+    const addData = (points: Point[], pid: string) => {
       points.forEach(p => {
         const d = fmtDDMMYYYY(p.dateISO);
         if (!dateMap.has(d)) {
           dateMap.set(d, { dateISO: p.dateISO, date: d });
         }
-        dateMap.get(d)[key] = p.seconds;
-        dateMap.get(d)[sessionKey] = p.sessionId;
+        dateMap.get(d)[`s_${pid}`] = p.seconds;
+        dateMap.get(d)[`sid_${pid}`] = p.sessionId;
       });
     };
-    addData(data.points, "mainSeconds", "mainSessionId");
-    addData(compareData.points, "compSeconds", "compSessionId");
+    addData(data.points, data.participant.id);
+    compares.forEach((c) => addData(c.points, c.participant.id));
 
     return Array.from(dateMap.values()).sort(
       (a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime()
     );
-  }, [data, compareData]);
+  }, [data, compares]);
 
   if (!data) {
     return (
@@ -258,52 +335,10 @@ export function PersonPage() {
     recentVsAverage = data.stats.avg == null ? null : data.stats.avg - last3Avg;
   }
 
-  let headToHeadAvg = "Uavgjort / Mangler data";
-  let headToHeadBest = "Uavgjort / Mangler data";
-  let headToHeadConsistency = "Uavgjort / Mangler data";
-  let headToHeadRecentForm = "Uavgjort / Mangler data";
-  let headToHeadVolume = "Like mange";
+  let headToHeadVolume = "";
+  headToHeadVolume;
 
-  if (compareData) {
-    if (data.stats.avg && compareData.stats.avg) {
-      const diff = data.stats.avg - compareData.stats.avg;
-      if (diff < 0) headToHeadAvg = `${p.name} (-${Math.abs(diff).toFixed(2)}s)`;
-      else if (diff > 0) headToHeadAvg = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
-    }
-    if (data.stats.bestClean && compareData.stats.bestClean) {
-      const diff = data.stats.bestClean - compareData.stats.bestClean;
-      if (diff < 0) headToHeadBest = `${p.name} (-${Math.abs(diff).toFixed(2)}s)`;
-      else if (diff > 0) headToHeadBest = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
-    }
-    if (data.points.length >= 2 && compareData.points.length >= 2) {
-      const getGap = (pts: Point[]) => Math.max(...pts.map(pt => pt.seconds)) - Math.min(...pts.map(pt => pt.seconds));
-      const myGap = getGap(data.points);
-      const compGap = getGap(compareData.points);
-      if (myGap < compGap) headToHeadConsistency = p.name;
-      else if (myGap > compGap) headToHeadConsistency = compareData.participant.name;
-      else headToHeadConsistency = "Likt gap";
-    }
-
-    const compareLast3 = compareData.points.slice(-3);
-    const compareLast3Avg = compareLast3.length
-      ? compareLast3.reduce((sum, pt) => sum + pt.seconds, 0) / compareLast3.length
-      : null;
-
-    if (last3Avg != null && compareLast3Avg != null) {
-      const diff = last3Avg - compareLast3Avg;
-      if (diff < 0) headToHeadRecentForm = `${p.name} (-${Math.abs(diff).toFixed(2)}s)`;
-      else if (diff > 0) headToHeadRecentForm = `${compareData.participant.name} (-${diff.toFixed(2)}s)`;
-      else headToHeadRecentForm = "Lik form";
-    }
-
-    if (data.points.length !== compareData.points.length) {
-      headToHeadVolume = data.points.length > compareData.points.length ? p.name : compareData.participant.name;
-    } else if (!data.points.length && !compareData.points.length) {
-      headToHeadVolume = "Mangler data";
-    }
-  }
-
-    const performanceStats: BottomStat[] = [
+  const performanceStats: BottomStat[] = [
       {
         label: "Endring siden start",
         value:
@@ -384,28 +419,425 @@ export function PersonPage() {
       },
     ];
 
-    const comparisonStats: BottomStat[] = [
-      {
-        label: "Raskest i snitt (totalt)",
-        value: headToHeadAvg,
-      },
-      {
-        label: "Beste clean tid",
-        value: headToHeadBest,
-      },
-      {
-        label: "Form siste 3",
-        value: headToHeadRecentForm,
-      },
-      {
-        label: "Mest konsekvent",
-        value: headToHeadConsistency,
-      },
-      {
-        label: "Flest forsøk",
-        value: headToHeadVolume,
-      },
-    ];
+  // --- Multi-person scoreboard ---
+  type BoardPerson = {
+    id: string;
+    name: string;
+    imageUrl: string | null;
+    color: string;
+    isMain: boolean;
+    points: Point[];
+    stats: Resp["stats"];
+    violationCount: number;
+  };
+  type BoardMetric = {
+    key: string;
+    label: string;
+    icon: string;
+    lowerBetter: boolean;
+    compute: (p: BoardPerson) => number | null;
+    format: (v: number | null) => string;
+  };
+
+  const stdDev = (pts: Point[]) => {
+    if (pts.length < 2) return null;
+    const mean = pts.reduce((s, pt) => s + pt.seconds, 0) / pts.length;
+    return Math.sqrt(pts.reduce((s, pt) => s + (pt.seconds - mean) ** 2, 0) / pts.length);
+  };
+  const computeMedian = (pts: Point[]) => {
+    if (!pts.length) return null;
+    const sorted = pts.map((pt) => pt.seconds).sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+  };
+  const computeLast3Avg = (pts: Point[]) => {
+    if (!pts.length) return null;
+    const last3 = pts.slice(-3);
+    return last3.reduce((s, pt) => s + pt.seconds, 0) / last3.length;
+  };
+  const computeSlope = (pts: Point[]) => {
+    if (pts.length < 2) return null;
+    const n = pts.length;
+    const sumX = pts.map((_, i) => i).reduce((a, b) => a + b, 0);
+    const sumY = pts.reduce((a, pt) => a + pt.seconds, 0);
+    const sumXY = pts.map((pt, i) => i * pt.seconds).reduce((a, b) => a + b, 0);
+    const sumXX = pts.map((_, i) => i * i).reduce((a, b) => a + b, 0);
+    const denom = n * sumXX - sumX * sumX;
+    return denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
+  };
+  const computeSpread = (pts: Point[]) => {
+    if (pts.length < 2) return null;
+    const xs = pts.map((pt) => pt.seconds);
+    return Math.max(...xs) - Math.min(...xs);
+  };
+
+  const personsBoard: BoardPerson[] = data
+    ? [
+        {
+          id: String(data.participant.id),
+          name: data.participant.name,
+          imageUrl: data.participant.imageUrl ?? null,
+          color: personColor(data.participant.name),
+          isMain: true,
+          points: data.points,
+          stats: data.stats,
+          violationCount:
+            (data.profileRanking?.violationCount ??
+              countViolationsFromPoints(data.points)) ?? 0,
+        },
+        ...compares.map((c, i) => ({
+          id: String(c.participant.id),
+          name: c.participant.name,
+          imageUrl: c.participant.imageUrl ?? null,
+          color: COMPARE_COLORS[i % COMPARE_COLORS.length],
+          isMain: false,
+          points: c.points,
+          stats: c.stats,
+          violationCount:
+            (c.profileRanking?.violationCount ??
+              countViolationsFromPoints(c.points)) ?? 0,
+        })),
+      ]
+    : [];
+
+  const fmtSecOrDash = (v: number | null) => (v == null ? "—" : `${v.toFixed(2)}s`);
+  const fmtIntOrDash = (v: number | null) => (v == null ? "—" : String(v));
+  const fmtSignedSec = (v: number | null) => {
+    if (v == null) return "—";
+    if (v === 0) return "0.00s";
+    return `${v < 0 ? "−" : "+"}${Math.abs(v).toFixed(2)}s`;
+  };
+
+  const boardMetrics: BoardMetric[] = [
+    { key: "avg", label: "Snitt", icon: "⚖️", lowerBetter: true,
+      compute: (p) => p.stats.avg ?? null, format: fmtSecOrDash },
+    { key: "bestClean", label: "Beste rene tid", icon: "🏆", lowerBetter: true,
+      compute: (p) => p.stats.bestClean ?? null, format: fmtSecOrDash },
+    { key: "best", label: "Raskeste forsøk", icon: "⚡", lowerBetter: true,
+      compute: (p) => p.stats.best ?? null, format: fmtSecOrDash },
+    { key: "slowest", label: "Tregeste forsøk", icon: "🐌", lowerBetter: true,
+      compute: (p) => p.points.length ? Math.max(...p.points.map((pt) => pt.seconds)) : null,
+      format: fmtSecOrDash },
+    { key: "median", label: "Median", icon: "📐", lowerBetter: true,
+      compute: (p) => computeMedian(p.points), format: fmtSecOrDash },
+    { key: "form", label: "Form siste 3", icon: "🔥", lowerBetter: true,
+      compute: (p) => computeLast3Avg(p.points), format: fmtSecOrDash },
+    { key: "stddev", label: "Konsistens (±)", icon: "📊", lowerBetter: true,
+      compute: (p) => stdDev(p.points), format: fmtSecOrDash },
+    { key: "spread", label: "Spenn", icon: "↔️", lowerBetter: true,
+      compute: (p) => computeSpread(p.points), format: fmtSecOrDash },
+    { key: "slope", label: "Trend per forsøk", icon: "📈", lowerBetter: true,
+      compute: (p) => computeSlope(p.points), format: fmtSignedSec },
+    { key: "attempts", label: "Antall forsøk", icon: "🎯", lowerBetter: false,
+      compute: (p) => p.points.length, format: fmtIntOrDash },
+    { key: "violations", label: "Antall kryss", icon: "❌", lowerBetter: true,
+      compute: (p) => p.violationCount, format: fmtIntOrDash },
+  ];
+
+  const boardRows = boardMetrics.map((m) => {
+    const values = personsBoard.map((per) => m.compute(per));
+    const nonNull = values.filter((v): v is number => v != null);
+    let bestVal: number | null = null;
+    if (nonNull.length) {
+      bestVal = m.lowerBetter ? Math.min(...nonNull) : Math.max(...nonNull);
+    }
+    const winners = bestVal == null ? new Set<number>() :
+      new Set(values.map((v, i) => (v === bestVal ? i : -1)).filter((i) => i >= 0));
+    return { metric: m, values, bestVal, winners };
+  });
+
+  const winTally: Record<string, number> = {};
+  personsBoard.forEach((per) => { winTally[per.id] = 0; });
+  boardRows.forEach((row) => {
+    // Only count when there's a unique winner
+    if (row.winners.size === 1) {
+      const idx = Array.from(row.winners)[0];
+      const winner = personsBoard[idx];
+      if (winner) winTally[winner.id] = (winTally[winner.id] ?? 0) + 1;
+    }
+  });
+
+  const leaderEntry = personsBoard.length
+    ? [...personsBoard].sort((a, b) => (winTally[b.id] ?? 0) - (winTally[a.id] ?? 0))[0]
+    : null;
+
+  // --- Head-to-head (per sammenligning, basert på felles sesjoner) ---
+  type H2H = {
+    id: string;
+    name: string;
+    color: string;
+    imageUrl: string | null;
+    meetings: number;
+    meWins: number;
+    themWins: number;
+    ties: number;
+    meAvg: number | null;
+    themAvg: number | null;
+  };
+  const headToHead: H2H[] = compares.map((c, i) => {
+    const mineBySession = new Map<string, number>();
+    data.points.forEach((pt) => mineBySession.set(pt.sessionId, pt.seconds));
+    let meetings = 0, meWins = 0, themWins = 0, ties = 0;
+    let meSum = 0, themSum = 0;
+    c.points.forEach((pt) => {
+      const my = mineBySession.get(pt.sessionId);
+      if (my == null) return;
+      meetings++;
+      meSum += my;
+      themSum += pt.seconds;
+      if (my < pt.seconds) meWins++;
+      else if (my > pt.seconds) themWins++;
+      else ties++;
+    });
+    return {
+      id: String(c.participant.id),
+      name: c.participant.name,
+      color: COMPARE_COLORS[i % COMPARE_COLORS.length],
+      imageUrl: c.participant.imageUrl ?? null,
+      meetings,
+      meWins,
+      themWins,
+      ties,
+      meAvg: meetings ? meSum / meetings : null,
+      themAvg: meetings ? themSum / meetings : null,
+    };
+  });
+
+  // --- Insights & distribution (solo storyline) ---
+  type Insight = {
+    key: string;
+    icon: string;
+    label: string;
+    value: string;
+    sub?: string;
+    tone?: "accent" | "better" | "worse" | "neutral" | "fun";
+  };
+  const insights: Insight[] = [];
+  const distBins: { label: string; count: number; mid: number }[] = [];
+  let pbCount = 0;
+  let longestImproveStreak = 0;
+  let cleanRate: number | null = null;
+  let totalChugSeconds = 0;
+  let mostCommonRule: { code: string; count: number } | null = null;
+  let daysActive: number | null = null;
+  let typicalRange: number | null = null;
+
+  if (data.points.length > 0) {
+    // Total chug time
+    totalChugSeconds = data.points.reduce((s, pt) => s + pt.seconds, 0);
+
+    // PB count (running clean PB)
+    let runningPb = Infinity;
+    data.points.forEach((pt) => {
+      const isClean = !pt.note || !pt.note.trim();
+      if (isClean && pt.seconds < runningPb) {
+        runningPb = pt.seconds;
+        pbCount++;
+      }
+    });
+    // First clean attempt shouldn't count as "knust" — subtract 1 if we counted it
+    if (pbCount > 0) pbCount = pbCount - 1;
+
+    // Longest improvement streak (consecutive attempts where each is faster than previous)
+    let cur = 0;
+    for (let i = 1; i < data.points.length; i++) {
+      if (data.points[i].seconds < data.points[i - 1].seconds) {
+        cur++;
+        if (cur > longestImproveStreak) longestImproveStreak = cur;
+      } else {
+        cur = 0;
+      }
+    }
+
+    // Best weekday
+    // (Removed: alle chugs er fredager.)
+
+    // Clean rate
+    const cleanCount = data.points.filter((pt) => !pt.note || !pt.note.trim()).length;
+    cleanRate = (cleanCount / data.points.length) * 100;
+
+    // Most common rule
+    const ruleCounts: Record<string, number> = {};
+    data.points.forEach((pt) => {
+      if (!pt.note) return;
+      pt.note.split(",").map((c) => c.trim().toUpperCase()).filter(Boolean).forEach((code) => {
+        ruleCounts[code] = (ruleCounts[code] ?? 0) + 1;
+      });
+    });
+    const ruleEntries = Object.entries(ruleCounts).sort((a, b) => b[1] - a[1]);
+    if (ruleEntries.length) mostCommonRule = { code: ruleEntries[0][0], count: ruleEntries[0][1] };
+
+    // Days active (calendar span)
+    if (data.points.length >= 2) {
+      const first = new Date(data.points[0].dateISO).getTime();
+      const last = new Date(data.points[data.points.length - 1].dateISO).getTime();
+      daysActive = Math.max(1, Math.round((last - first) / (1000 * 60 * 60 * 24)));
+    }
+
+    // Typical range = std dev shorthand
+    typicalRange = standardDeviation;
+
+    // Distribution histogram (8 bins from min..max)
+    if (data.points.length >= 3) {
+      const times = data.points.map((pt) => pt.seconds);
+      const lo = Math.min(...times);
+      const hi = Math.max(...times);
+      const span = hi - lo;
+      const binCount = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(times.length))));
+      if (span > 0) {
+        const step = span / binCount;
+        for (let i = 0; i < binCount; i++) {
+          const a = lo + step * i;
+          const b = lo + step * (i + 1);
+          const isLast = i === binCount - 1;
+          const count = times.filter((t) => t >= a && (isLast ? t <= b : t < b)).length;
+          distBins.push({
+            label: `${a.toFixed(1)}–${b.toFixed(1)}s`,
+            count,
+            mid: (a + b) / 2,
+          });
+        }
+      }
+    }
+
+    // Build insight cards
+    if (pbCount > 0) {
+      insights.push({
+        key: "pb",
+        icon: "🔥",
+        label: "PB knust",
+        value: String(pbCount),
+        sub: pbCount === 1 ? "gang i perioden" : "ganger i perioden",
+        tone: "better",
+      });
+    }
+    if (data.points.length >= 2) {
+      const first = data.points[0].seconds;
+      const last = data.points[data.points.length - 1].seconds;
+      const pct = ((first - last) / first) * 100;
+      insights.push({
+        key: "improve",
+        icon: pct > 0 ? "📈" : pct < 0 ? "📉" : "➖",
+        label: "Endring siden start",
+        value: `${pct > 0 ? "−" : pct < 0 ? "+" : ""}${Math.abs(pct).toFixed(1)}%`,
+        sub: `${first.toFixed(2)}s → ${last.toFixed(2)}s`,
+        tone: pct > 1 ? "better" : pct < -1 ? "worse" : "neutral",
+      });
+    }
+    if (longestImproveStreak >= 2) {
+      insights.push({
+        key: "streak",
+        icon: "🚀",
+        label: "Lengste forbedring",
+        value: `${longestImproveStreak + 1}`,
+        sub: "forsøk på rad raskere",
+        tone: "accent",
+      });
+    }
+    if (cleanRate != null) {
+      const dirtyCount = data.points.length - data.points.filter((pt) => !pt.note || !pt.note.trim()).length;
+      insights.push({
+        key: "clean",
+        icon: cleanRate >= 80 ? "🎯" : cleanRate >= 50 ? "😅" : "💧",
+        label: "Rene forsøk",
+        value: `${cleanRate.toFixed(0)}%`,
+        sub: dirtyCount === 0 ? "ingen anmerkninger" : `${dirtyCount} med anmerkning`,
+        tone: cleanRate >= 80 ? "better" : cleanRate < 50 ? "worse" : "neutral",
+      });
+    }
+    if (mostCommonRule) {
+      insights.push({
+        key: "rule",
+        icon: "⚠️",
+        label: "Hyppigste anmerkning",
+        value: mostCommonRule.code,
+        sub: `${mostCommonRule.count} gang${mostCommonRule.count === 1 ? "" : "er"}`,
+        tone: "worse",
+      });
+    }
+    if (totalChugSeconds > 0) {
+      const mins = Math.floor(totalChugSeconds / 60);
+      const secs = Math.round(totalChugSeconds - mins * 60);
+      insights.push({
+        key: "total",
+        icon: "⏱️",
+        label: "Total tid chugget",
+        value: mins > 0 ? `${mins}m ${secs}s` : `${secs}s`,
+        sub: `${data.points.length} forsøk totalt`,
+        tone: "neutral",
+      });
+    }
+    if (daysActive != null) {
+      insights.push({
+        key: "active",
+        icon: "📅",
+        label: "Aktiv periode",
+        value: `${daysActive} dager`,
+        sub: `${(data.points.length / Math.max(1, daysActive / 30)).toFixed(1)} forsøk/mnd`,
+        tone: "fun",
+      });
+    }
+    if (typicalRange != null) {
+      insights.push({
+        key: "spread",
+        icon: "📊",
+        label: "Typisk variasjon",
+        value: `±${typicalRange.toFixed(2)}s`,
+        sub: "fra ditt snitt",
+        tone: "neutral",
+      });
+    }
+
+    // Percentile rank (basert på beste rene tid, fallback til snitt)
+    if (peers.length >= 3) {
+      const meId = String(p.id);
+      const me = peers.find((pr) => String(pr.id) === meId);
+      const usingBestClean = me?.bestClean != null;
+      const metricKey: "bestClean" | "avg" = usingBestClean ? "bestClean" : "avg";
+      const myVal = usingBestClean ? me!.bestClean! : me?.avg;
+      if (myVal != null) {
+        const others = peers
+          .filter((pr) => String(pr.id) !== meId)
+          .map((pr) => (metricKey === "bestClean" ? pr.bestClean : pr.avg))
+          .filter((v): v is number => v != null);
+        if (others.length >= 2) {
+          const slower = others.filter((v) => v > myVal).length;
+          const pct = Math.round((slower / others.length) * 100);
+          insights.push({
+            key: "percentile",
+            icon: pct >= 75 ? "🥇" : pct >= 50 ? "🥈" : pct >= 25 ? "🥉" : "📍",
+            label: usingBestClean ? "Prosentil (PB)" : "Prosentil (snitt)",
+            value: `${pct}%`,
+            sub: `slår ${slower} av ${others.length} chuggere`,
+            tone: pct >= 75 ? "better" : pct >= 25 ? "neutral" : "worse",
+          });
+        }
+
+        // Konsistens-score (0-100, basert på stddev relativt til peer-gruppa)
+        const myStd = me?.stddev;
+        const otherStds = peers
+          .filter((pr) => String(pr.id) !== meId)
+          .map((pr) => pr.stddev)
+          .filter((v): v is number => Number.isFinite(v) && v > 0);
+        if (myStd != null && Number.isFinite(myStd) && otherStds.length >= 2) {
+          const all = [...otherStds, myStd];
+          const lo = Math.min(...all);
+          const hi = Math.max(...all);
+          const span = hi - lo || 1;
+          // Lavere stddev = høyere score
+          const score = Math.round((1 - (myStd - lo) / span) * 100);
+          insights.push({
+            key: "consistency-score",
+            icon: score >= 75 ? "🎯" : score >= 50 ? "🧘" : "🌪️",
+            label: "Konsistens-score",
+            value: `${score}/100`,
+            sub: `±${myStd.toFixed(2)}s vs gruppa`,
+            tone: score >= 75 ? "better" : score >= 40 ? "neutral" : "worse",
+          });
+        }
+      }
+    }
+  }
 
   // --- Derived UI values ---
   const accent = personColor(p.name);
@@ -488,7 +920,12 @@ export function PersonPage() {
     },
   ];
 
-  const detailStats = compareData ? comparisonStats : performanceStats;
+  const detailStats = personsBoard.length > 1 ? performanceStats : performanceStats;
+  detailStats;
+  const isComparing = compares.length > 0;
+  const availableForCompare = participants.filter(
+    (pt) => String(pt.id) !== String(id) && !compareIds.includes(String(pt.id))
+  );
 
   return (
     <div className="person" style={{ ["--person-accent" as any]: accent }}>
@@ -518,20 +955,6 @@ export function PersonPage() {
             </div>
             <div className="person-hero__stat">
               <div className="person-hero__stat-num">
-                {data.stats.best == null ? "—" : `${data.stats.best.toFixed(2)}s`}
-              </div>
-              <div className="person-hero__stat-lbl">
-                {profileRanking.bestCleanRank != null ? (
-                  <Link to={leaderboardHref} className="person-hero__stat-link">
-                    PB · #{profileRanking.bestCleanRank}
-                  </Link>
-                ) : (
-                  "PB"
-                )}
-              </div>
-            </div>
-            <div className="person-hero__stat">
-              <div className="person-hero__stat-num">
                 {data.stats.avg == null ? "—" : `${data.stats.avg.toFixed(2)}s`}
               </div>
               <div className="person-hero__stat-lbl">Snitt</div>
@@ -554,69 +977,377 @@ export function PersonPage() {
 
       {/* ── TOOLBAR ── */}
       <div className="person-toolbar card">
-        <div className="tabs person-toolbar__tabs">
-          <button
-            className={`tab ${semester === "2025H" ? "tabActive" : ""}`}
-            onClick={() => setSemester("2025H")}
-          >
-            2025 Høst
-          </button>
-          <button
-            className={`tab ${semester === "2026V" ? "tabActive" : ""}`}
-            onClick={() => setSemester("2026V")}
-          >
-            2026 Vår
-          </button>
-          <button
-            className={`tab ${semester === "all" ? "tabActive" : ""}`}
-            onClick={() => setSemester("all")}
-          >
-            Total
-          </button>
+        <div className="person-toolbar__group">
+          <span className="person-toolbar__group-label">Sesong</span>
+          <div className="person-toolbar__segment">
+            <button
+              className={`person-toolbar__seg-btn ${semester === "2025H" ? "is-active" : ""}`}
+              onClick={() => setSemester("2025H")}
+            >
+              2025 Høst
+            </button>
+            <button
+              className={`person-toolbar__seg-btn ${semester === "2026V" ? "is-active" : ""}`}
+              onClick={() => setSemester("2026V")}
+            >
+              2026 Vår
+            </button>
+            <button
+              className={`person-toolbar__seg-btn ${semester === "all" ? "is-active" : ""}`}
+              onClick={() => setSemester("all")}
+            >
+              Total
+            </button>
+          </div>
         </div>
-        <select
-          className="input person-toolbar__compare"
-          value={compareId}
-          onChange={(e) => setCompareId(e.target.value)}
-        >
-          <option value="">Sammenlign med...</option>
-          {participants.map((pt) => (
-            <option key={pt.id} value={pt.id}>
-              {pt.name}
-            </option>
-          ))}
-        </select>
+
+        <div className="person-toolbar__divider" aria-hidden="true" />
+
+        <div className="person-toolbar__group person-toolbar__group--compare">
+          <span className="person-toolbar__group-label">
+            ⚔️ Sammenlign
+          </span>
+
+          <div className="person-toolbar__chips">
+            {compareIds.length === 0 && (
+              <span className="person-toolbar__empty">Ingen valgt</span>
+            )}
+            {compareIds.map((cid, i) => {
+              const part = participants.find((pt) => String(pt.id) === String(cid));
+              const name = part?.name ?? compareDataMap[cid]?.participant.name ?? "…";
+              const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+              return (
+                <span
+                  key={cid}
+                  className="person-toolbar__chip"
+                  style={{ ["--chip-color" as any]: color }}
+                >
+                  <span className="person-toolbar__chip-dot" aria-hidden="true" />
+                  <span className="person-toolbar__chip-name">{name}</span>
+                  <button
+                    type="button"
+                    className="person-toolbar__chip-remove"
+                    onClick={() => {
+                      setCompareIds((prev) => prev.filter((x) => x !== cid));
+                      setCompareDataMap((prev) => {
+                        const next = { ...prev };
+                        delete next[cid];
+                        return next;
+                      });
+                    }}
+                    aria-label={`Fjern ${name}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+
+          <div className="person-toolbar__actions">
+            {availableForCompare.length > 0 && (
+              <select
+                className="person-toolbar__add"
+                value=""
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v) setCompareIds((prev) => [...prev, v]);
+                }}
+              >
+                <option value="">+ Legg til</option>
+                {availableForCompare.map((pt) => (
+                  <option key={pt.id} value={pt.id}>
+                    {pt.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {compareIds.length > 0 && (
+              <button
+                type="button"
+                className="person-toolbar__clear-icon"
+                onClick={() => {
+                  setCompareIds([]);
+                  setCompareDataMap({});
+                }}
+                aria-label="Nullstill alle sammenligninger"
+                title="Nullstill alle"
+              >
+                ↻
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ── HIGHLIGHTS ── */}
-      <section className="person-highlights">
-        {highlights.map((h) => (
-          <article
-            key={h.key}
-            className={`card person-highlight person-highlight--${h.tone} ${
-              h.onClick ? "person-highlight--clickable" : ""
-            }`}
-            onClick={h.onClick}
-            role={h.onClick ? "button" : undefined}
-            tabIndex={h.onClick ? 0 : undefined}
-            onKeyDown={(e) => {
-              if (h.onClick && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                h.onClick();
-              }
-            }}
-          >
-            <div className="person-highlight__icon" aria-hidden="true">
-              {h.icon}
-            </div>
-            <div className="person-highlight__body">
-              <div className="person-highlight__label">{h.label}</div>
-              <div className="person-highlight__value">{h.value}</div>
-              <div className="person-highlight__sub">{h.sub}</div>
-            </div>
-          </article>
-        ))}
-      </section>
+      {/* ── HIGHLIGHTS (solo only) ── */}
+      {!isComparing && (
+        <section className="person-highlights">
+          {highlights.map((h) => (
+            <article
+              key={h.key}
+              className={`card person-highlight person-highlight--${h.tone} ${
+                h.onClick ? "person-highlight--clickable" : ""
+              }`}
+              onClick={h.onClick}
+              role={h.onClick ? "button" : undefined}
+              tabIndex={h.onClick ? 0 : undefined}
+              onKeyDown={(e) => {
+                if (h.onClick && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault();
+                  h.onClick();
+                }
+              }}
+            >
+              <div className="person-highlight__icon" aria-hidden="true">
+                {h.icon}
+              </div>
+              <div className="person-highlight__body">
+                <div className="person-highlight__label">{h.label}</div>
+                <div className="person-highlight__value">{h.value}</div>
+                <div className="person-highlight__sub">{h.sub}</div>
+              </div>
+            </article>
+          ))}
+        </section>
+      )}
+
+      {/* ── SCOREBOARD ── */}
+      {isComparing && (
+        <section className="card person-board">
+          <div className="person-board__head">
+            <h2 className="u-mb-0">Sammenligning</h2>
+            {leaderEntry && (winTally[leaderEntry.id] ?? 0) > 0 && (
+              <span className="person-board__leader">
+                👑 {leaderEntry.name} leder ({winTally[leaderEntry.id]} kategori
+                {winTally[leaderEntry.id] === 1 ? "" : "er"})
+              </span>
+            )}
+          </div>
+
+          <div className="person-board__scroll">
+            <table className="person-board__table">
+              <thead>
+                <tr>
+                  <th className="person-board__metric-col">Metrikk</th>
+                  {personsBoard.map((per) => (
+                    <th
+                      key={per.id}
+                      className={`person-board__person-col ${
+                        per.isMain ? "person-board__person-col--main" : ""
+                      }`}
+                      style={{ ["--col-color" as any]: per.color }}
+                    >
+                      <div className="person-board__person">
+                        <button
+                          type="button"
+                          className="person-board__avatar"
+                          onClick={() => !per.isMain && nav(`/person/${per.id}`)}
+                          aria-label={per.isMain ? per.name : `Gå til ${per.name}`}
+                          disabled={per.isMain}
+                          style={{ borderColor: per.color }}
+                        >
+                          {per.imageUrl ? (
+                            <img src={per.imageUrl} alt={per.name} />
+                          ) : (
+                            <span style={{ color: per.color }}>
+                              {personInitials(per.name) || "?"}
+                            </span>
+                          )}
+                        </button>
+                        <div className="person-board__person-name">{per.name}</div>
+                        <div className="person-board__person-wins">
+                          {winTally[per.id] ?? 0} 👑
+                        </div>
+                        {!per.isMain && (
+                          <button
+                            type="button"
+                            className="person-board__remove"
+                            onClick={() => {
+                              const pid = String(per.id);
+                              setCompareIds((prev) =>
+                                prev.filter((x) => String(x) !== pid)
+                              );
+                              setCompareDataMap((prev) => {
+                                const next = { ...prev };
+                                delete next[pid];
+                                return next;
+                              });
+                            }}
+                            aria-label={`Fjern ${per.name}`}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {boardRows.map((row) => (
+                  <tr key={row.metric.key}>
+                    <th scope="row" className="person-board__metric">
+                      <span className="person-board__metric-icon" aria-hidden>
+                        {row.metric.icon}
+                      </span>
+                      <span>{row.metric.label}</span>
+                    </th>
+                    {row.values.map((v, i) => {
+                      const isWinner =
+                        row.winners.has(i) && row.winners.size < personsBoard.length;
+                      return (
+                        <td
+                          key={personsBoard[i].id}
+                          className={`person-board__cell ${
+                            isWinner ? "person-board__cell--win" : ""
+                          }`}
+                          style={
+                            isWinner
+                              ? { ["--col-color" as any]: personsBoard[i].color }
+                              : undefined
+                          }
+                        >
+                          {row.metric.format(v)}
+                          {isWinner && (
+                            <span className="person-board__crown" aria-hidden>
+                              👑
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* ── HEAD-TO-HEAD (compare only) ── */}
+      {isComparing && headToHead.some((h) => h.meetings > 0) && (
+        <section className="card person-h2h">
+          <div className="person-h2h__head">
+            <h2 className="u-mb-0">⚔️ Head-to-head</h2>
+            <span className="person-h2h__sub">
+              Kun sesjoner hvor dere begge var med
+            </span>
+          </div>
+          <div className="person-h2h__grid">
+            {headToHead
+              .filter((h) => h.meetings > 0)
+              .map((h) => {
+                const winPct = h.meetings ? (h.meWins / h.meetings) * 100 : 0;
+                const themPct = h.meetings ? (h.themWins / h.meetings) * 100 : 0;
+                const tiePct = 100 - winPct - themPct;
+                const leading =
+                  h.meWins > h.themWins
+                    ? "me"
+                    : h.meWins < h.themWins
+                      ? "them"
+                      : "tie";
+                return (
+                  <article
+                    key={h.id}
+                    className={`person-h2h__card person-h2h__card--${leading}`}
+                    style={{ ["--h2h-color" as any]: h.color }}
+                  >
+                    <header className="person-h2h__head-row">
+                      <button
+                        type="button"
+                        className="person-h2h__avatar"
+                        onClick={() => nav(`/person/${h.id}`)}
+                        aria-label={`Gå til ${h.name}`}
+                        style={{ borderColor: h.color }}
+                      >
+                        {h.imageUrl ? (
+                          <img src={h.imageUrl} alt={h.name} />
+                        ) : (
+                          <span style={{ color: h.color }}>
+                            {personInitials(h.name) || "?"}
+                          </span>
+                        )}
+                      </button>
+                      <div className="person-h2h__title">
+                        <div className="person-h2h__vs">
+                          <span>{p.name.split(/\s+/)[0]}</span>
+                          <span className="person-h2h__vs-x">vs</span>
+                          <span style={{ color: h.color }}>{h.name}</span>
+                        </div>
+                        <div className="person-h2h__meet">
+                          {h.meetings} møte{h.meetings === 1 ? "" : "r"}
+                        </div>
+                      </div>
+                    </header>
+
+                    <div className="person-h2h__score">
+                      <div className="person-h2h__score-side person-h2h__score-side--me">
+                        <div className="person-h2h__num">{h.meWins}</div>
+                        <div className="person-h2h__lbl">deg</div>
+                      </div>
+                      {h.ties > 0 && (
+                        <div className="person-h2h__score-side person-h2h__score-side--tie">
+                          <div className="person-h2h__num">{h.ties}</div>
+                          <div className="person-h2h__lbl">uavgjort</div>
+                        </div>
+                      )}
+                      <div className="person-h2h__score-side person-h2h__score-side--them">
+                        <div className="person-h2h__num">{h.themWins}</div>
+                        <div className="person-h2h__lbl">{h.name.split(/\s+/)[0]}</div>
+                      </div>
+                    </div>
+
+                    <div
+                      className="person-h2h__bar"
+                      role="img"
+                      aria-label={`${h.meWins} mot ${h.themWins}`}
+                    >
+                      <span
+                        className="person-h2h__bar-seg person-h2h__bar-seg--me"
+                        style={{ width: `${winPct}%` }}
+                      />
+                      {tiePct > 0 && (
+                        <span
+                          className="person-h2h__bar-seg person-h2h__bar-seg--tie"
+                          style={{ width: `${tiePct}%` }}
+                        />
+                      )}
+                      <span
+                        className="person-h2h__bar-seg person-h2h__bar-seg--them"
+                        style={{ width: `${themPct}%` }}
+                      />
+                    </div>
+
+                    <div className="person-h2h__avg">
+                      <span>
+                        Snitt deg:{" "}
+                        <strong>
+                          {h.meAvg == null ? "—" : `${h.meAvg.toFixed(2)}s`}
+                        </strong>
+                      </span>
+                      <span>
+                        Snitt {h.name.split(/\s+/)[0]}:{" "}
+                        <strong style={{ color: h.color }}>
+                          {h.themAvg == null ? "—" : `${h.themAvg.toFixed(2)}s`}
+                        </strong>
+                      </span>
+                    </div>
+
+                    <div className="person-h2h__verdict">
+                      {leading === "me" &&
+                        `Du leder ${h.meWins}–${h.themWins}`}
+                      {leading === "them" &&
+                        `${h.name.split(/\s+/)[0]} leder ${h.themWins}–${h.meWins}`}
+                      {leading === "tie" && `Helt likt ${h.meWins}–${h.themWins}`}
+                    </div>
+                  </article>
+                );
+              })}
+          </div>
+        </section>
+      )}
 
       {/* ── CHART ── */}
       <section className="card person-chart-card">
@@ -652,21 +1383,18 @@ export function PersonPage() {
                 wrapperClassName="person__chart-tooltip"
                 formatter={(v: any, name: any) => {
                   if (name === "trend") return [`${Number(v).toFixed(2)}s`, "Trend"];
-                  if (name === "seconds" || name === "mainSeconds")
-                    return [`${Number(v).toFixed(2)}s`, p.name];
-                  if (name === "compSeconds" && compareData)
-                    return [`${Number(v).toFixed(2)}s`, compareData.participant.name];
-                  return [String(v), String(name)];
+                  if (name === "seconds") return [`${Number(v).toFixed(2)}s`, p.name];
+                  return [`${Number(v).toFixed(2)}s`, String(name)];
                 }}
                 labelFormatter={(label: any) => `${label}`}
               />
 
-              {compareData && <Legend verticalAlign="top" height={36} />}
+              {isComparing && <Legend verticalAlign="top" height={36} />}
 
               <Line
                 name={p.name}
                 type="monotone"
-                dataKey={compareData ? "mainSeconds" : "seconds"}
+                dataKey={isComparing ? `s_${p.id}` : "seconds"}
                 stroke={accent}
                 strokeWidth={3}
                 dot={{ r: 4, fill: accent, cursor: "pointer" }}
@@ -674,14 +1402,16 @@ export function PersonPage() {
                   r: 6,
                   cursor: "pointer",
                   onClick: (_: any, payload: any) => {
-                    const sid = payload?.payload?.sessionId || payload?.payload?.mainSessionId;
+                    const sid =
+                      payload?.payload?.sessionId ||
+                      payload?.payload?.[`sid_${p.id}`];
                     if (sid) nav(`/session/${sid}`);
                   },
                 }}
                 connectNulls
               />
 
-              {!compareData && (
+              {!isComparing && (
                 <Line
                   type="monotone"
                   dataKey="trend"
@@ -692,54 +1422,158 @@ export function PersonPage() {
                 />
               )}
 
-              {compareData && (
-                <Line
-                  name={compareData.participant.name}
-                  type="monotone"
-                  dataKey="compSeconds"
-                  stroke="#f59e0b"
-                  strokeWidth={3}
-                  dot={{ r: 4, fill: "#f59e0b", cursor: "pointer" }}
-                  activeDot={{
-                    r: 6,
-                    cursor: "pointer",
-                    onClick: (_: any, payload: any) => {
-                      const sid = payload?.payload?.compSessionId;
-                      if (sid) nav(`/session/${sid}`);
-                    },
-                  }}
-                  connectNulls
-                />
-              )}
+              {compares.map((c, i) => {
+                const color = COMPARE_COLORS[i % COMPARE_COLORS.length];
+                return (
+                  <Line
+                    key={c.participant.id}
+                    name={c.participant.name}
+                    type="monotone"
+                    dataKey={`s_${c.participant.id}`}
+                    stroke={color}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: color, cursor: "pointer" }}
+                    activeDot={{
+                      r: 6,
+                      cursor: "pointer",
+                      onClick: (_: any, payload: any) => {
+                        const sid = payload?.payload?.[`sid_${c.participant.id}`];
+                        if (sid) nav(`/session/${sid}`);
+                      },
+                    }}
+                    connectNulls
+                  />
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>
       </section>
 
-      {/* ── DETAIL STATS ── */}
-      <section className="card person-detail">
-        <h2 className="u-mb-0 person-detail__title">
-          {compareData ? `Mot ${compareData.participant.name}` : "Detaljert statistikk"}
-        </h2>
-        <div className="person-detail__grid">
-          {detailStats.map((stat) => {
-            const toneClass =
-              stat.tone === "better"
-                ? "person-detail__card--better"
-                : stat.tone === "worse"
-                  ? "person-detail__card--worse"
-                  : stat.tone === "accent"
-                    ? "person-detail__card--accent"
-                    : "";
-            return (
-              <article key={stat.label} className={`person-detail__card ${toneClass}`}>
-                <div className="person-detail__label">{stat.label}</div>
-                <div className="person-detail__value">{stat.value}</div>
+      {/* ── INSIGHTS ── */}
+      {insights.length > 0 && (
+        <section className="card person-insights">
+          <div className="person-insights__head">
+            <h2 className="u-mb-0">Innsikter</h2>
+            {isComparing && (
+              <span className="person-insights__sub">For {p.name}</span>
+            )}
+          </div>
+          <div className="person-insights__grid">
+            {insights.map((ins) => (
+              <article
+                key={ins.key}
+                className={`person-insight person-insight--${ins.tone ?? "neutral"}`}
+              >
+                <div className="person-insight__icon" aria-hidden>{ins.icon}</div>
+                <div className="person-insight__body">
+                  <div className="person-insight__label">{ins.label}</div>
+                  <div className="person-insight__value">{ins.value}</div>
+                  {ins.sub && <div className="person-insight__sub">{ins.sub}</div>}
+                </div>
               </article>
-            );
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── DISTRIBUTION (solo only) ── */}
+      {!isComparing && distBins.length > 0 && data.stats.avg != null && (
+        <section className="card person-dist">
+          <div className="person-dist__head">
+            <h2 className="u-mb-0">Tidsfordeling</h2>
+            <span className="person-dist__sub">
+              Hvor ofte du lander i hvert tidsintervall
+            </span>
+          </div>
+          <div className="person-dist__chart">
+            <ResponsiveContainer width="100%" height={240} minWidth={1} minHeight={240}>
+              <BarChart data={distBins} margin={{ top: 28, right: 16, bottom: 28, left: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 11, fontWeight: 600 }}
+                  interval={0}
+                  angle={-18}
+                  textAnchor="end"
+                  height={50}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  stroke="var(--text)"
+                  tick={{ fill: "var(--text)", fontSize: 11, fontWeight: 600 }}
+                  width={28}
+                />
+                <Tooltip
+                  wrapperClassName="person__chart-tooltip"
+                  cursor={{ fill: "rgba(99, 102, 241, 0.12)" }}
+                  formatter={(v: any) => [`${v} forsøk`, "Antall"]}
+                  labelFormatter={(label: any) => `Intervall: ${label}`}
+                />
+                <ReferenceLine
+                  x={
+                    distBins.reduce((closest, bin) =>
+                      Math.abs(bin.mid - (data.stats.avg as number)) <
+                      Math.abs(closest.mid - (data.stats.avg as number))
+                        ? bin
+                        : closest
+                    ).label
+                  }
+                  stroke="#fbbf24"
+                  strokeWidth={2}
+                  strokeDasharray="5 4"
+                  ifOverflow="extendDomain"
+                  label={{
+                    value: `↓ Snitt ${(data.stats.avg as number).toFixed(2)}s`,
+                    position: "insideTop",
+                    fill: "#fbbf24",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    offset: 4,
+                  }}
+                />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {distBins.map((bin, i) => {
+                    const isPbBucket = bestClean != null && bin.mid <= bestClean + (distBins[1]?.mid ?? bin.mid) - (distBins[0]?.mid ?? bin.mid);
+                    return (
+                      <Cell
+                        key={i}
+                        fill={isPbBucket ? accent : "rgba(99, 102, 241, 0.65)"}
+                      />
+                    );
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+
+      {/* ── DETAIL STATS (solo only — scoreboard replaces this when comparing) ── */}
+      {!isComparing && (
+        <section className="card person-detail">
+          <h2 className="u-mb-0 person-detail__title">Detaljert statistikk</h2>
+          <div className="person-detail__grid">
+            {detailStats.map((stat) => {
+              const toneClass =
+                stat.tone === "better"
+                  ? "person-detail__card--better"
+                  : stat.tone === "worse"
+                    ? "person-detail__card--worse"
+                    : stat.tone === "accent"
+                      ? "person-detail__card--accent"
+                      : "";
+              return (
+                <article key={stat.label} className={`person-detail__card ${toneClass}`}>
+                  <div className="person-detail__label">{stat.label}</div>
+                  <div className="person-detail__value">{stat.value}</div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── BADGES ── */}
       <section className="card person-badges-card">
