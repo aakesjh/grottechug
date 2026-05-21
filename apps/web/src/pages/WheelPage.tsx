@@ -73,6 +73,16 @@ export function WheelPage() {
     }
   }, []);
 
+  // Lukk fullskjerm med Escape
+  useEffect(() => {
+    if (!isExpanded) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsExpanded(false);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [isExpanded]);
+
   // Last inn faste deltakere
   async function loadRegulars() {
     try {
