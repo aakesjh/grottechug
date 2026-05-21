@@ -290,7 +290,6 @@ export function PersonPage() {
   if (!p.isRegular) {
     rankingQuery.set("includeGuests", "1");
   }
-  const leaderboardHref = `/leaderboard?${rankingQuery.toString()}`;
   const violationsHref = `/violations?${rankingQuery.toString()}`;
 
   let changeSinceStart = null;

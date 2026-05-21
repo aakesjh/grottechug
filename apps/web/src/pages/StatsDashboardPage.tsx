@@ -193,8 +193,6 @@ export function StatsDashboardPage() {
     }))
     .sort((a, b) => b.count - a.count);
 
-  const chugsPerSession = data?.overview.sessions ? (data.overview.attempts / data.overview.sessions) : 0;
-
   const validParticipants = participantStats.filter(
     p => p.attempts > 0 && p.avg !== null && (includeGuests || p.isRegular)
   );
