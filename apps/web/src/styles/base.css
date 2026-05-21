@@ -2,10 +2,14 @@
    Base Styles — Resets, body, global elements, links, headings
    ========================================================================== */
 
-/* --- Scrollbar: only vertical when needed, never horizontal --- */
+/* --- Scrollbar: only vertical when needed, never horizontal.
+   `scrollbar-gutter: stable both-edges` reserves the scrollbar gutter
+   on both sides so the centered container does not visually shift
+   left when the vertical scrollbar appears. --- */
 html {
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
 }
 
 * {

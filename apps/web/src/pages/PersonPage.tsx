@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend
+  LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend, ResponsiveContainer
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { BadgeMedal } from "../components/BadgeMedal";
@@ -71,37 +71,20 @@ export function PersonPage() {
   const [participants, setParticipants] = useState<{id: string, name: string}[]>([]);
   const [compareId, setCompareId] = useState<string>("");
   const [compareData, setCompareData] = useState<Resp | null>(null);
-  const chartAreaRef = useRef<HTMLDivElement | null>(null);
-  const [chartSize, setChartSize] = useState({ width: 0, height: 240 });
+  const [chartHeight, setChartHeight] = useState(() => {
+    if (typeof window === "undefined") return 280;
+    return Math.max(240, Math.min(Math.round(window.innerHeight * 0.46), 420));
+  });
 
   useEffect(() => {
-    const element = chartAreaRef.current;
-    if (!element) return;
-
-    const updateSize = () => {
-      const containerWidth = Math.floor(element.getBoundingClientRect().width);
-      const viewportWidth = Math.max(0, Math.floor(window.innerWidth - 24));
-      const width = Math.min(containerWidth, viewportWidth);
-      if (width > 1) {
-        const targetByWidth = Math.round(width * 0.52);
-        const maxByViewport = Math.round(window.innerHeight * 0.46);
-        const height = Math.max(240, Math.min(targetByWidth, maxByViewport, 420));
-        setChartSize({ width, height });
-      }
+    const updateHeight = () => {
+      const maxByViewport = Math.round(window.innerHeight * 0.46);
+      setChartHeight(Math.max(240, Math.min(maxByViewport, 420)));
     };
-
-    updateSize();
-
-    const observer = new ResizeObserver(() => updateSize());
-    observer.observe(element);
-
-    window.addEventListener("resize", updateSize);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateSize);
-    };
-  }, [data]);
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   // 1. Hent alle deltakere for sammenligning
   useEffect(() => {
@@ -500,11 +483,9 @@ export function PersonPage() {
             </div>
           </div>
 
-          <div className="person__chart-area" ref={chartAreaRef}>
-            {chartSize.width > 1 && (
+          <div className="person__chart-area" style={{ height: chartHeight }}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                width={chartSize.width}
-                height={chartSize.height}
                 data={chartData}
                 margin={{ top: 16, right: 20, bottom: 26, left: 8 }}
               >
@@ -566,7 +547,7 @@ export function PersonPage() {
                   />
                 )}
               </LineChart>
-            )}
+            </ResponsiveContainer>
           </div>
 
           <div className="hr person__divider" />
