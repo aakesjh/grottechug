@@ -131,7 +131,8 @@ export function JoinPage() {
 
   const canSubmit =
     normalizedInput &&
-    croppedBlob &&
+    rawImageUrl &&
+    croppedAreaPixels &&
     !saving &&
     !isBlockedBecauseAlreadyRegistered &&
     !mustUseInitial;
@@ -203,21 +204,6 @@ export function JoinPage() {
     setCrop({ x: 0, y: 0 });
   }
 
-  async function finalizeCrop() {
-    try {
-      setError("");
-      if (!rawImageUrl || !croppedAreaPixels) return;
-
-      const blob = await getCroppedImg(rawImageUrl, croppedAreaPixels);
-      setCroppedBlob(blob);
-
-      if (croppedPreviewUrl) URL.revokeObjectURL(croppedPreviewUrl);
-      setCroppedPreviewUrl(URL.createObjectURL(blob));
-    } catch (err: any) {
-      setError(err.message || "Kunne ikke croppe bildet.");
-    }
-  }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -237,15 +223,20 @@ export function JoinPage() {
       return;
     }
 
-    if (!croppedBlob) {
-      setError("Du må croppe bildet til 1:1 før innsending.");
+    if (!rawImageUrl || !croppedAreaPixels) {
+      setError("Du må velge et bilde først.");
       return;
     }
 
     setSaving(true);
 
     try {
-      const fileToUpload = new File([croppedBlob], "participant.jpg", {
+      let blobToUpload = croppedBlob;
+      if (!blobToUpload) {
+        blobToUpload = await getCroppedImg(rawImageUrl, croppedAreaPixels);
+      }
+
+      const fileToUpload = new File([blobToUpload], "participant.jpg", {
         type: "image/jpeg",
       });
 
@@ -488,20 +479,12 @@ export function JoinPage() {
                   className="join__zoom-slider"
                 />
               </div>
-
-              <button
-                type="button"
-                className="btn join__crop-btn"
-                onClick={finalizeCrop}
-              >
-                ✂️ Beskjær bildet
-              </button>
             </div>
           )}
 
           {preview && (
             <div className="join__preview">
-              <div className="join__preview-label">Ser bra ut! 👌</div>
+              <div className="join__preview-label">Forhåndsvisning</div>
               <img
                 src={preview}
                 alt="Croppet forhåndsvisning"
