@@ -181,9 +181,9 @@ const OFFICIAL_CROSS_RULES: Rule[] = [
   },
   {
     code: "DNF",
-    label: "Tobias-chug",
+    label: "DNF-chug",
     crosses: 2,
-    details: "Å ikke fullføre chuggen innen 25 sekunder.",
+    details: "Did-Not-Finish. Å ikke fullføre chuggen innen 25 sekunder.",
   },
   {
     code: "MM",
@@ -232,7 +232,7 @@ const OFFICIAL_CROSS_RULES: Rule[] = [
 ];
 
 const CROSS_NOTES = [
-  "Tobias-chug gjelder for 25/26. Hvis Tobias Andresen fullfører under 10 sek, går regelen tilbake til DNF-chug.",
+  "DNF-chug ble i 25/26 omdøpt til Tobias-chug, men ble tilbakeført til DNF-chug etter at Tobias Andresen chugget under 10 sekunder 15. mai 2026.",
   "Ved oppkast stoppes klokka til chugginga gjenopptas. Dersom man trekker seg, får man kryss.",
 ];
 

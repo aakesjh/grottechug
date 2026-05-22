@@ -1,221 +1,388 @@
 import { useEffect, useRef, useState } from "react";
 import "../styles/pages/howto.css";
 
+/* ──────────────────────────────────────────────────────────────────────────
+   1 · Pour into cup
+   ─────────────────────────────────────────────────────────────────────── */
 function CupPourSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Beer can — tilted */}
-      <g transform="rotate(-40 60 50)">
-        <rect x="38" y="20" width="44" height="64" rx="6" fill="color-mix(in srgb, var(--accent3) 18%, transparent)" stroke="var(--accent3)" strokeWidth="2" />
-        {/* Can top rim */}
-        <ellipse cx="60" cy="22" rx="22" ry="5" fill="color-mix(in srgb, var(--accent3) 12%, transparent)" stroke="var(--accent3)" strokeWidth="1.5" />
-        {/* Can bottom rim */}
-        <ellipse cx="60" cy="82" rx="22" ry="5" fill="color-mix(in srgb, var(--accent3) 8%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
-        {/* Can tab */}
-        <ellipse cx="60" cy="18" rx="6" ry="2.5" fill="color-mix(in srgb, var(--accent3) 30%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
-        {/* Can label stripe */}
-        <rect x="38" y="40" width="44" height="14" fill="color-mix(in srgb, var(--accent3) 10%, transparent)" />
-      </g>
-      {/* Pour stream */}
-      <path className="howto__pourStream howto__pourStream--main" d="M78 54 Q88 80 100 96" stroke="var(--accent3)" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 4" opacity="0.7" />
-      <path className="howto__pourStream howto__pourStream--alt" d="M80 58 Q90 82 103 94" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" strokeDasharray="3 5" opacity="0.5" />
-      {/* Foam / splash */}
-      <circle className="howto__pourBubble howto__pourBubble--1" cx="96" cy="88" r="2.5" fill="color-mix(in srgb, var(--accent3) 40%, transparent)" />
-      <circle className="howto__pourBubble howto__pourBubble--2" cx="103" cy="84" r="1.8" fill="color-mix(in srgb, var(--accent3) 30%, transparent)" />
-      <circle className="howto__pourBubble howto__pourBubble--3" cx="100" cy="92" r="2" fill="color-mix(in srgb, var(--accent3) 35%, transparent)" />
-      {/* Cup */}
-      <path d="M85 100 L89 160 L131 160 L135 100 Z" fill="color-mix(in srgb, var(--accent) 12%, transparent)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
-      {/* Liquid in cup */}
-      <path d="M89 122 L91 158 L129 158 L131 122 Z" fill="color-mix(in srgb, var(--accent3) 25%, transparent)" />
-      {/* 0.5L label */}
-      <text x="110" y="146" textAnchor="middle" fill="var(--muted)" fontSize="11" fontWeight="600">0.5L</text>
-      {/* Carbonation fizz */}
-      <path d="M100 118 L100 111" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M110 120 L110 112" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="M120 117 L120 110" stroke="rgba(255,255,255,0.2)" strokeWidth="1.2" strokeLinecap="round" />
-    </svg>
-  );
-}
+      <defs>
+        <linearGradient id="howto-pour-liquid" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="color-mix(in srgb, var(--accent3) 75%, transparent)" />
+          <stop offset="100%" stopColor="color-mix(in srgb, var(--accent3) 30%, transparent)" />
+        </linearGradient>
+      </defs>
 
-function KneelSVG() {
-  return (
-    <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Counter / table */}
-      <rect x="10" y="70" width="180" height="8" rx="3" fill="rgba(255,255,255,0.1)" stroke="var(--border)" strokeWidth="1" />
-      <rect x="20" y="78" width="6" height="60" rx="2" fill="rgba(255,255,255,0.06)" />
-      <rect x="174" y="78" width="6" height="60" rx="2" fill="rgba(255,255,255,0.06)" />
-      {/* Cup on counter */}
-      <g className="howto__kneelCup">
-        <path d="M120 48 L122 70 L148 70 L150 48 Z" fill="color-mix(in srgb, var(--accent) 12%, transparent)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M122 55 L123 69 L147 69 L148 55 Z" fill="color-mix(in srgb, var(--accent3) 20%, transparent)" />
-      </g>
-      {/* Person — sideways, one knee down */}
-      <g className="howto__kneelPerson">
-      {/* Head */}
-      <circle cx="85" cy="98" r="11" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
-      {/* Body — angled slightly forward */}
-      <line x1="85" y1="109" x2="90" y2="140" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Front arm reaching to counter */}
-      <line x1="87" y1="118" x2="120" y2="72" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Back arm resting */}
-      <line x1="87" y1="118" x2="75" y2="130" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Front leg — knee on ground */}
-      <line x1="90" y1="140" x2="75" y2="160" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Front shin flat on ground */}
-      <line x1="75" y1="160" x2="60" y2="162" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Back leg — foot planted */}
-      <line x1="90" y1="140" x2="110" y2="158" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="110" y1="158" x2="115" y2="162" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      </g>
-      {/* Ground line */}
-      <line x1="30" y1="164" x2="170" y2="164" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function WheelSVG() {
-  return (
-    <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(100 90)">
-        <g className="howto__wheelSpin">
-        <circle r="50" fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth="2" />
-        <path d="M0 0 L0 -50 A50 50 0 0 1 35.36 -35.36 Z" fill="color-mix(in srgb, var(--accent2) 28%, transparent)" />
-        <path d="M0 0 L35.36 -35.36 A50 50 0 0 1 50 0 Z" fill="color-mix(in srgb, var(--accent3) 24%, transparent)" />
-        <path d="M0 0 L50 0 A50 50 0 0 1 35.36 35.36 Z" fill="color-mix(in srgb, var(--accent4) 24%, transparent)" />
-        <path d="M0 0 L35.36 35.36 A50 50 0 0 1 0 50 Z" fill="color-mix(in srgb, var(--accent2) 20%, transparent)" />
-        <path d="M0 0 L0 50 A50 50 0 0 1 -35.36 35.36 Z" fill="color-mix(in srgb, var(--accent3) 22%, transparent)" />
-        <path d="M0 0 L-35.36 35.36 A50 50 0 0 1 -50 0 Z" fill="color-mix(in srgb, var(--accent) 22%, transparent)" />
-        <path d="M0 0 L-50 0 A50 50 0 0 1 -35.36 -35.36 Z" fill="color-mix(in srgb, var(--accent4) 22%, transparent)" />
-        <path d="M0 0 L-35.36 -35.36 A50 50 0 0 1 0 -50 Z" fill="color-mix(in srgb, var(--accent2) 24%, transparent)" />
-
-        <circle r="50" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.45" />
-        <line x1="0" y1="0" x2="0" y2="-50" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="35.36" y2="-35.36" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="50" y2="0" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="35.36" y2="35.36" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="0" y2="50" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="-35.36" y2="35.36" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="-50" y2="0" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-        <line x1="0" y1="0" x2="-35.36" y2="-35.36" stroke="var(--accent2)" strokeWidth="1.2" opacity="0.5" />
-
-        <circle r="11" fill="color-mix(in srgb, var(--accent2) 22%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
-        <circle r="4" fill="var(--text)" />
+      {/* Beer can held tilted, opening pointing down toward the cup */}
+      <g className="howto__pourCan">
+        {/* Drawn horizontally then rotated so the opening (right end) points down‑right toward the cup. */}
+        <g transform="rotate(58 60 56)">
+          <rect x="18" y="38" width="84" height="36" rx="5" fill="color-mix(in srgb, var(--accent3) 18%, transparent)" stroke="var(--accent3)" strokeWidth="2" />
+          {/* Closed bottom (left side) */}
+          <ellipse cx="18" cy="56" rx="3" ry="18" fill="color-mix(in srgb, var(--accent3) 10%, transparent)" stroke="var(--accent3)" strokeWidth="1.4" />
+          {/* Opening rim (right side) */}
+          <ellipse cx="102" cy="56" rx="3" ry="18" fill="color-mix(in srgb, var(--accent3) 28%, transparent)" stroke="var(--accent3)" strokeWidth="1.6" />
+          {/* Pull-tab on top of body, near the opening */}
+          <ellipse cx="94" cy="40" rx="5" ry="2" fill="color-mix(in srgb, var(--accent3) 40%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
+          {/* Color band + PILS label */}
+          <rect x="34" y="48" width="50" height="16" fill="color-mix(in srgb, var(--accent3) 28%, transparent)" />
+          <text x="59" y="60" textAnchor="middle" fill="color-mix(in srgb, var(--accent3) 95%, var(--text))" fontSize="10" fontWeight="800" letterSpacing="1.5">PILS</text>
         </g>
       </g>
 
-      <g className="howto__wheelPointer">
-        <path d="M138 90 L162 78 V102 Z" fill="var(--danger)" />
-        <circle cx="164" cy="90" r="2" fill="var(--danger)" opacity="0.85" />
-      </g>
-      <text x="100" y="156" textAnchor="middle" fill="var(--muted)" fontSize="10" fontWeight="700">VENT PÅ TUR</text>
+      {/* Stream falls from the opening (~96, 96 after rotation) into the cup */}
+      <path className="howto__pourRibbon" d="M96 96 Q102 110 107 122" stroke="url(#howto-pour-liquid)" strokeWidth="5" strokeLinecap="round" fill="none" />
+      <path className="howto__pourRibbon howto__pourRibbon--inner" d="M98 96 Q103 110 108 122" stroke="color-mix(in srgb, var(--accent3) 60%, transparent)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+      {/* Splash */}
+      <circle className="howto__pourBubble howto__pourBubble--1" cx="96" cy="92" r="2.8" fill="color-mix(in srgb, var(--accent3) 55%, transparent)" />
+      <circle className="howto__pourBubble howto__pourBubble--2" cx="106" cy="86" r="2" fill="color-mix(in srgb, var(--accent3) 45%, transparent)" />
+      <circle className="howto__pourBubble howto__pourBubble--3" cx="100" cy="96" r="2.3" fill="color-mix(in srgb, var(--accent3) 50%, transparent)" />
+      <circle className="howto__pourBubble howto__pourBubble--4" cx="112" cy="92" r="1.4" fill="color-mix(in srgb, var(--accent3) 40%, transparent)" />
+
+      {/* Cup */}
+      <path d="M85 104 L90 162 L130 162 L135 104 Z" fill="color-mix(in srgb, var(--accent) 12%, transparent)" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" />
+      <path d="M86.5 110 Q98 106 110 110 Q122 114 133.5 110" stroke="rgba(255,255,255,0.45)" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <path className="howto__pourFill" d="M89 124 L91 160 L129 160 L131 124 Z" fill="url(#howto-pour-liquid)" />
+      <circle className="howto__cupBubble howto__cupBubble--1" cx="100" cy="150" r="1.4" fill="rgba(255,255,255,0.55)" />
+      <circle className="howto__cupBubble howto__cupBubble--2" cx="112" cy="148" r="1.1" fill="rgba(255,255,255,0.45)" />
+      <circle className="howto__cupBubble howto__cupBubble--3" cx="120" cy="152" r="1.2" fill="rgba(255,255,255,0.5)" />
+      <text x="110" y="148" textAnchor="middle" fill="rgba(255,255,255,0.85)" fontSize="9" fontWeight="700" letterSpacing="0.5">0.5L</text>
     </svg>
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   2 · Wheel — spins around its own center
+   ─────────────────────────────────────────────────────────────────────── */
+function WheelSVG() {
+  // Wheel centered at (100, 90). Wedge geometry is generated in absolute coords.
+  const cx = 100;
+  const cy = 90;
+  const r = 54;
+  const wedges = [
+    "var(--accent2)", "var(--accent3)", "var(--accent4)", "var(--accent2)",
+    "var(--accent3)", "var(--accent)", "var(--accent4)", "var(--accent2)",
+  ];
+
+  return (
+    <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="howto-wheel-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stopColor="color-mix(in srgb, var(--accent2) 25%, transparent)" />
+          <stop offset="100%" stopColor="transparent" />
+        </radialGradient>
+      </defs>
+      <circle cx={cx} cy={cy} r={68} fill="url(#howto-wheel-glow)" />
+
+      <g className="howto__wheelSpin" style={{ transformOrigin: `${cx}px ${cy}px` }}>
+        <circle cx={cx} cy={cy} r={r} fill="color-mix(in srgb, var(--accent) 8%, transparent)" stroke="color-mix(in srgb, var(--accent2) 70%, var(--border))" strokeWidth="2" />
+        {wedges.map((c, i) => {
+          const a0 = (i * 360) / wedges.length - 90;
+          const a1 = ((i + 1) * 360) / wedges.length - 90;
+          const x0 = cx + Math.cos((a0 * Math.PI) / 180) * r;
+          const y0 = cy + Math.sin((a0 * Math.PI) / 180) * r;
+          const x1 = cx + Math.cos((a1 * Math.PI) / 180) * r;
+          const y1 = cy + Math.sin((a1 * Math.PI) / 180) * r;
+          return (
+            <path
+              key={i}
+              d={`M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`}
+              fill={`color-mix(in srgb, ${c} 28%, transparent)`}
+              stroke="color-mix(in srgb, var(--accent2) 35%, transparent)"
+              strokeWidth="1.1"
+            />
+          );
+        })}
+        <circle cx={cx} cy={cy} r={14} fill="color-mix(in srgb, var(--accent2) 30%, var(--card-bg))" stroke="var(--accent2)" strokeWidth="2" />
+        <circle cx={cx} cy={cy} r={5} fill="var(--text)" />
+      </g>
+
+      {/* Pointer */}
+      <g className="howto__wheelPointer">
+        <path d="M148 90 L168 80 L168 100 Z" fill="var(--danger)" stroke="color-mix(in srgb, var(--danger) 60%, var(--bg))" strokeWidth="1" strokeLinejoin="round" />
+        <circle cx="168" cy="90" r="3" fill="var(--danger)" />
+      </g>
+
+      <text x="100" y="170" textAnchor="middle" fill="var(--muted)" fontSize="9" fontWeight="700" letterSpacing="1.2">VENT PÅ TUR</text>
+    </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Reusable person primitives
+   ─────────────────────────────────────────────────────────────────────── */
+function Head({
+  cx,
+  cy,
+  r = 12,
+  hair = true,
+  expression = "neutral",
+}: {
+  cx: number;
+  cy: number;
+  r?: number;
+  hair?: boolean;
+  expression?: "neutral" | "focused" | "happy" | "puff" | "drinking";
+}) {
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill="color-mix(in srgb, var(--accent2) 22%, var(--card-bg))" stroke="var(--accent2)" strokeWidth="2.2" />
+      {hair && (
+        <path
+          d={`M ${cx - r * 0.7} ${cy - r * 0.55} Q ${cx} ${cy - r * 1.25} ${cx + r * 0.85} ${cy - r * 0.4}`}
+          stroke="var(--accent2)"
+          strokeWidth="2.5"
+          fill="color-mix(in srgb, var(--accent2) 45%, transparent)"
+          strokeLinecap="round"
+        />
+      )}
+      {expression === "neutral" && (
+        <>
+          <circle cx={cx - r * 0.32} cy={cy - r * 0.1} r={1.4} fill="var(--text)" />
+          <circle cx={cx + r * 0.32} cy={cy - r * 0.1} r={1.4} fill="var(--text)" />
+          <path d={`M ${cx - r * 0.3} ${cy + r * 0.45} Q ${cx} ${cy + r * 0.55} ${cx + r * 0.3} ${cy + r * 0.45}`} stroke="var(--text)" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+        </>
+      )}
+      {expression === "focused" && (
+        <>
+          <path d={`M ${cx - r * 0.5} ${cy - r * 0.25} L ${cx - r * 0.15} ${cy - r * 0.1}`} stroke="var(--text)" strokeWidth="1.8" strokeLinecap="round" />
+          <path d={`M ${cx + r * 0.15} ${cy - r * 0.1} L ${cx + r * 0.5} ${cy - r * 0.25}`} stroke="var(--text)" strokeWidth="1.8" strokeLinecap="round" />
+          <line x1={cx - r * 0.3} y1={cy + r * 0.45} x2={cx + r * 0.3} y2={cy + r * 0.45} stroke="var(--text)" strokeWidth="1.6" strokeLinecap="round" />
+        </>
+      )}
+      {expression === "happy" && (
+        <>
+          <circle cx={cx - r * 0.32} cy={cy - r * 0.1} r={1.4} fill="var(--text)" />
+          <circle cx={cx + r * 0.32} cy={cy - r * 0.1} r={1.4} fill="var(--text)" />
+          <path d={`M ${cx - r * 0.4} ${cy + r * 0.3} Q ${cx} ${cy + r * 0.75} ${cx + r * 0.4} ${cy + r * 0.3}`} stroke="var(--text)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+        </>
+      )}
+      {expression === "puff" && (
+        <>
+          <path d={`M ${cx - r * 0.5} ${cy - r * 0.2} L ${cx - r * 0.15} ${cy - r * 0.05}`} stroke="var(--text)" strokeWidth="2" strokeLinecap="round" />
+          <path d={`M ${cx + r * 0.15} ${cy - r * 0.05} L ${cx + r * 0.5} ${cy - r * 0.2}`} stroke="var(--text)" strokeWidth="2" strokeLinecap="round" />
+          <path d={`M ${cx - r * 0.3} ${cy + r * 0.5} Q ${cx} ${cy + r * 0.4} ${cx + r * 0.3} ${cy + r * 0.5}`} stroke="var(--text)" strokeWidth="2" fill="none" strokeLinecap="round" />
+        </>
+      )}
+      {expression === "drinking" && (
+        <path d={`M ${cx - r * 0.25} ${cy - r * 0.1} Q ${cx} ${cy - r * 0.25} ${cx + r * 0.25} ${cy - r * 0.1}`} stroke="var(--text)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+      )}
+    </g>
+  );
+}
+
+function Limb({ x1, y1, x2, y2, w = 3 }: { x1: number; y1: number; x2: number; y2: number; w?: number }) {
+  return <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="var(--accent2)" strokeWidth={w} strokeLinecap="round" />;
+}
+
+/* Shared counter for steps 3-6 (top edge at y=120) */
+function Counter() {
+  return (
+    <>
+      <rect x="8" y="120" width="184" height="10" rx="3" fill="color-mix(in srgb, var(--border) 80%, var(--text))" />
+      <rect x="8" y="130" width="184" height="3" fill="rgba(0,0,0,0.25)" />
+    </>
+  );
+}
+
+/* Shared kneeling pose: spine + legs only. Head at (56, 102), shoulder at (62, 122). */
+function KneelingBody() {
+  return (
+    <>
+      {/* Curved spine, shoulder at (62, 122) */}
+      <path d="M56 114 Q60 130 66 150" stroke="var(--accent2)" strokeWidth="3.6" fill="none" strokeLinecap="round" />
+      {/* Front thigh + shin, knee on the ground */}
+      <Limb x1={66} y1={150} x2={50} y2={162} w={3.4} />
+      <Limb x1={50} y1={162} x2={38} y2={164} w={3} />
+      {/* Back thigh + foot */}
+      <Limb x1={66} y1={150} x2={86} y2={162} w={3.4} />
+      <Limb x1={86} y1={162} x2={96} y2={166} w={3} />
+    </>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   3 · Ready at counter — kneeling, hand resting near cup on counter
+   ─────────────────────────────────────────────────────────────────────── */
+function KneelSVG() {
+  return (
+    <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <Counter />
+
+      {/* Cup sitting on counter at right */}
+      <g className="howto__kneelCup">
+        <path d="M118 100 L120 120 L146 120 L148 100 Z" fill="color-mix(in srgb, var(--accent) 14%, transparent)" stroke="var(--accent)" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M121 108 L122.5 119 L143.5 119 L145 108 Z" fill="color-mix(in srgb, var(--accent3) 32%, transparent)" />
+        <path d="M120 106 Q130 103 140 106 Q145 107 146.5 108" stroke="rgba(255,255,255,0.45)" strokeWidth="1" fill="none" strokeLinecap="round" />
+      </g>
+
+      <g className="howto__kneelPerson">
+        <Head cx={56} cy={102} r={12} expression="neutral" />
+        <KneelingBody />
+        {/* Back arm relaxed */}
+        <Limb x1={60} y1={122} x2={44} y2={140} w={3} />
+        {/* Front arm extending toward cup on counter */}
+        <Limb x1={62} y1={122} x2={84} y2={118} w={3} />
+        <Limb x1={84} y1={118} x2={104} y2={112} w={3} />
+        <circle cx={104} cy={112} r={2.6} fill="var(--accent2)" />
+      </g>
+
+      <ellipse className="howto__shadow" cx="66" cy="170" rx="38" ry="2.5" fill="rgba(0,0,0,0.35)" />
+    </svg>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   4 · Drinking — same kneel pose, head tilted back, cup raised to mouth
+   ─────────────────────────────────────────────────────────────────────── */
 function DrinkSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g className="howto__drinkAction">
-      {/* Person head — tilted back */}
-      <circle cx="110" cy="38" r="13" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
-      {/* Mouth open */}
-      <ellipse cx="116" cy="42" rx="3.5" ry="3" fill="rgba(255,255,255,0.15)" />
-      {/* Cup tilted to mouth */}
-      <path d="M120 20 L128 48 L146 42 L140 14 Z" fill="color-mix(in srgb, var(--accent) 15%, transparent)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M125 28 L128 46 L143 41 L141 24 Z" fill="color-mix(in srgb, var(--accent3) 25%, transparent)" />
-      {/* Pour into mouth */}
-      <path className="howto__drinkStream" d="M122 44 Q118 44 116 43" stroke="var(--accent3)" strokeWidth="2" strokeLinecap="round" opacity="0.6" />
-      {/* Arms holding cup */}
-      <line x1="108" y1="62" x2="128" y2="36" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      <line x1="108" y1="62" x2="140" y2="40" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Body — slightly forward */}
-      <line x1="110" y1="51" x2="105" y2="100" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Timer icon */}
-      <circle cx="38" cy="70" r="20" fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth="1.5" />
-      <line x1="38" y1="70" x2="38" y2="58" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
-      <line x1="38" y1="70" x2="48" y2="70" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
-      <text x="38" y="100" textAnchor="middle" fill="var(--accent)" fontSize="10" fontWeight="700">START</text>
-      {/* One-knee pose: front knee down */}
-      <line x1="105" y1="100" x2="88" y2="128" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Shin flat on ground */}
-      <line x1="88" y1="128" x2="74" y2="132" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Back leg — foot planted */}
-      <line x1="105" y1="100" x2="122" y2="126" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="122" y1="126" x2="126" y2="132" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      </g>
-      {/* Ground line */}
-      <line x1="40" y1="134" x2="170" y2="134" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+      <Counter />
 
-      <g className="howto__drinkTimerTick" transform="translate(38 70)">
-        <line x1="0" y1="0" x2="0" y2="-12" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
+      {/* Stopwatch (START) */}
+      <g transform="translate(165 60)">
+        <circle r="22" fill="color-mix(in srgb, var(--accent) 10%, var(--card-bg))" stroke="var(--accent)" strokeWidth="1.8" />
+        <rect x="-3" y="-26" width="6" height="5" rx="1" fill="var(--accent)" />
+        {[0, 60, 120, 180, 240, 300].map((a) => (
+          <line key={a} x1="0" y1="-18" x2="0" y2="-15" stroke="var(--accent)" strokeWidth="1.2" transform={`rotate(${a})`} />
+        ))}
+        <g className="howto__drinkTimerHand">
+          <line x1="0" y1="2" x2="0" y2="-15" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" />
+        </g>
+        <circle r="2.5" fill="var(--accent)" />
+        <text y="40" textAnchor="middle" fill="var(--accent)" fontSize="9" fontWeight="800" letterSpacing="1.2">START</text>
       </g>
+
+      <g className="howto__drinkPerson">
+        <KneelingBody />
+
+        {/* Head tilted back */}
+        <g transform="rotate(-22 56 102)">
+          <Head cx={56} cy={102} r={12} expression="drinking" />
+        </g>
+
+        {/* Cup raised to mouth, tilted to pour */}
+        <g transform="rotate(-95 70 88)">
+          <path d="M62 70 L66 108 L84 108 L80 70 Z" fill="color-mix(in srgb, var(--accent) 14%, var(--card-bg))" stroke="var(--accent)" strokeWidth="1.8" strokeLinejoin="round" />
+          <path className="howto__drinkLiquid" d="M65 76 L67 107 L83 107 L81 76 Z" fill="color-mix(in srgb, var(--accent3) 45%, transparent)" />
+        </g>
+
+        {/* Stream from cup to mouth */}
+        <path className="howto__drinkStream" d="M62 82 Q58 90 56 96" stroke="var(--accent3)" strokeWidth="3" strokeLinecap="round" fill="none" />
+
+        {/* Front arm raised holding cup */}
+        <Limb x1={62} y1={122} x2={74} y2={104} w={3} />
+        <Limb x1={74} y1={104} x2={70} y2={88} w={3} />
+        {/* Back arm bracing cup */}
+        <Limb x1={60} y1={122} x2={50} y2={102} w={3} />
+        <Limb x1={50} y1={102} x2={62} y2={88} w={3} />
+      </g>
+
+      {/* Throat gulp */}
+      <path className="howto__gulp" d="M58 120 Q58 126 56 132" stroke="color-mix(in srgb, var(--accent3) 70%, transparent)" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+
+      <ellipse className="howto__shadow" cx="66" cy="170" rx="38" ry="2.5" fill="rgba(0,0,0,0.35)" />
     </svg>
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   5 · Keep liquid inside — puffed cheeks, cup held at chest
+   ─────────────────────────────────────────────────────────────────────── */
 function KeepInsideSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Person head (bigger to show cheeks) */}
-      <circle cx="105" cy="38" r="18" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
-      {/* Puffed cheeks */}
-      <ellipse className="howto__cheek howto__cheek--left" cx="90" cy="42" rx="6" ry="5" fill="color-mix(in srgb, var(--accent3) 20%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
-      <ellipse className="howto__cheek howto__cheek--right" cx="120" cy="42" rx="6" ry="5" fill="color-mix(in srgb, var(--accent3) 20%, transparent)" stroke="var(--accent3)" strokeWidth="1" />
-      {/* Eyes (determined) */}
-      <circle cx="98" cy="34" r="2" fill="var(--text)" />
-      <circle cx="112" cy="34" r="2" fill="var(--text)" />
-      {/* Closed mouth */}
-      <line x1="100" y1="46" x2="110" y2="46" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Check mark */}
-      <path className="howto__checkMark" d="M160 25 L168 35 L182 17" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      {/* Warning X for spilling */}
-      <path d="M20 25 L32 37 M32 25 L20 37" stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round" />
-      <text x="26" y="52" textAnchor="middle" fill="var(--danger)" fontSize="8" fontWeight="600">Søl</text>
-      {/* Body */}
-      <line x1="105" y1="56" x2="100" y2="100" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Cup still held */}
-      <path d="M130 65 L132 88 L148 88 L150 65 Z" fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth="1.5" strokeLinejoin="round" />
-      <line x1="105" y1="70" x2="135" y2="72" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Other arm */}
-      <line x1="105" y1="70" x2="85" y2="82" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* One-knee pose: front knee down */}
-      <line x1="100" y1="100" x2="84" y2="126" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Shin flat on ground */}
-      <line x1="84" y1="126" x2="68" y2="130" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Back leg — foot planted */}
-      <line x1="100" y1="100" x2="118" y2="126" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      <line x1="118" y1="126" x2="122" y2="132" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Ground line */}
-      <line x1="40" y1="134" x2="170" y2="134" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+      <Counter />
+
+      {/* Warning bubble */}
+      <g transform="translate(160 30)">
+        <circle r="12" fill="color-mix(in srgb, var(--danger) 14%, transparent)" stroke="var(--danger)" strokeWidth="1.6" />
+        <path d="M-5 -5 L5 5 M5 -5 L-5 5" stroke="var(--danger)" strokeWidth="2.4" strokeLinecap="round" />
+        <text y="26" textAnchor="middle" fill="var(--danger)" fontSize="8" fontWeight="800" letterSpacing="0.8">SØL</text>
+      </g>
+
+      {/* Approval bubble */}
+      <g transform="translate(190 30)">
+        <circle r="12" fill="color-mix(in srgb, #10b981 14%, transparent)" stroke="#10b981" strokeWidth="1.6" />
+        <path className="howto__checkMark" d="M-5 0 L-1 4 L6 -4" stroke="#10b981" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <text y="26" textAnchor="middle" fill="#10b981" fontSize="8" fontWeight="800" letterSpacing="0.8">BRA</text>
+      </g>
+
+      <g className="howto__keepPerson">
+        <Head cx={56} cy={102} r={12} expression="happy" />
+        {/* Puffed cheeks just outside head */}
+        <ellipse className="howto__cheek howto__cheek--left" cx="44" cy="105" rx="4.5" ry="3.6" fill="color-mix(in srgb, var(--accent3) 28%, transparent)" stroke="var(--accent3)" strokeWidth="1.3" />
+        <ellipse className="howto__cheek howto__cheek--right" cx="68" cy="105" rx="4.5" ry="3.6" fill="color-mix(in srgb, var(--accent3) 28%, transparent)" stroke="var(--accent3)" strokeWidth="1.3" />
+
+        <KneelingBody />
+
+        {/* Cup held in front (between hands), above counter */}
+        <path d="M82 104 L84 118 L102 118 L104 104 Z" fill="color-mix(in srgb, var(--accent) 14%, transparent)" stroke="var(--accent)" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M84 110 L85 117 L101 117 L102 110 Z" fill="color-mix(in srgb, var(--accent3) 35%, transparent)" />
+
+        {/* Both arms holding cup */}
+        <Limb x1={62} y1={122} x2={82} y2={112} w={3} />
+        <Limb x1={60} y1={122} x2={82} y2={120} w={3} />
+      </g>
+
+      <ellipse className="howto__shadow" cx="66" cy="170" rx="38" ry="2.5" fill="rgba(0,0,0,0.35)" />
     </svg>
   );
 }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   6 · Slam cup on counter — same kneel pose, front arm swings down
+   ─────────────────────────────────────────────────────────────────────── */
 function CupDownSVG() {
   return (
     <svg className="howto__illustration" viewBox="0 0 200 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Counter */}
-      <rect x="10" y="90" width="180" height="8" rx="3" fill="rgba(255,255,255,0.1)" stroke="var(--border)" strokeWidth="1" />
-      {/* Cup slamming down — impact lines */}
-      <line className="howto__impactLine howto__impactLine--1" x1="95" y1="60" x2="88" y2="50" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <line className="howto__impactLine howto__impactLine--2" x1="115" y1="60" x2="122" y2="50" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <line className="howto__impactLine howto__impactLine--3" x1="105" y1="58" x2="105" y2="46" stroke="var(--accent3)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      {/* Cup on counter */}
-      <path className="howto__cupSlam" d="M90 68 L92 90 L118 90 L120 68 Z" fill="color-mix(in srgb, var(--accent) 15%, transparent)" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" />
-      {/* Empty cup shine */}
-      <line x1="97" y1="72" x2="97" y2="82" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" />
-      {/* Timer — STOP */}
-      <circle className="howto__stopPulse" cx="160" cy="130" r="20" fill="rgba(255,77,109,0.12)" stroke="var(--danger)" strokeWidth="1.5" />
-      <rect className="howto__stopPulse" x="152" y="122" width="16" height="16" rx="3" fill="var(--danger)" opacity="0.4" />
-      <text x="160" y="160" textAnchor="middle" fill="var(--danger)" fontSize="10" fontWeight="700">STOPP</text>
-      {/* Person celebrating */}
-      <circle cx="50" cy="115" r="10" fill="color-mix(in srgb, var(--accent2) 15%, transparent)" stroke="var(--accent2)" strokeWidth="2" />
-      <line x1="50" y1="125" x2="50" y2="155" stroke="var(--accent2)" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Arms up celebration */}
-      <line x1="50" y1="132" x2="35" y2="118" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      <line x1="50" y1="132" x2="65" y2="118" stroke="var(--accent2)" strokeWidth="2" strokeLinecap="round" />
-      {/* Mean time note */}
-      <text x="105" y="115" textAnchor="middle" fill="var(--muted)" fontSize="9">t = (t₁ + t₂) / 2</text>
+      <Counter />
+
+      {/* Impact lines around the cup landing point (110, 120) */}
+      <g className="howto__impactBurst">
+        <line x1="110" y1="110" x2="110" y2="94" stroke="var(--accent3)" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="96" y1="114" x2="84" y2="102" stroke="var(--accent3)" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="124" y1="114" x2="136" y2="102" stroke="var(--accent3)" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="92" y1="122" x2="78" y2="120" stroke="var(--accent3)" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="128" y1="122" x2="142" y2="120" stroke="var(--accent3)" strokeWidth="2.2" strokeLinecap="round" />
+      </g>
+
+      <g className="howto__slamPerson">
+        <Head cx={56} cy={102} r={12} expression="happy" />
+        <KneelingBody />
+        {/* Back arm out for balance */}
+        <Limb x1={60} y1={122} x2={42} y2={140} w={3} />
+
+        {/* Slamming arm + cup — rotates around front shoulder (62, 122) */}
+        <g className="howto__slamArm">
+          <Limb x1={62} y1={122} x2={82} y2={118} w={3} />
+          <Limb x1={82} y1={118} x2={104} y2={112} w={3} />
+          <circle cx={104} cy={112} r={3} fill="var(--accent2)" />
+          {/* Cup, hand grips top rim */}
+          <path d="M96 100 L98 120 L122 120 L124 100 Z" fill="color-mix(in srgb, var(--accent) 16%, transparent)" stroke="var(--accent)" strokeWidth="2.2" strokeLinejoin="round" />
+          <line x1="104" y1="104" x2="104" y2="116" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Last drops */}
+          <ellipse cx="110" cy="118" rx="7" ry="1.4" fill="color-mix(in srgb, var(--accent3) 30%, transparent)" />
+        </g>
+      </g>
+
+      {/* Stopwatch — STOP (wrapper preserves translate when CSS animates scale) */}
+      <g transform="translate(165 60)">
+        <g className="howto__stopWatch">
+          <circle r="22" fill="color-mix(in srgb, var(--danger) 12%, var(--card-bg))" stroke="var(--danger)" strokeWidth="1.8" />
+          <rect x="-3" y="-26" width="6" height="5" rx="1" fill="var(--danger)" />
+          <rect x="-7" y="-7" width="14" height="14" rx="2" fill="var(--danger)" />
+          <text y="40" textAnchor="middle" fill="var(--danger)" fontSize="9" fontWeight="800" letterSpacing="1.2">STOPP</text>
+        </g>
+      </g>
+
+      {/* Note */}
+      <text x="100" y="176" textAnchor="middle" fill="var(--muted)" fontSize="9" fontWeight="600">t = (t₁ + t₂) / 2</text>
+
+      <ellipse className="howto__shadow" cx="66" cy="170" rx="38" ry="2.5" fill="rgba(0,0,0,0.35)" />
     </svg>
   );
 }
@@ -308,7 +475,6 @@ export function HowToPage() {
       const nodes = stepRefs.current.filter((node): node is HTMLDivElement => Boolean(node));
       if (!nodes.length) return;
 
-      // Find the currently visible step
       const visibleStep = nodes.find((node) => {
         const rect = node.getBoundingClientRect();
         return rect.top <= window.innerHeight * 0.5 && rect.bottom > window.innerHeight * 0.5;
@@ -316,7 +482,6 @@ export function HowToPage() {
 
       if (!visibleStep) return;
 
-      // Calculate progress within this step
       const stepRect = visibleStep.getBoundingClientRect();
       const stepTop = stepRect.top;
       const stepProgress = (-stepTop) / window.innerHeight;
