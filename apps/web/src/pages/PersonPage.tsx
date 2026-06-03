@@ -954,13 +954,21 @@ export function PersonPage() {
       {/* ── HERO ── */}
       <section className="person-hero card">
         <div className="person-hero__bg" aria-hidden="true" />
-        <div className="person-hero__photo">
-          {p.imageUrl ? (
-            <img src={p.imageUrl} alt={p.name} />
-          ) : (
-            <span className="person-hero__initials">{initials || "?"}</span>
-          )}
-        </div>
+        <Link
+          to={`/wrapped/person/${id}`}
+          className="person-hero__photo-link"
+          title={`Se ${p.name} sin Wrapped`}
+          aria-label={`Se ${p.name} sin Wrapped`}
+        >
+          <div className="person-hero__photo person-hero__photo--wrapped">
+            {p.imageUrl ? (
+              <img src={p.imageUrl} alt={p.name} />
+            ) : (
+              <span className="person-hero__initials">{initials || "?"}</span>
+            )}
+          </div>
+          <span className="person-hero__wrapped-tag">🎁 Wrapped</span>
+        </Link>
         <div className="person-hero__info">
           <div className="person-hero__pills">
             <span className="person-hero__pill person-hero__pill--role">

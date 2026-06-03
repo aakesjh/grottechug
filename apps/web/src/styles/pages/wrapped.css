@@ -1,0 +1,896 @@
+/* ==========================================================================
+   Grottechug Wrapped — recap pages + Spotify-Wrapped-style stories
+   ========================================================================== */
+
+.wrapped {
+  padding-bottom: 64px;
+}
+
+/* ---- Shared round avatar ---- */
+.wrapped-avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.wrapped-avatar--fallback {
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #7c3aed, #db2777);
+}
+
+/* ---- Hero ---- */
+.wrapped-hero {
+  text-align: center;
+  padding: 40px 20px 28px;
+  border-radius: var(--radius2);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(124, 92, 255, 0.35), transparent 60%),
+    linear-gradient(160deg, rgba(124, 92, 255, 0.12), rgba(43, 210, 255, 0.06));
+  border: 1px solid var(--border);
+  margin-bottom: 22px;
+}
+.wrapped-hero--person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.wrapped-hero__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--accent2);
+  margin-bottom: 6px;
+}
+.wrapped-hero__title {
+  font-size: clamp(2.4rem, 8vw, 4.2rem);
+  font-weight: 900;
+  line-height: 1.02;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.wrapped-hero__title-accent {
+  background: linear-gradient(90deg, #7c5cff, #2bd2ff, #ff79c6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.wrapped-hero__range {
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+.wrapped-hero__personality {
+  font-size: clamp(1.3rem, 4vw, 1.9rem);
+  font-weight: 800;
+  margin-top: 6px;
+  background: linear-gradient(90deg, #ffb86c, #ff79c6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.wrapped-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 18px auto 0;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.wrapped-seg__btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: var(--font-sm);
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+.wrapped-seg__btn--active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.wrapped-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 22px;
+}
+.wrapped-play-btn {
+  font-size: var(--font-lg);
+  font-weight: 800;
+  padding: 12px 28px;
+}
+
+/* ---- Stat grid ---- */
+.wrapped-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.wrapped-stat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 14px;
+  text-align: center;
+}
+.wrapped-stat--accent {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+.wrapped-stat__value {
+  font-size: clamp(1.6rem, 5vw, 2.3rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.wrapped-stat__label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Records ---- */
+.wrapped-records {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.wrapped-record {
+  border-radius: var(--radius);
+  padding: 18px;
+  text-align: center;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.wrapped-record--fast {
+  background: linear-gradient(160deg, rgba(202, 138, 4, 0.18), rgba(253, 224, 71, 0.06));
+  border-color: rgba(253, 224, 71, 0.4);
+}
+.wrapped-record--slow {
+  background: linear-gradient(160deg, rgba(185, 28, 28, 0.18), rgba(251, 113, 133, 0.06));
+  border-color: rgba(251, 113, 133, 0.4);
+}
+.wrapped-record--neutral {
+  text-align: left;
+  align-items: stretch;
+}
+.wrapped-record__label {
+  font-weight: 700;
+  font-size: var(--font-sm);
+  color: var(--muted);
+}
+.wrapped-record__name {
+  font-weight: 800;
+  font-size: var(--font-lg);
+}
+.wrapped-record__time {
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+  font-weight: 900;
+}
+.wrapped-record__meta {
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+.wrapped-record__semesters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+.wrapped-record__sem-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+/* ---- Sections / headings ---- */
+.wrapped-section {
+  margin-bottom: 24px;
+}
+.wrapped-h2 {
+  font-size: var(--font-2xl);
+  font-weight: 800;
+  margin: 8px 0 14px;
+}
+.wrapped-h2--roast {
+  color: var(--danger);
+}
+
+/* ---- Award cards ---- */
+.wrapped-award-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+}
+.wrapped-award {
+  border-radius: var(--radius);
+  padding: 18px 14px;
+  text-align: center;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  transition: transform var(--transition-base);
+}
+.wrapped-award:hover {
+  transform: translateY(-3px);
+}
+.wrapped-award--award {
+  background: linear-gradient(160deg, #4c1d95, #7c3aed 60%, #c084fc);
+}
+.wrapped-award--roast {
+  background: linear-gradient(160deg, #450a0a, #b91c1c 60%, #fb7185);
+}
+.wrapped-award__kicker {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+.wrapped-award__name {
+  font-weight: 800;
+  font-size: var(--font-lg);
+}
+.wrapped-award__value {
+  font-size: 1.7rem;
+  font-weight: 900;
+}
+.wrapped-award__detail {
+  font-size: var(--font-xs);
+  opacity: 0.85;
+}
+
+/* ---- Rivalry ---- */
+.wrapped-rivalry {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+.wrapped-rivalry__side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+.wrapped-rivalry__wins {
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.wrapped-rivalry__name {
+  font-weight: 700;
+}
+.wrapped-rivalry__vs {
+  font-size: 1.4rem;
+  font-weight: 900;
+  opacity: 0.6;
+}
+.wrapped-rivalry-card {
+  text-align: center;
+}
+.wrapped-rivalry__meta {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+
+/* ---- Charts ---- */
+.wrapped-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 26px;
+}
+.wrapped-chart {
+  margin-bottom: 20px;
+}
+.wrapped-chart__title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+.wrapped-chart__legend {
+  display: flex;
+  gap: 16px;
+  font-size: var(--font-sm);
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.wrapped-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.wrapped-dot--clean { background: #34d399; }
+.wrapped-dot--wet { background: #38bdf8; }
+
+/* ---- People grid ---- */
+.wrapped-people-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.wrapped-person-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text);
+  transition: var(--transition-base);
+}
+.wrapped-person-chip:hover {
+  border-color: var(--accent-border-strong);
+  transform: translateY(-2px);
+}
+.wrapped-person-chip--guest {
+  opacity: 0.82;
+}
+.wrapped-person-chip__name {
+  font-weight: 700;
+  font-size: var(--font-sm);
+  text-align: center;
+}
+.wrapped-person-chip__meta {
+  font-size: var(--font-xs);
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ---- Awards won pills (person) ---- */
+.wrapped-awards-won {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.wrapped-awards-won__pill {
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: var(--font-sm);
+  color: #fff;
+}
+.wrapped-awards-won__pill--award {
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+}
+.wrapped-awards-won__pill--roast {
+  background: linear-gradient(90deg, #b91c1c, #fb7185);
+}
+
+/* ---- Rap sheet ---- */
+.wrapped-crosslist {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wrapped-crosslist__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wrapped-crosslist__label {
+  flex: 1;
+  color: var(--muted);
+}
+.wrapped-crosslist__count {
+  font-weight: 800;
+}
+.wrapped-crosslist__rank {
+  margin-top: 12px;
+  color: var(--danger);
+  font-weight: 700;
+  font-size: var(--font-sm);
+}
+
+/* ---- Badges ---- */
+.wrapped-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-bottom: 26px;
+}
+.wrapped-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.wrapped-badge--earned {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+.wrapped-badge--locked {
+  opacity: 0.32;
+  filter: grayscale(1);
+}
+.wrapped-badge__emoji {
+  font-size: 1.8rem;
+}
+.wrapped-badge__label {
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
+.wrapped-back {
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* CTA on the person profile hero */
+.person-hero__wrapped-btn {
+  margin-top: 16px;
+  align-self: flex-start;
+  font-weight: 800;
+}
+
+/* Wrapped badge sitting next to the logo */
+.navLogoContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.navWrappedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(90deg, #7c3aed, #ec4899);
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--font-sm);
+  letter-spacing: 0.01em;
+  padding: 8px 15px;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.45);
+  animation: navWrappedGlow 2.8s ease-in-out infinite;
+  transition: transform var(--transition-base);
+}
+.navWrappedBadge:hover {
+  transform: translateY(-1px) scale(1.04);
+}
+.navWrappedBadge--active {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}
+@keyframes navWrappedGlow {
+  0%, 100% { box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4); }
+  50% { box-shadow: 0 4px 26px rgba(236, 72, 153, 0.6); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navWrappedBadge { animation: none; }
+}
+
+/* ==========================================================================
+   Stories player
+   ========================================================================== */
+.wrapped-stories {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: #050608;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  overflow: hidden;
+}
+.wrapped-stories__bars {
+  display: flex;
+  gap: 4px;
+  padding: 12px 12px 0;
+  z-index: 3;
+}
+.wrapped-stories__bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.wrapped-stories__bar-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 2px;
+}
+.wrapped-stories__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 6px;
+  z-index: 3;
+}
+.wrapped-stories__brand {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: var(--font-xs);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.wrapped-stories__top-actions {
+  display: flex;
+  gap: 8px;
+}
+.wrapped-stories__icon-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wrapped-stories__stage {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  min-height: 0;
+}
+.wrapped-stories__tap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 2;
+}
+.wrapped-stories__tap--left { left: 0; }
+.wrapped-stories__tap--right { right: 0; width: 65%; }
+
+.wrapped-stories__card {
+  position: relative;
+  width: min(520px, 100%);
+  height: min(86vh, 880px);
+  border-radius: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #fff;
+  padding: 32px 28px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  animation: wrapped-card-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.wrapped-stories__card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+  max-height: 100%;
+}
+@keyframes wrapped-card-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.wrapped-stories__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+  font-size: var(--font-sm);
+  opacity: 0.9;
+  animation: wrapped-fade-up 0.5s 0.05s both;
+}
+.wrapped-stories__emoji {
+  font-size: clamp(3.4rem, 14vw, 5.5rem);
+  line-height: 1;
+  animation: wrapped-pop 0.6s 0.1s both;
+}
+.wrapped-stories__heading {
+  font-size: clamp(1.6rem, 6vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1.08;
+  animation: wrapped-fade-up 0.5s 0.12s both;
+}
+.wrapped-stories__big {
+  font-size: clamp(3.2rem, 15vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  animation: wrapped-pop 0.6s 0.15s both;
+}
+.wrapped-stories__content {
+  width: 100%;
+  animation: wrapped-fade-up 0.5s 0.18s both;
+}
+.wrapped-stories__sub {
+  font-size: clamp(1rem, 3.6vw, 1.3rem);
+  font-weight: 600;
+  opacity: 0.95;
+  max-width: 26ch;
+  animation: wrapped-fade-up 0.5s 0.22s both;
+}
+.wrapped-stories__meta {
+  font-size: var(--font-sm);
+  opacity: 0.8;
+  animation: wrapped-fade-up 0.5s 0.28s both;
+}
+@keyframes wrapped-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wrapped-pop {
+  0% { opacity: 0; transform: scale(0.5); }
+  70% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* highlight (avatar + name) inside story cards */
+.wrapped-highlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.wrapped-highlight__name {
+  font-size: clamp(1.4rem, 5vw, 2.1rem);
+  font-weight: 900;
+}
+
+/* podium list inside story card */
+.wrapped-podium-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.wrapped-podium-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px 8px 12px;
+}
+.wrapped-podium-row__medal { font-size: 1.4rem; }
+.wrapped-podium-row__name {
+  flex: 1;
+  text-align: left;
+  font-weight: 800;
+}
+.wrapped-podium-row__time { font-weight: 900; }
+
+/* stories rivalry tweaks (smaller wins number to fit) */
+.wrapped-stories__content .wrapped-rivalry__wins { font-size: 1.9rem; }
+
+@media (max-width: 540px) {
+  .wrapped-stories__card {
+    height: calc(100dvh - 70px);
+    border-radius: 0;
+  }
+}
+
+/* ---- Controls row (semester + faste/gjester) ---- */
+.wrapped-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 18px;
+}
+.wrapped-controls .wrapped-seg {
+  margin: 0;
+}
+
+/* ---- People chip title ---- */
+.wrapped-person-chip__title {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: var(--accent);
+  text-align: center;
+}
+
+/* ---- Aura line in person hero ---- */
+.wrapped-hero__aura {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: var(--font-sm);
+}
+.wrapped-hero__aura strong {
+  color: var(--accent4);
+}
+
+/* ---- Verdict / classification ---- */
+.wrapped-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+.wrapped-verdict__line {
+  font-size: var(--font-md);
+  font-weight: 600;
+  opacity: 0.95;
+}
+.wrapped-verdict-card {
+  text-align: center;
+  margin-bottom: 22px;
+  background: linear-gradient(160deg, rgba(185, 28, 28, 0.16), rgba(251, 113, 133, 0.06));
+  border: 1px solid rgba(251, 113, 133, 0.3);
+}
+.wrapped-verdict-card__kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: var(--muted);
+}
+.wrapped-verdict-card__label {
+  font-size: clamp(1.4rem, 5vw, 2.2rem);
+  font-weight: 900;
+  margin: 6px 0 10px;
+}
+
+/* ---- Wrapped ring around the profile photo (person page) ---- */
+.person-hero__photo-link {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-block;
+  text-decoration: none;
+  transition: transform var(--transition-base);
+}
+.person-hero__photo-link::before {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #7c3aed, #ec4899, #f59e0b, #22d3ee, #7c3aed);
+  z-index: 0;
+  animation: wrapped-ring-spin 7s linear infinite;
+}
+.person-hero__photo--wrapped {
+  position: relative;
+  z-index: 1;
+}
+.person-hero__wrapped-tag {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  background: linear-gradient(90deg, #7c3aed, #ec4899);
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--font-xs);
+  padding: 5px 13px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
+}
+.person-hero__photo-link:hover {
+  transform: scale(1.03);
+}
+@keyframes wrapped-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Home page Wrapped teaser banner ---- */
+.home__wrapped-banner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 22px auto 0;
+  padding: 12px 28px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, #4c1d95, #7c3aed 45%, #ec4899);
+  color: #fff;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.45);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.home__wrapped-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(236, 72, 153, 0.5);
+}
+.home__wrapped-banner__emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.home__wrapped-banner__label {
+  font-size: var(--font-xl);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.home__wrapped-banner__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: home-wrapped-shine 3.6s ease-in-out infinite;
+}
+@keyframes home-wrapped-shine {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .person-hero__photo-link::before { animation: none; }
+  .home__wrapped-banner__shine { animation: none; }
+}
+
+/* head-to-head "seire" label under the big win numbers */
+.wrapped-rivalry__wins-label {
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  margin-top: -2px;
+}
+
+/* shared-award avatar rows (two+ winners) */
+.wrapped-award__avatars {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.wrapped-award-avatars-lg {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

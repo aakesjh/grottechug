@@ -49,6 +49,7 @@
 .u-text-muted     { color: var(--muted); }
 .u-text-accent    { color: var(--accent); }
 .u-text-accent2   { color: var(--accent2); }
+.u-text-accent4   { color: var(--accent4); }
 .u-text-danger    { color: var(--danger); }
 .u-text-bold      { font-weight: 700; }
 .u-text-xs        { font-size: var(--font-xs); }

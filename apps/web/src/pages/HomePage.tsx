@@ -34,6 +34,12 @@ export function HomePage() {
             Toppliste
           </Link>
         </div>
+
+        <Link to="/wrapped" className="home__wrapped-banner">
+          <span className="home__wrapped-banner__shine" aria-hidden="true" />
+          <span className="home__wrapped-banner__emoji">🎁</span>
+          <span className="home__wrapped-banner__label">Grottechug Wrapped</span>
+        </Link>
       </div>
 
       {/* Oversikt over funksjoner */}

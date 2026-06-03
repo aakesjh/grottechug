@@ -17,6 +17,7 @@ import { analyticsRouter } from "./routes/analytics.js";
 import { crossesRouter } from "./routes/crosses.js";
 import { violationsRouter } from "./routes/violations.js";
 import { participantSubmissionsRouter } from "./routes/participantSubmissionRouter.js";
+import { wrappedRouter } from "./routes/wrapped.js";
 
 assertProductionEnv();
 
@@ -90,6 +91,7 @@ app.use("/api/analytics", analyticsRouter);
 app.use("/api/crosses", crossesRouter);
 app.use("/api/violations", violationsRouter);
 app.use("/api/participant-submissions", participantSubmissionsRouter);
+app.use("/api/wrapped", wrappedRouter);
 
 // Global error handler – returns JSON instead of Express 5 default HTML
 app.use((err: any, _req: any, res: any, _next: any) => {

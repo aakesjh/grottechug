@@ -14,6 +14,8 @@ import { LoginPage } from "../pages/LoginPage";
 import { AdminPage } from "../pages/AdminPage";
 import { JoinPage } from "../pages/JoinPage";
 import { HowToPage } from "../pages/HowToPage";
+import { WrappedPage } from "../pages/WrappedPage";
+import { WrappedPersonPage } from "../pages/WrappedPersonPage";
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
       { path: "grotta", element: <GrottaPage /> },
       { path: "violations", element: <ViolationsPage /> },
       { path: "session/:id", element: <SessionPage /> },
+      { path: "wrapped", element: <WrappedPage /> },
+      { path: "wrapped/person/:id", element: <WrappedPersonPage /> },
       { path: "login", element: <LoginPage /> },
       { path: "admin", element: <AdminPage /> },
       { path: "join", element: <JoinPage /> },

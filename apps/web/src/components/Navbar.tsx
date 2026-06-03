@@ -36,6 +36,7 @@ const NAV_SEARCH_PAGES: Array<{ id: string; label: string; subtitle: string; to:
   { id: "page-rules", label: "Regler", subtitle: "Side", to: "/rules" },
   { id: "page-leaderboard", label: "Toppliste", subtitle: "Side", to: "/leaderboard" },
   { id: "page-stats", label: "Statistikk", subtitle: "Side", to: "/stats" },
+  { id: "page-wrapped", label: "Wrapped", subtitle: "Side", to: "/wrapped" },
   { id: "page-grotta", label: "Grotta", subtitle: "Side", to: "/grotta" },
   { id: "page-join", label: "Join", subtitle: "Side", to: "/join" },
   { id: "page-howto", label: "How To", subtitle: "Side", to: "/howto" },
@@ -496,6 +497,16 @@ export function Navbar() {
                   className="navLogo"
                 />
               </NavLink>
+              {!isHome && (
+                <NavLink
+                  to="/wrapped"
+                  className={({ isActive }) =>
+                    `navWrappedBadge ${isActive ? "navWrappedBadge--active" : ""}`
+                  }
+                >
+                  🎁 Wrapped
+                </NavLink>
+              )}
             </div>
 
             <div className="navControls">

@@ -32,6 +32,7 @@ import "./styles/pages/violations.css";
 import "./styles/pages/rules.css";
 import "./styles/pages/join.css";
 import "./styles/pages/admin.css";
+import "./styles/pages/wrapped.css";
 
 /* --- Utilities (last for override priority) --- */
 import "./styles/utilities.css";
