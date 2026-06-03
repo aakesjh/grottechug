@@ -430,7 +430,6 @@ function computeGroup(data: LoadedData) {
   const allPoints = people.flatMap((p) => p.points);
   const chugs = allPoints.length;
   const totalSeconds = allPoints.reduce((s, p) => s + p.seconds, 0);
-  const cleanPoints = allPoints.filter((p) => p.clean);
   const wetPoints = allPoints.filter((p) => p.wet);
 
   // Fastest clean ever (a real record) + slowest single time (roast)
@@ -651,7 +650,8 @@ function computeGroup(data: LoadedData) {
       totalLitres: Number((chugs * LITRES_PER_CHUG).toFixed(1)),
       litresPerChug: LITRES_PER_CHUG,
       avg: chugs ? Number((totalSeconds / chugs).toFixed(2)) : null,
-      cleanRate: chugs ? Number(((cleanPoints.length / chugs) * 100).toFixed(1)) : 0,
+      // "rene" = uten søl (ikke MM/W/VW/P), so rene + våte == 100% (no double-count of MM).
+      cleanRate: chugs ? Number((((chugs - wetPoints.length) / chugs) * 100).toFixed(1)) : 0,
       wetRate: chugs ? Number(((wetPoints.length / chugs) * 100).toFixed(1)) : 0,
       totalCrosses: Number(totalCrosses.toFixed(1)),
       fastestClean: fastestClean
