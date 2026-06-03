@@ -567,3 +567,14 @@
     padding: 1px 5px;
   }
 }
+
+/* Round label (e.g. "Runde 2") for multiple sessions on the same day */
+.chuglist__scard-round {
+  font-size: var(--font-xs);
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(90deg, #7c3aed, #2bd2ff);
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}

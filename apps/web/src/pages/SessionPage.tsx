@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer,
@@ -13,6 +13,7 @@ import {
   ReferenceLine,
   PieChart,
   Pie,
+  Legend,
 } from "recharts";
 import { apiFetch } from "../lib/api";
 import { LoadingCard } from "../components/LoadingCard";
@@ -296,6 +297,69 @@ function AwardTimeCompare({
   );
 }
 
+type CompareRecordSide = { name: string; seconds: number } | null;
+
+function CompareStatRow({
+  label,
+  a,
+  b,
+  suffix = "",
+  decimals = 0,
+  lowerBetter = false,
+  higherBetter = false,
+}: {
+  label: string;
+  a: number | null;
+  b: number | null;
+  suffix?: string;
+  decimals?: number;
+  lowerBetter?: boolean;
+  higherBetter?: boolean;
+}) {
+  const fmt = (v: number | null) => (v == null ? "–" : `${v.toFixed(decimals)}${suffix}`);
+  const has = typeof a === "number" && typeof b === "number";
+  let aBetter = false;
+  let bBetter = false;
+  if (has && Math.abs((a as number) - (b as number)) > 1e-9) {
+    if (lowerBetter) {
+      aBetter = (a as number) < (b as number);
+      bBetter = (b as number) < (a as number);
+    } else if (higherBetter) {
+      aBetter = (a as number) > (b as number);
+      bBetter = (b as number) > (a as number);
+    }
+  }
+  const diff = has ? Math.abs((a as number) - (b as number)) : null;
+  return (
+    <div className="session-compare__row">
+      <span className="session-compare__row-label">{label}</span>
+      <span className={`session-compare__row-val ${aBetter ? "session-compare__row-val--good" : ""}`}>{fmt(a)}</span>
+      <span className="session-compare__row-delta">{diff == null || diff < 1e-9 ? "–" : `Δ ${diff.toFixed(decimals)}${suffix}`}</span>
+      <span className={`session-compare__row-val ${bBetter ? "session-compare__row-val--good" : ""}`}>{fmt(b)}</span>
+    </div>
+  );
+}
+
+function CompareRecordRow({ label, a, b }: { label: string; a: CompareRecordSide; b: CompareRecordSide }) {
+  const cell = (rec: CompareRecordSide) =>
+    rec ? (
+      <span className="session-compare__row-val session-compare__row-val--rec">
+        <strong>{rec.seconds.toFixed(2)}s</strong>
+        <span className="session-compare__row-name">{rec.name}</span>
+      </span>
+    ) : (
+      <span className="session-compare__row-val">–</span>
+    );
+  return (
+    <div className="session-compare__row session-compare__row--rec">
+      <span className="session-compare__row-label">{label}</span>
+      {cell(a)}
+      <span className="session-compare__row-delta" />
+      {cell(b)}
+    </div>
+  );
+}
+
 export function SessionPage() {
   const { id } = useParams();
   const nav = useNavigate();
@@ -306,6 +370,7 @@ export function SessionPage() {
   const [participantImages, setParticipantImages] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [showStories, setShowStories] = useState(false);
+  const [compareId, setCompareId] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -562,6 +627,72 @@ export function SessionPage() {
       .map((c) => c.seconds)
       .filter((v): v is number => typeof v === "number" && v > 0);
   }, [tableData]);
+
+  // --- Session-vs-session comparison ---
+  const sessionId = (s: SessionCol) => s.id || s.sessionId;
+
+  const summaryFor = useCallback(
+    (sid: string) => {
+      if (!tableData) return null;
+      const sess = sessions.find((s) => sessionId(s) === sid);
+      const sessViol = violations.filter((v) => v.sessionId === sid);
+      const wetPids = new Set(
+        sessViol.filter((v) => WET_CODES.has(v.ruleCode)).map((v) => v.participantId)
+      );
+      const crosses = sessViol.reduce((sum, v) => sum + (v.crosses || 0), 0);
+
+      const attempts: { participantId: string; name: string; isRegular: boolean; seconds: number; wet: boolean }[] = [];
+      let total = 0;
+      let wetCount = 0;
+      tableData.rows.forEach((row) => {
+        const cell = tableData.cells[row.participantId]?.[sid];
+        if (!cell || cell.seconds == null || cell.seconds <= 0) return;
+        const wet = wetPids.has(row.participantId);
+        attempts.push({ participantId: row.participantId, name: row.name, isRegular: row.isRegular, seconds: cell.seconds, wet });
+        total += cell.seconds;
+        if (wet) wetCount++;
+      });
+      attempts.sort((a, b) => a.seconds - b.seconds);
+      const n = attempts.length;
+      return {
+        sid,
+        dateISO: sess?.dateISO ?? "",
+        note: sess?.note ?? null,
+        n,
+        avg: n ? total / n : null,
+        fastest: attempts[0] ?? null,
+        slowest: attempts[n - 1] ?? null,
+        wetRate: n ? (wetCount / n) * 100 : 0,
+        crosses,
+        attempts,
+      };
+    },
+    [tableData, sessions, violations]
+  );
+
+  const otherSessions = useMemo(
+    () =>
+      [...sessions]
+        .filter((s) => sessionId(s) !== id)
+        .sort((a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()),
+    [sessions, id]
+  );
+
+  const currentSummary = useMemo(() => (id ? summaryFor(id) : null), [summaryFor, id]);
+  const compareSummary = useMemo(() => (compareId ? summaryFor(compareId) : null), [summaryFor, compareId]);
+
+  const commonParticipants = useMemo(() => {
+    if (!currentSummary || !compareSummary) return [];
+    const bMap = new Map(compareSummary.attempts.map((a) => [a.participantId, a]));
+    return currentSummary.attempts
+      .filter((a) => bMap.has(a.participantId))
+      .map((a) => {
+        const b = bMap.get(a.participantId)!;
+        // delta = this day − compare day (negative = faster on this day)
+        return { participantId: a.participantId, name: a.name, a: a.seconds, b: b.seconds, delta: a.seconds - b.seconds };
+      })
+      .sort((x, y) => x.delta - y.delta);
+  }, [currentSummary, compareSummary]);
 
   const groupedViolations = useMemo(() => {
     const map = new Map<
@@ -870,6 +1001,140 @@ export function SessionPage() {
         {sessionStats.note && (
           <div className="session__note">
             "{sessionStats.note}"
+          </div>
+        )}
+      </div>
+
+      {/* ── SAMMENLIGN MED EN ANNEN DAG ── */}
+      <div className="card session-compare">
+        <div className="session-compare__head">
+          <h2 className="session-compare__title">⚔️ Sammenlign med en annen dag</h2>
+          <div className="session-compare__controls">
+            <select
+              className="session-compare__select"
+              value={compareId}
+              onChange={(e) => setCompareId(e.target.value)}
+            >
+              <option value="">Velg dag…</option>
+              {otherSessions.map((s) => (
+                <option key={sessionId(s)} value={sessionId(s)}>
+                  {fmtDate(s.dateISO)}
+                  {s.note ? ` · ${s.note}` : ""}
+                </option>
+              ))}
+            </select>
+            {compareId && (
+              <button type="button" className="btn session-compare__clear" onClick={() => setCompareId("")}>
+                Nullstill
+              </button>
+            )}
+          </div>
+        </div>
+
+        {currentSummary && compareSummary && (
+          <div className="session-compare__body">
+            <div className="session-compare__cols">
+              <div className="session-compare__col session-compare__col--a">
+                <span className="session-compare__col-tag">Denne dagen</span>
+                <span className="session-compare__col-date">{fmtDate(currentSummary.dateISO)}</span>
+              </div>
+              <span className="session-compare__vs">vs</span>
+              <button
+                type="button"
+                className="session-compare__col session-compare__col--b"
+                onClick={() => nav(`/session/${compareSummary.sid}`)}
+                title="Gå til denne dagen"
+              >
+                <span className="session-compare__col-tag">Sammenligning ↗</span>
+                <span className="session-compare__col-date">{fmtDate(compareSummary.dateISO)}</span>
+              </button>
+            </div>
+
+            <div className="session-compare__stats">
+              <CompareStatRow label="Deltakere" a={currentSummary.n} b={compareSummary.n} higherBetter />
+              <CompareStatRow label="Snitt" a={currentSummary.avg} b={compareSummary.avg} suffix="s" decimals={2} lowerBetter />
+              <CompareStatRow label="Wet-rate" a={currentSummary.wetRate} b={compareSummary.wetRate} suffix="%" decimals={0} lowerBetter />
+              <CompareStatRow label="Kryss" a={currentSummary.crosses} b={compareSummary.crosses} decimals={0} lowerBetter />
+              <CompareRecordRow label="⚡ Raskest" a={currentSummary.fastest} b={compareSummary.fastest} />
+              <CompareRecordRow label="🐢 Tregest" a={currentSummary.slowest} b={compareSummary.slowest} />
+            </div>
+
+            <div className="session-compare__chart">
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart
+                  data={[
+                    { metric: "Snitt", A: currentSummary.avg, B: compareSummary.avg },
+                    { metric: "Raskest", A: currentSummary.fastest?.seconds ?? null, B: compareSummary.fastest?.seconds ?? null },
+                    { metric: "Tregest", A: currentSummary.slowest?.seconds ?? null, B: compareSummary.slowest?.seconds ?? null },
+                  ]}
+                  margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                  <XAxis dataKey="metric" stroke="var(--text)" tick={{ fontSize: 12, fontWeight: 600 }} />
+                  <YAxis stroke="var(--text)" tick={{ fontSize: 11 }} width={46} tickFormatter={(v: any) => `${v}s`} />
+                  <Tooltip
+                    wrapperClassName="session__recharts-tooltip"
+                    formatter={(v: any) => [`${Number(v).toFixed(2)}s`, ""]}
+                  />
+                  <Legend />
+                  <Bar dataKey="A" name={fmtDate(currentSummary.dateISO)} fill="var(--accent)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="B" name={fmtDate(compareSummary.dateISO)} fill="var(--accent2)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <h3 className="session-compare__subtitle">
+              Felles deltakere ({commonParticipants.length})
+            </h3>
+            {commonParticipants.length === 0 ? (
+              <p className="u-text-muted session-compare__empty">Ingen chugget begge dagene.</p>
+            ) : (
+              <div className="tableWrap">
+                <table className="session-compare__table">
+                  <thead>
+                    <tr>
+                      <th>Navn</th>
+                      <th>{fmtDate(currentSummary.dateISO)}</th>
+                      <th>{fmtDate(compareSummary.dateISO)}</th>
+                      <th>Endring</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commonParticipants.map((p) => {
+                      const improved = p.delta < -1e-9;
+                      const worse = p.delta > 1e-9;
+                      return (
+                        <tr key={p.participantId}>
+                          <td>
+                            <button
+                              type="button"
+                              className="session__table-person-link"
+                              onClick={() => nav(`/person/${p.participantId}`)}
+                            >
+                              {p.name}
+                            </button>
+                          </td>
+                          <td>{p.a.toFixed(2)}s</td>
+                          <td>{p.b.toFixed(2)}s</td>
+                          <td
+                            className={`session-compare__delta-cell ${
+                              improved ? "session-compare__delta-cell--good" : worse ? "session-compare__delta-cell--bad" : ""
+                            }`}
+                          >
+                            {Math.abs(p.delta) < 1e-9
+                              ? "±0"
+                              : `${improved ? "▼" : "▲"} ${Math.abs(p.delta).toFixed(2)}s`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="session-compare__hint u-text-muted">
+              Endring = denne dagen vs {fmtDate(compareSummary.dateISO)}. ▼ grønn = raskere denne dagen, ▲ rød = tregere.
+            </p>
           </div>
         )}
       </div>

@@ -103,10 +103,6 @@ export function ChugListPage() {
     setNewDaySemester(inferSemesterFromYYYYMMDD(newDayDate));
   }, [newDayDate]);
 
-  function toISOFromDateInput(yyyyMmDd: string) {
-    return new Date(`${yyyyMmDd}T12:00:00.000Z`).toISOString();
-  }
-
   const [dirtyCells, setDirtyCells] = useState<Set<string>>(new Set());
   const [dirtySessionNote, setDirtySessionNote] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -326,7 +322,23 @@ export function ChugListPage() {
     if (!isAdmin) return;
 
     try {
-      const dateISO = toISOFromDateInput(newDayDate);
+      // Two sessions on the same calendar day (e.g. siste session med to runder) are
+      // allowed — they just need distinct timestamps. Find existing sessions that day
+      // and place the new one an hour later, auto-labelling the rounds.
+      let sameDay: Array<{ id: string; dateISO: string; note: string | null }> = [];
+      try {
+        const allRes = await apiFetch(`/api/sessions?semester=all`);
+        const all: Array<{ id: string; dateISO: string; note: string | null }> = await allRes.json();
+        sameDay = (Array.isArray(all) ? all : [])
+          .filter((s) => s.dateISO.slice(0, 10) === newDayDate)
+          .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+      } catch {
+        /* fall back to a single session at noon */
+      }
+
+      const roundIndex = sameDay.length; // 0 = first session of the day
+      const hour = Math.min(12 + roundIndex, 23);
+      const dateISO = new Date(`${newDayDate}T${String(hour).padStart(2, "0")}:00:00.000Z`).toISOString();
 
       const res = await apiFetch("/api/sessions", {
         method: "POST",
@@ -335,12 +347,30 @@ export function ChugListPage() {
       });
 
       if (!res.ok) {
-        const txt = await res.text(); 
+        const txt = await res.text();
         alert(`Kunne ikke opprette ny dag (${res.status}).\n\n${txt}`);
         return;
       }
 
-      const created = await res.json(); 
+      const created = await res.json();
+
+      // When this is round 2+ of the day, label the rounds for clarity.
+      if (roundIndex >= 1 && created?.id) {
+        await apiFetch(`/api/sessions/${created.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ note: `Runde ${roundIndex + 1}` }),
+        }).catch(() => {});
+        const first = sameDay[0];
+        if (first && !(first.note && first.note.trim())) {
+          await apiFetch(`/api/sessions/${first.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ note: "Runde 1" }),
+          }).catch(() => {});
+        }
+      }
+
       setNewDayOpen(false);
 
       setSemester(newDaySemester);
@@ -677,6 +707,9 @@ export function ChugListPage() {
                       >
                         {fmtDDMMYYYY(col.dateISO)}
                       </button>
+                      {col.note && /^runde\s*\d+$/i.test(col.note.trim()) && (
+                        <span className="chuglist__scard-round">{col.note.trim()}</span>
+                      )}
                       {hasDayNote && (
                         <span className="chuglist__scard-daynote" title={col.note!} onClick={(e) => { e.stopPropagation(); nav(`/session/${col.sessionId}`); }}>
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
