@@ -152,40 +152,42 @@ function drawPerson(ctx: CanvasRenderingContext2D, d: PersonWrapped) {
   // Row 1
   drawStat("CHUGS", String(s.chugs), W * 0.22, 760);
   drawStat("OPPMØTE", `${s.attendance}/${s.totalSessions}`, W * 0.5, 760);
+  // Value clearly means "#1 of N faste" via the label — no cramped secondary here.
   drawStat(
-    d.participant.isRegular ? "RANK · FASTE" : "RANK",
+    d.participant.isRegular ? `AV ${r.totalRanked} FASTE` : "RANK",
     r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–",
     W * 0.78,
     760,
     "#fde047",
   );
-  // Guest-inclusive rank as a small secondary line for regulars
-  if (d.participant.isRegular && r.bestCleanRankAll != null && r.bestCleanRankAll !== r.bestCleanRank) {
-    ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "600 21px system-ui, sans-serif";
-    ctx.fillText(`#${r.bestCleanRankAll} av ${r.totalRankedAll} med gjester`, W * 0.78, 826);
-  }
   // Row 2
   drawStat("SNITT", `${s.avg.toFixed(2)}s`, W * 0.22, 880);
   drawStat("LITER ØL", String(s.totalLitres), W * 0.5, 880);
   if (d.participant.isRegular) drawStat("KRYSS", String(s.crossesTotal), W * 0.78, 880, "#fb7185");
   else drawStat("STABILITET", `±${s.stddev.toFixed(2)}`, W * 0.78, 880);
 
+  // Guest-inclusive rank as its own clearly-separated centered line.
+  if (d.participant.isRegular && r.bestCleanRankAll != null && r.bestCleanRankAll !== r.bestCleanRank) {
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.font = "600 26px system-ui, sans-serif";
+    ctx.fillText(`#${r.bestCleanRankAll} av ${r.totalRankedAll} medregnet gjester`, W / 2, 968);
+  }
+
   if (r.percentile != null) {
     ctx.fillStyle = "#fff";
     ctx.font = "700 36px system-ui, sans-serif";
-    ctx.fillText(`Raskere enn ${r.percentile.toFixed(0)}% av alle chugs`, W / 2, 985);
+    ctx.fillText(`Raskere enn ${r.percentile.toFixed(0)}% av alle chugs`, W / 2, 1022);
   }
   if (s.improvement > 0.1) {
     ctx.fillStyle = "#bbf7d0";
     ctx.font = "700 32px system-ui, sans-serif";
-    ctx.fillText(`📈 ${s.improvementPct.toFixed(0)}% bedre enn ved start`, W / 2, 1035);
+    ctx.fillText(`📈 ${s.improvementPct.toFixed(0)}% bedre enn ved start`, W / 2, 1070);
   }
 
   // Classification
   ctx.fillStyle = "#fde047";
   ctx.font = "800 38px system-ui, sans-serif";
-  ctx.fillText(`«${d.classification.label}»`, W / 2, 1120);
+  ctx.fillText(`«${d.classification.label}»`, W / 2, 1130);
 
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = "500 24px system-ui, sans-serif";
