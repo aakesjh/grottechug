@@ -144,6 +144,12 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.wrapped-stat__sub {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: var(--font-xs);
+  opacity: 0.85;
+}
 
 /* ---- Records ---- */
 .wrapped-records {

@@ -101,6 +101,10 @@
   color: var(--danger);
 }
 
+.session__highlight-label--wet {
+  color: #38bdf8;
+}
+
 .session__highlight-label--alltime-fast {
   color: #facc15;
 }

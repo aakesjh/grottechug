@@ -973,20 +973,28 @@ function computePerson(data: LoadedData, group: ReturnType<typeof computeGroup>,
   const p = data.byId.get(id);
   if (!p) return null;
 
-  // Rank of best clean (vs everyone + vs regulars)
+  // Rank of best clean. A fast medlem is ranked among FASTE (their personal page
+  // has no guest toggle, so it shouldn't put them behind a guest). Guests rank
+  // against everyone.
   const cleanRanking = data.people
     .filter((x) => x.bestClean != null)
     .sort((a, b) => (a.bestClean as number) - (b.bestClean as number));
-  const bestCleanRank = p.bestClean != null ? cleanRanking.findIndex((x) => x.id === id) + 1 || null : null;
   const regularRanking = cleanRanking.filter((x) => x.isRegular);
+  const pool = p.isRegular ? regularRanking : cleanRanking;
+  const bestCleanRank = p.bestClean != null ? cleanRanking.findIndex((x) => x.id === id) + 1 || null : null;
   const bestCleanRankRegular =
     p.bestClean != null && p.isRegular ? regularRanking.findIndex((x) => x.id === id) + 1 || null : null;
+  const primaryRank = p.bestClean != null ? pool.findIndex((x) => x.id === id) + 1 || null : null;
 
-  // Percentile: share of all clean attempts that were slower than your best clean
+  // Percentile: share of clean attempts (in the same population) slower than your
+  // best clean. Floored, and never 100% unless you actually hold the fastest time.
+  const poolSeconds = (p.isRegular ? data.people.filter((x) => x.isRegular) : data.people)
+    .flatMap((x) => x.points.filter((pt) => pt.clean).map((pt) => pt.seconds));
   let percentile: number | null = null;
-  if (p.bestClean != null && data.allCleanSeconds.length > 0) {
-    const slower = data.allCleanSeconds.filter((s) => s > (p.bestClean as number)).length;
-    percentile = Number(((slower / data.allCleanSeconds.length) * 100).toFixed(1));
+  if (p.bestClean != null && poolSeconds.length > 0) {
+    const slower = poolSeconds.filter((s) => s > (p.bestClean as number)).length;
+    const raw = (slower / poolSeconds.length) * 100;
+    percentile = primaryRank === 1 ? 100 : Math.min(99, Math.floor(raw));
   }
 
   // Crosses ranking
@@ -1087,9 +1095,12 @@ function computePerson(data: LoadedData, group: ReturnType<typeof computeGroup>,
       sessionLosses,
     },
     rankings: {
-      bestCleanRank,
+      // Primary rank/total is population-appropriate (regulars vs faste, guests vs all).
+      bestCleanRank: primaryRank,
+      bestCleanRankAll: bestCleanRank,
       bestCleanRankRegular,
-      totalRanked: cleanRanking.length,
+      totalRanked: pool.length,
+      totalRankedAll: cleanRanking.length,
       totalRankedRegular: regularRanking.length,
       percentile,
       crossRank,

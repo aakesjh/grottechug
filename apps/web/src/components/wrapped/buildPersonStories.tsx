@@ -68,7 +68,15 @@ export function buildPersonStories(d: PersonWrapped): WrappedCard[] {
       bigDecimals: 2,
       bigSuffix: "s",
       sub: s.bestCleanDateISO ? `Satt ${fmtShortDate(s.bestCleanDateISO)}` : undefined,
-      meta: r.bestCleanRank != null ? `#${r.bestCleanRank} av ${r.totalRanked} i hele kullet` : undefined,
+      meta:
+        r.bestCleanRank != null
+          ? isRegular
+            ? `#${r.bestCleanRank} av ${r.totalRanked} faste` +
+              (r.bestCleanRankAll != null && r.bestCleanRankAll !== r.bestCleanRank
+                ? ` · #${r.bestCleanRankAll} av ${r.totalRankedAll} med gjester`
+                : "")
+            : `#${r.bestCleanRank} av ${r.totalRanked} i kullet`
+          : undefined,
     });
   }
 
@@ -79,7 +87,7 @@ export function buildPersonStories(d: PersonWrapped): WrappedCard[] {
       bg: BG.blue,
       kicker: "DIN BESTE TID VAR RASKERE ENN",
       bigCountUp: r.percentile,
-      bigDecimals: 1,
+      bigDecimals: 0,
       bigSuffix: "%",
       sub: "...av alle chugs i kullet i år.",
       meta:

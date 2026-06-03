@@ -152,7 +152,19 @@ function drawPerson(ctx: CanvasRenderingContext2D, d: PersonWrapped) {
   // Row 1
   drawStat("CHUGS", String(s.chugs), W * 0.22, 760);
   drawStat("OPPMØTE", `${s.attendance}/${s.totalSessions}`, W * 0.5, 760);
-  drawStat("RANK", r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–", W * 0.78, 760, "#fde047");
+  drawStat(
+    d.participant.isRegular ? "RANK · FASTE" : "RANK",
+    r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–",
+    W * 0.78,
+    760,
+    "#fde047",
+  );
+  // Guest-inclusive rank as a small secondary line for regulars
+  if (d.participant.isRegular && r.bestCleanRankAll != null && r.bestCleanRankAll !== r.bestCleanRank) {
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "600 21px system-ui, sans-serif";
+    ctx.fillText(`#${r.bestCleanRankAll} av ${r.totalRankedAll} med gjester`, W * 0.78, 826);
+  }
   // Row 2
   drawStat("SNITT", `${s.avg.toFixed(2)}s`, W * 0.22, 880);
   drawStat("LITER ØL", String(s.totalLitres), W * 0.5, 880);

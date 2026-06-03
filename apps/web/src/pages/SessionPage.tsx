@@ -843,6 +843,9 @@ export function SessionPage() {
   const isAllTimeFastest = sessionStats.fastestGlobalRank === 1;
   const isAllTimeSlowest = sessionStats.slowestGlobalRank === 1;
 
+  // Fastest attempt that had a real anmerkning (non-MM). attempts are sorted asc.
+  const fastestDirty = sessionStats.attempts.find((a) => a.violations.some((c) => c !== "MM")) ?? null;
+
   const stories: Story[] = [];
   stories.push({
     id: "intro",
@@ -1252,6 +1255,21 @@ export function SessionPage() {
 
             <div className="session__highlight-meta">
               #{sessionStats.slowestGlobalRank}/{sessionStats.totalHistoricalAttempts} tregeste tid noensinne
+            </div>
+          </div>
+        )}
+
+        {fastestDirty && (
+          <div className="card session__highlight-card">
+            <div className="session__highlight-label session__highlight-label--wet">
+              💧 Raskest med anmerkning
+            </div>
+            <div className="session__highlight-name">
+              <PersonName personId={fastestDirty.participantId} name={fastestDirty.name} />
+            </div>
+            <div className="session__highlight-time">{fastestDirty.seconds.toFixed(2)}s</div>
+            <div className="session__highlight-meta">
+              Teller ikke som ren tid · {fastestDirty.violations.filter((c) => c !== "MM").join(", ")}
             </div>
           </div>
         )}

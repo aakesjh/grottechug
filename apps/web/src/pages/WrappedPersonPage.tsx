@@ -20,11 +20,12 @@ import { RoundAvatar } from "../components/wrapped/WrappedBits";
 import { BadgeMedal } from "../components/BadgeMedal";
 import { fmtSeconds, fmtShortDate, type PersonWrapped, type ProfileBadge } from "../components/wrapped/types";
 
-function StatTile({ value, label, accent }: { value: string; label: string; accent?: boolean }) {
+function StatTile({ value, label, accent, sub }: { value: string; label: string; accent?: boolean; sub?: string }) {
   return (
     <div className={`wrapped-stat ${accent ? "wrapped-stat--accent" : ""}`}>
       <div className="wrapped-stat__value">{value}</div>
       <div className="wrapped-stat__label">{label}</div>
+      {sub && <div className="wrapped-stat__sub">{sub}</div>}
     </div>
   );
 }
@@ -152,7 +153,15 @@ export function WrappedPersonPage() {
         <StatTile value={String(s.chugs)} label="chugs i år" accent />
         <StatTile value={`${s.attendance}/${s.totalSessions}`} label="oppmøter" />
         <StatTile value={s.bestClean != null ? fmtSeconds(s.bestClean) : "–"} label="beste tid" accent />
-        <StatTile value={r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–"} label={`av ${r.totalRanked} i kullet`} />
+        <StatTile
+          value={r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–"}
+          label={isRegular ? `av ${r.totalRanked} faste` : `av ${r.totalRanked} i kullet`}
+          sub={
+            isRegular && r.bestCleanRankAll != null && r.bestCleanRankAll !== r.bestCleanRank
+              ? `#${r.bestCleanRankAll} av ${r.totalRankedAll} med gjester`
+              : undefined
+          }
+        />
         <StatTile value={`${s.avg.toFixed(2)}s`} label="snittet ditt" />
         <StatTile
           value={

@@ -145,8 +145,10 @@ export type PersonWrapped = {
   };
   rankings: {
     bestCleanRank: number | null;
+    bestCleanRankAll: number | null;
     bestCleanRankRegular: number | null;
     totalRanked: number;
+    totalRankedAll: number;
     totalRankedRegular: number;
     percentile: number | null;
     crossRank: number | null;

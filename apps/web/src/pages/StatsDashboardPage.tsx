@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, AreaChart, Area,
@@ -45,6 +45,7 @@ type ParticipantStat = {
 
 type ViolationEntry = {
   participantId: string;
+  sessionId: string;
   ruleCode: string;
   dateISO: string;
 };
@@ -467,7 +468,28 @@ export function StatsDashboardPage() {
       .slice(0, 3);
   }, [validParticipants, violations]);
 
-  // --- Raskeste enkelt-chugs (sortert) ---
+  // Codes per (participant, session). "Ren" (tellende) = ingen kode eller bare MM.
+  // "Med anmerkning" = minst én ikke-MM-kode (W/VW/P/DNF/…).
+  const cellCodes = useMemo(() => {
+    const map = new Map<string, string[]>();
+    violations.forEach((v) => {
+      const key = `${v.participantId}:${v.sessionId}`;
+      const arr = map.get(key) ?? [];
+      arr.push(v.ruleCode.toUpperCase());
+      map.set(key, arr);
+    });
+    return map;
+  }, [violations]);
+
+  const isCleanCell = useCallback(
+    (pid: string, sid: string) => {
+      const codes = cellCodes.get(`${pid}:${sid}`);
+      return !codes || codes.length === 0 || codes.every((c) => c === "MM");
+    },
+    [cellCodes]
+  );
+
+  // --- Raskeste enkelt-chugs (rene/tellende — uten anmerkning, MM ok) ---
   const fastestSingleChugs = useMemo(() => {
     if (!tableData) return [];
     const allowed = new Set(validParticipants.map((p) => p.participantId));
@@ -484,7 +506,7 @@ export function StatsDashboardPage() {
       if (!allowed.has(r.participantId)) return;
       tableData.columns.forEach((col) => {
         const cell = tableData.cells[r.participantId]?.[col.sessionId];
-        if (cell?.seconds != null) {
+        if (cell?.seconds != null && isCleanCell(r.participantId, col.sessionId)) {
           out.push({
             participantId: r.participantId,
             name: r.name,
@@ -497,7 +519,31 @@ export function StatsDashboardPage() {
       });
     });
     return out.sort((a, b) => a.seconds - b.seconds).slice(0, 10);
-  }, [tableData, validParticipants]);
+  }, [tableData, validParticipants, isCleanCell]);
+
+  // --- Raskeste enkelt-chugs MED anmerkning (egen statistikk) ---
+  const fastestWithAnmerkning = useMemo(() => {
+    if (!tableData) return [];
+    const allowed = new Set(validParticipants.map((p) => p.participantId));
+    const out: { participantId: string; name: string; seconds: number; codes: string; dateFormatted: string }[] = [];
+    tableData.rows.forEach((r) => {
+      if (!allowed.has(r.participantId)) return;
+      tableData.columns.forEach((col) => {
+        const cell = tableData.cells[r.participantId]?.[col.sessionId];
+        if (cell?.seconds == null) return;
+        const codes = (cellCodes.get(`${r.participantId}:${col.sessionId}`) ?? []).filter((c) => c !== "MM");
+        if (codes.length === 0) return;
+        out.push({
+          participantId: r.participantId,
+          name: r.name,
+          seconds: cell.seconds,
+          codes: codes.join("/"),
+          dateFormatted: fmtDate(col.dateISO),
+        });
+      });
+    });
+    return out.sort((a, b) => a.seconds - b.seconds).slice(0, 10);
+  }, [tableData, validParticipants, cellCodes]);
 
   // --- Personlige rekorder (raskeste chug pr. person) ---
   const personalBests = useMemo(() => {
@@ -511,7 +557,7 @@ export function StatsDashboardPage() {
       if (!allowed.has(r.participantId)) return;
       tableData.columns.forEach((col) => {
         const cell = tableData.cells[r.participantId]?.[col.sessionId];
-        if (cell?.seconds != null) {
+        if (cell?.seconds != null && isCleanCell(r.participantId, col.sessionId)) {
           const existing = map[r.participantId];
           if (!existing || cell.seconds < existing.seconds) {
             map[r.participantId] = {
@@ -526,7 +572,7 @@ export function StatsDashboardPage() {
       });
     });
     return Object.values(map).sort((a, b) => a.seconds - b.seconds);
-  }, [tableData, validParticipants]);
+  }, [tableData, validParticipants, isCleanCell]);
 
   // --- Histogram: fordeling av alle chug-tider ---
   const histogramData = useMemo(() => {
@@ -860,6 +906,20 @@ export function StatsDashboardPage() {
               onClickEntry={(id) => navigate(`/person/${id}`)}
               tone="warn"
             />
+            {fastestWithAnmerkning.length > 0 && (
+              <PodiumCard
+                title="💧 Raskeste med anmerkning"
+                subtitle="Beste tider som ikke teller (W/VW/P/…)"
+                entries={fastestWithAnmerkning.slice(0, 3).map((c) => ({
+                  id: c.participantId,
+                  name: c.name,
+                  value: `${c.seconds.toFixed(2)}s`,
+                  sub: `${c.codes} · ${c.dateFormatted}`,
+                }))}
+                onClickEntry={(id) => navigate(`/person/${id}`)}
+                tone="warn"
+              />
+            )}
           </section>
 
           {/* ── CHART GRID ── */}
