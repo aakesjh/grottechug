@@ -786,8 +786,8 @@
 /* column headers */
 .session-compare__cols {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: stretch;
   gap: 10px;
   margin-bottom: 16px;
 }
@@ -795,7 +795,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 14px;
+  min-width: 0;
+  padding: 12px 10px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   text-align: center;
@@ -821,6 +822,7 @@
 .session-compare__col-date {
   font-size: var(--font-lg);
   font-weight: 900;
+  white-space: nowrap;
 }
 .session-compare__vs {
   font-weight: 900;
@@ -915,6 +917,32 @@
 }
 
 @media (max-width: 540px) {
+  .session-compare__head {
+    align-items: flex-start;
+  }
+  .session-compare__controls {
+    width: 100%;
+  }
+  .session-compare__select {
+    flex: 1;
+    min-width: 0;
+  }
+  .session-compare__cols {
+    gap: 6px;
+  }
+  .session-compare__col {
+    padding: 10px 6px;
+  }
+  .session-compare__col-tag {
+    font-size: 0.62rem;
+    letter-spacing: 0.04em;
+  }
+  .session-compare__col-date {
+    font-size: var(--font-base);
+  }
+  .session-compare__vs {
+    font-size: var(--font-sm);
+  }
   .session-compare__row {
     grid-template-columns: 1fr 0.9fr 0.8fr 0.9fr;
     font-size: var(--font-sm);
