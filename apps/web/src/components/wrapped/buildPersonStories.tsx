@@ -137,6 +137,33 @@ export function buildPersonStories(d: PersonWrapped): WrappedCard[] {
     });
   }
 
+  // 8.5 — Monthly context
+  if (d.monthly.length > 1) {
+    const mostActive = d.monthly.reduce((a, b) => (b.chugs > a.chugs ? b : a));
+    cards.push({
+      id: "month-active",
+      bg: BG.blue,
+      emoji: "📅",
+      kicker: "DIN MEST AKTIVE MÅNED",
+      big: mostActive.label,
+      sub: `${mostActive.chugs} chugs. Da var du på ditt mest engasjerte.`,
+    });
+    const months = d.monthly.filter((m) => m.bestClean != null);
+    const bestMonth = months.length
+      ? months.reduce((a, b) => ((b.bestClean as number) < (a.bestClean as number) ? b : a))
+      : null;
+    if (bestMonth) {
+      cards.push({
+        id: "month-best",
+        bg: BG.green,
+        emoji: "🌟",
+        kicker: "DIN BESTE MÅNED",
+        big: bestMonth.label,
+        sub: `Beste tid ${fmtSeconds(bestMonth.bestClean)} — formtoppen din.`,
+      });
+    }
+  }
+
   // 9 — Rival
   if (d.rival) {
     const rv = d.rival;

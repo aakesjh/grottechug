@@ -68,6 +68,37 @@ function fmtDateLong(d: Date): string {
   return `${d.getDate()}. ${NB_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+function monthKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthLabel(key: string): string {
+  const [, m] = key.split("-");
+  const name = NB_MONTHS[Number(m) - 1] ?? key;
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Per-month aggregation of a set of points (sorted chronologically). */
+function monthlyFrom(points: { dateISO: string; seconds: number; clean: boolean }[]) {
+  const byMonth = new Map<string, { times: number[]; clean: number[] }>();
+  for (const p of points) {
+    const k = monthKey(p.dateISO);
+    const e = byMonth.get(k) ?? { times: [], clean: [] };
+    e.times.push(p.seconds);
+    if (p.clean) e.clean.push(p.seconds);
+    byMonth.set(k, e);
+  }
+  return [...byMonth.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, e]) => ({
+      key,
+      label: monthLabel(key),
+      chugs: e.times.length,
+      avg: Number(mean(e.times).toFixed(2)),
+      bestClean: e.clean.length ? Math.min(...e.clean) : null,
+    }));
+}
+
 // ---------------------------------------------------------------------------
 // Per-person aggregate
 // ---------------------------------------------------------------------------
@@ -646,6 +677,7 @@ function computeGroup(data: LoadedData) {
     awards,
     roasts,
     charts: { timeSeries, crossBreakdown },
+    monthly: monthlyFrom(allPoints.map((p) => ({ dateISO: p.dateISO, seconds: p.seconds, clean: p.clean }))),
     rivalry,
     participants,
   };
@@ -1075,6 +1107,7 @@ function computePerson(data: LoadedData, group: ReturnType<typeof computeGroup>,
     perSemester,
     awardsWon,
     timeSeries: p.points.map((pt) => ({ dateISO: pt.dateISO, seconds: pt.seconds, clean: pt.clean, wet: pt.wet })),
+    monthly: monthlyFrom(p.points.map((pt) => ({ dateISO: pt.dateISO, seconds: pt.seconds, clean: pt.clean }))),
   };
 }
 

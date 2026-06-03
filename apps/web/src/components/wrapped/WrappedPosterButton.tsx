@@ -31,53 +31,60 @@ function drawYear(ctx: CanvasRenderingContext2D, d: GroupWrapped) {
 
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.font = "700 34px system-ui, sans-serif";
-  ctx.fillText("GROTTECHUG WRAPPED", W / 2, 120);
+  ctx.fillText("GROTTECHUG WRAPPED", W / 2, 110);
   ctx.fillStyle = "#fde047";
   ctx.font = "800 44px system-ui, sans-serif";
-  ctx.fillText(d.semesterLabel.toUpperCase(), W / 2, 180);
+  ctx.fillText(d.semesterLabel.toUpperCase(), W / 2, 168);
 
   // Hero: total chugs
   ctx.fillStyle = "#fff";
-  ctx.font = "900 280px system-ui, sans-serif";
-  ctx.fillText(String(t.chugs), W / 2, 470);
+  ctx.font = "900 210px system-ui, sans-serif";
+  ctx.fillText(String(t.chugs), W / 2, 390);
   ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.font = "700 40px system-ui, sans-serif";
-  ctx.fillText("CHUGS", W / 2, 540);
+  ctx.font = "700 38px system-ui, sans-serif";
+  ctx.fillText("CHUGS", W / 2, 450);
 
-  // Stat row
-  const statsY = 660;
-  const drawStat = (label: string, value: string, x: number, color: string) => {
+  const drawStat = (label: string, value: string, x: number, y: number, color = "#fff") => {
     ctx.fillStyle = color;
-    ctx.font = "900 60px system-ui, sans-serif";
-    ctx.fillText(value, x, statsY);
+    ctx.font = "900 58px system-ui, sans-serif";
+    ctx.fillText(value, x, y);
     ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "600 26px system-ui, sans-serif";
-    ctx.fillText(label, x, statsY + 44);
+    ctx.font = "600 25px system-ui, sans-serif";
+    ctx.fillText(label, x, y + 42);
   };
-  drawStat("LITER ØL", `${t.totalLitres}`, W * 0.22, "#fff");
-  drawStat("MINUTTER", `${t.totalMinutes.toFixed(0)}`, W * 0.5, "#fff");
-  drawStat("SNITT", t.avg != null ? `${t.avg.toFixed(2)}s` : "–", W * 0.78, "#22d3ee");
+  // Row 1
+  drawStat("LITER ØL", `${t.totalLitres}`, W * 0.22, 575);
+  drawStat("MINUTTER", `${t.totalMinutes.toFixed(0)}`, W * 0.5, 575);
+  drawStat("SNITT", t.avg != null ? `${t.avg.toFixed(2)}s` : "–", W * 0.78, 575, "#22d3ee");
+  // Row 2
+  drawStat("SAMLINGER", `${t.sessions}`, W * 0.22, 690);
+  drawStat("CHUGGERE", `${t.participants}`, W * 0.5, 690);
+  drawStat("KRYSS", `${t.totalCrosses}`, W * 0.78, 690, "#fb7185");
+  // clean / wet line
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = "700 30px system-ui, sans-serif";
+  ctx.fillText(`${t.cleanRate}% rene · ${t.wetRate}% våte chugs`, W / 2, 770);
 
   // Fastest
   if (t.fastestClean) {
     ctx.fillStyle = "#fde047";
-    ctx.font = "700 32px system-ui, sans-serif";
-    ctx.fillText("⚡ ÅRETS RASKESTE", W / 2, 820);
+    ctx.font = "700 30px system-ui, sans-serif";
+    ctx.fillText("⚡ ÅRETS RASKESTE", W / 2, 858);
     ctx.fillStyle = "#fff";
-    ctx.font = "800 72px system-ui, sans-serif";
-    ctx.fillText(`${t.fastestClean.name} · ${t.fastestClean.seconds.toFixed(2)}s`, W / 2, 895);
+    ctx.font = "800 64px system-ui, sans-serif";
+    ctx.fillText(`${t.fastestClean.name} · ${t.fastestClean.seconds.toFixed(2)}s`, W / 2, 922);
   }
 
   // Podium
   ctx.fillStyle = "rgba(255,255,255,0.7)";
   ctx.font = "700 30px system-ui, sans-serif";
-  ctx.fillText("ÅRETS PALL", W / 2, 1010);
+  ctx.fillText("ÅRETS PALL", W / 2, 1020);
   const medals = ["🥇", "🥈", "🥉"];
   d.podium.slice(0, 3).forEach((p, i) => {
-    const y = 1070 + i * 64;
+    const y = 1080 + i * 62;
     ctx.textAlign = "left";
     ctx.fillStyle = "#fff";
-    ctx.font = "700 40px system-ui, sans-serif";
+    ctx.font = "700 38px system-ui, sans-serif";
     ctx.fillText(`${medals[i]}  ${p.name}`, 190, y);
     ctx.textAlign = "right";
     ctx.fillStyle = "#fde047";
@@ -87,7 +94,7 @@ function drawYear(ctx: CanvasRenderingContext2D, d: GroupWrapped) {
 
   ctx.fillStyle = "rgba(255,255,255,0.5)";
   ctx.font = "500 24px system-ui, sans-serif";
-  ctx.fillText("grottechug.no", W / 2, H - 50);
+  ctx.fillText("grottechug.no", W / 2, H - 48);
 }
 
 function drawPerson(ctx: CanvasRenderingContext2D, d: PersonWrapped) {
@@ -101,67 +108,76 @@ function drawPerson(ctx: CanvasRenderingContext2D, d: PersonWrapped) {
   ctx.textAlign = "center";
 
   ctx.fillStyle = "rgba(255,255,255,0.7)";
-  ctx.font = "700 32px system-ui, sans-serif";
-  ctx.fillText("GROTTECHUG WRAPPED", W / 2, 110);
-  ctx.fillStyle = "#fde047";
   ctx.font = "700 30px system-ui, sans-serif";
-  ctx.fillText(d.semesterLabel.toUpperCase(), W / 2, 156);
+  ctx.fillText("GROTTECHUG WRAPPED", W / 2, 96);
+  ctx.fillStyle = "#fde047";
+  ctx.font = "700 28px system-ui, sans-serif";
+  ctx.fillText(d.semesterLabel.toUpperCase(), W / 2, 140);
 
   // Name
   ctx.fillStyle = "#fff";
-  ctx.font = "900 96px system-ui, sans-serif";
-  ctx.fillText(d.participant.name, W / 2, 270);
+  ctx.font = "900 88px system-ui, sans-serif";
+  ctx.fillText(d.participant.name, W / 2, 232);
 
   // Personality
-  ctx.font = "800 56px system-ui, sans-serif";
-  ctx.fillText(`${d.title.emoji} ${d.title.label}`, W / 2, 360);
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.font = "italic 30px Georgia, serif";
-  ctx.fillText(d.title.blurb, W / 2, 410);
+  ctx.font = "800 50px system-ui, sans-serif";
+  ctx.fillText(`${d.title.emoji} ${d.title.label}`, W / 2, 304);
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.font = "italic 28px Georgia, serif";
+  ctx.fillText(d.title.blurb, W / 2, 348);
+  // Aura
+  ctx.fillStyle = "#fde047";
+  ctx.font = "700 28px system-ui, sans-serif";
+  ctx.fillText(`AURA: ${d.aura.word.toUpperCase()}`, W / 2, 402);
 
   // Best time hero
   const bestTime = s.bestClean ?? s.best;
   if (bestTime != null) {
     ctx.fillStyle = "rgba(255,255,255,0.65)";
-    ctx.font = "700 30px system-ui, sans-serif";
-    ctx.fillText("RASKESTE RENE CHUG", W / 2, 560);
+    ctx.font = "700 28px system-ui, sans-serif";
+    ctx.fillText("RASKESTE TID", W / 2, 490);
     ctx.fillStyle = "#fde047";
-    ctx.font = "900 200px system-ui, sans-serif";
-    ctx.fillText(`${bestTime.toFixed(2)}s`, W / 2, 740);
+    ctx.font = "900 170px system-ui, sans-serif";
+    ctx.fillText(`${bestTime.toFixed(2)}s`, W / 2, 640);
   }
 
-  // Stat row
-  const statsY = 900;
-  const drawStat = (label: string, value: string, x: number) => {
-    ctx.fillStyle = "#fff";
-    ctx.font = "900 64px system-ui, sans-serif";
-    ctx.fillText(value, x, statsY);
+  const drawStat = (label: string, value: string, x: number, y: number, color = "#fff") => {
+    ctx.fillStyle = color;
+    ctx.font = "900 58px system-ui, sans-serif";
+    ctx.fillText(value, x, y);
     ctx.fillStyle = "rgba(255,255,255,0.6)";
-    ctx.font = "600 26px system-ui, sans-serif";
-    ctx.fillText(label, x, statsY + 46);
+    ctx.font = "600 24px system-ui, sans-serif";
+    ctx.fillText(label, x, y + 40);
   };
-  drawStat("CHUGS", String(s.chugs), W * 0.25);
-  drawStat("LITER ØL", String(s.totalLitres), W * 0.5);
-  drawStat(
-    "RANK",
-    r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–",
-    W * 0.75,
-  );
+  // Row 1
+  drawStat("CHUGS", String(s.chugs), W * 0.22, 760);
+  drawStat("OPPMØTE", `${s.attendance}/${s.totalSessions}`, W * 0.5, 760);
+  drawStat("RANK", r.bestCleanRank != null ? `#${r.bestCleanRank}` : "–", W * 0.78, 760, "#fde047");
+  // Row 2
+  drawStat("SNITT", `${s.avg.toFixed(2)}s`, W * 0.22, 880);
+  drawStat("LITER ØL", String(s.totalLitres), W * 0.5, 880);
+  if (d.participant.isRegular) drawStat("KRYSS", String(s.crossesTotal), W * 0.78, 880, "#fb7185");
+  else drawStat("STABILITET", `±${s.stddev.toFixed(2)}`, W * 0.78, 880);
 
   if (r.percentile != null) {
     ctx.fillStyle = "#fff";
-    ctx.font = "700 40px system-ui, sans-serif";
-    ctx.fillText(`Raskere enn ${r.percentile.toFixed(0)}% av alle chugs`, W / 2, 1080);
+    ctx.font = "700 36px system-ui, sans-serif";
+    ctx.fillText(`Raskere enn ${r.percentile.toFixed(0)}% av alle chugs`, W / 2, 985);
   }
   if (s.improvement > 0.1) {
     ctx.fillStyle = "#bbf7d0";
-    ctx.font = "700 36px system-ui, sans-serif";
-    ctx.fillText(`📈 ${s.improvementPct.toFixed(0)}% bedre enn ved start`, W / 2, 1145);
+    ctx.font = "700 32px system-ui, sans-serif";
+    ctx.fillText(`📈 ${s.improvementPct.toFixed(0)}% bedre enn ved start`, W / 2, 1035);
   }
+
+  // Classification
+  ctx.fillStyle = "#fde047";
+  ctx.font = "800 38px system-ui, sans-serif";
+  ctx.fillText(`«${d.classification.label}»`, W / 2, 1120);
 
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = "500 24px system-ui, sans-serif";
-  ctx.fillText("grottechug.no", W / 2, H - 50);
+  ctx.fillText("grottechug.no", W / 2, H - 48);
 }
 
 export function WrappedPosterButton(props: Props) {

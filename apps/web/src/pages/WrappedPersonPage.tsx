@@ -241,6 +241,22 @@ export function WrappedPersonPage() {
         </div>
       )}
 
+      {/* Month by month */}
+      {data.monthly.length > 1 && (
+        <div className="card wrapped-section">
+          <h2 className="wrapped-h2" style={{ marginTop: 0 }}>📅 Måned for måned</h2>
+          <div className="wrapped-month-row">
+            {data.monthly.map((m) => (
+              <div key={m.key} className="wrapped-month">
+                <div className="wrapped-month__label">{m.label}</div>
+                <div className="wrapped-month__best">{m.bestClean != null ? fmtSeconds(m.bestClean) : "–"}</div>
+                <div className="wrapped-month__meta">{m.chugs} chugs · ⌀ {m.avg.toFixed(2)}s</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Rap sheet — regulars only (kryss telles ikke for gjester) */}
       {isRegular && data.crossBreakdown.length > 0 && (
         <div className="card wrapped-section">

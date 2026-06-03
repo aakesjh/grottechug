@@ -37,6 +37,14 @@ export type TimeSeriesPoint = {
 
 export type CrossBreakdownEntry = { code: string; label: string; count: number };
 
+export type MonthlyEntry = {
+  key: string;
+  label: string;
+  chugs: number;
+  avg: number;
+  bestClean: number | null;
+};
+
 export type WrappedParticipant = {
   id: string;
   name: string;
@@ -88,6 +96,7 @@ export type GroupWrapped = {
   awards: Record<string, AwardWinner>;
   roasts: Record<string, AwardWinner>;
   charts: { timeSeries: TimeSeriesPoint[]; crossBreakdown: CrossBreakdownEntry[] };
+  monthly: MonthlyEntry[];
   rivalry: Rivalry;
   participants: WrappedParticipant[];
 };
@@ -149,6 +158,7 @@ export type PersonWrapped = {
   perSemester: Record<string, { n: number; bestClean: number | null; avg: number | null }>;
   awardsWon: { key: string; label: string; emoji: string; kind: "award" | "roast" }[];
   timeSeries: { dateISO: string; seconds: number; clean: boolean; wet: boolean }[];
+  monthly: MonthlyEntry[];
 };
 
 /** Badge shape from GET /api/person/:id (the real profile badges). */

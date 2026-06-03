@@ -121,6 +121,33 @@ export function buildGroupStories(d: GroupWrapped): WrappedCard[] {
     });
   }
 
+  // 5.5 — Monthly context
+  if (d.monthly.length > 1) {
+    const mostActive = d.monthly.reduce((a, b) => (b.chugs > a.chugs ? b : a));
+    cards.push({
+      id: "month-active",
+      bg: BG.green,
+      emoji: "📅",
+      kicker: "MEST AKTIVE MÅNED",
+      big: mostActive.label,
+      sub: `${mostActive.chugs} chugs — kullet var på sitt mest aktive.`,
+    });
+    const eligible = d.monthly.filter((m) => m.bestClean != null && m.chugs >= 3);
+    const fastestMonth = eligible.length
+      ? eligible.reduce((a, b) => ((b.bestClean as number) < (a.bestClean as number) ? b : a))
+      : null;
+    if (fastestMonth) {
+      cards.push({
+        id: "month-fast",
+        bg: BG.blue,
+        emoji: "🚀",
+        kicker: "RASKESTE MÅNED",
+        big: fastestMonth.label,
+        sub: `Snitt ${fastestMonth.avg.toFixed(2)}s — formtoppen for kullet.`,
+      });
+    }
+  }
+
   // 6 — Fastest moment of the year
   if (t.fastestClean) {
     cards.push({

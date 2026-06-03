@@ -6,6 +6,8 @@ import {
   Area,
   BarChart,
   Bar,
+  ComposedChart,
+  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -93,7 +95,7 @@ function AwardCard({
 export function WrappedPage() {
   const nav = useNavigate();
   const [semester, setSemester] = useState("year");
-  const [includeGuests, setIncludeGuests] = useState(true);
+  const [includeGuests, setIncludeGuests] = useState(false);
   const [data, setData] = useState<GroupWrapped | null>(null);
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
@@ -164,16 +166,16 @@ export function WrappedPage() {
           </div>
           <div className="wrapped-seg">
             <button
-              className={`wrapped-seg__btn ${includeGuests ? "wrapped-seg__btn--active" : ""}`}
-              onClick={() => setIncludeGuests(true)}
-            >
-              Med gjester
-            </button>
-            <button
               className={`wrapped-seg__btn ${!includeGuests ? "wrapped-seg__btn--active" : ""}`}
               onClick={() => setIncludeGuests(false)}
             >
               Bare faste
+            </button>
+            <button
+              className={`wrapped-seg__btn ${includeGuests ? "wrapped-seg__btn--active" : ""}`}
+              onClick={() => setIncludeGuests(true)}
+            >
+              Med gjester
             </button>
           </div>
         </div>
@@ -333,6 +335,31 @@ export function WrappedPage() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Month by month */}
+      {data.monthly.length > 1 && (
+        <div className="card wrapped-chart">
+          <h2 className="wrapped-chart__title">Måned for måned</h2>
+          <div className="wrapped-chart__legend">
+            <span><i className="wrapped-dot" style={{ background: "#7c5cff" }} /> Chugs</span>
+            <span><i className="wrapped-dot" style={{ background: "#22d3ee" }} /> Snitt-tid</span>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={data.monthly} margin={{ top: 10, right: 6, bottom: 0, left: -18 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <XAxis dataKey="label" stroke="var(--text)" tick={{ fontSize: 11 }} interval={0} />
+              <YAxis yAxisId="c" stroke="var(--text)" tick={{ fontSize: 11 }} width={34} allowDecimals={false} />
+              <YAxis yAxisId="s" orientation="right" stroke="var(--text)" tick={{ fontSize: 11 }} width={40} tickFormatter={(v) => `${v}s`} />
+              <Tooltip
+                wrapperClassName="session__recharts-tooltip"
+                formatter={(v: any, n: any) => (n === "chugs" ? [`${v}`, "Chugs"] : [`${Number(v).toFixed(2)}s`, "Snitt"])}
+              />
+              <Bar yAxisId="c" dataKey="chugs" radius={[8, 8, 0, 0]} fill="#7c5cff" maxBarSize={64} />
+              <Line yAxisId="s" type="monotone" dataKey="avg" stroke="#22d3ee" strokeWidth={3} dot={{ r: 3 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      )}
 
       {/* Everyone */}
       <h2 className="wrapped-h2">🎁 Hele kullet — trykk for personlig Wrapped</h2>

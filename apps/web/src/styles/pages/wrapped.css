@@ -894,3 +894,34 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* ---- Month-by-month row (person) ---- */
+.wrapped-month-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.wrapped-month {
+  flex: 0 0 auto;
+  min-width: 110px;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.wrapped-month__label {
+  font-size: var(--font-sm);
+  font-weight: 700;
+  color: var(--muted);
+}
+.wrapped-month__best {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin: 4px 0 2px;
+}
+.wrapped-month__meta {
+  font-size: var(--font-xs);
+  color: var(--muted);
+}

@@ -129,14 +129,25 @@ export function SessionPosterButton(props: Props) {
         "#38bdf8"
       );
 
+      // Slowest of the day
+      if (props.slowest) {
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.font = "700 26px system-ui, sans-serif";
+        ctx.fillText("🐢 DAGENS TREGESTE", W / 2, 998);
+        ctx.fillStyle = "#fff";
+        ctx.font = "800 42px system-ui, sans-serif";
+        ctx.fillText(`${props.slowest.name} · ${props.slowest.seconds.toFixed(2)}s`, W / 2, 1044);
+      }
+
       // Top 3 podium
       ctx.fillStyle = "rgba(255,255,255,0.65)";
       ctx.font = "700 30px system-ui, sans-serif";
-      ctx.fillText("PALL", W / 2, 1060);
+      ctx.fillText("PALL", W / 2, 1110);
 
       const medals = ["🥇", "🥈", "🥉"];
       props.top.slice(0, 3).forEach((p, i) => {
-        const y = 1110 + i * 60;
+        const y = 1158 + i * 50;
         ctx.textAlign = "left";
         ctx.fillStyle = "#fff";
         ctx.font = "700 36px system-ui, sans-serif";
