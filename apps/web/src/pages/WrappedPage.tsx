@@ -191,12 +191,12 @@ export function WrappedPage() {
       {/* Headline stats */}
       <div className="wrapped-stat-grid">
         <StatTile value={String(t.chugs)} label="chugs totalt" accent />
-        <StatTile value={String(t.sessions)} label="chuggekvelder" />
+        <StatTile value={String(t.sessions)} label="samlinger" />
         <StatTile value={String(t.participants)} label="chuggere" />
         <StatTile value={`${t.totalLitres} L`} label="øl drukket" accent />
         <StatTile value={`${t.totalMinutes.toFixed(0)} min`} label="total chuggetid" />
         <StatTile value={t.avg != null ? `${t.avg.toFixed(2)}s` : "–"} label="snitt for året" />
-        <StatTile value={`${t.cleanRate}%`} label="rene chugs" />
+        <StatTile value={`${t.cleanRate}%`} label="tørre chugs" />
         <StatTile value={`${t.wetRate}%`} label="våte chugs" />
         <StatTile value={String(t.totalCrosses)} label="kryss utdelt" />
       </div>

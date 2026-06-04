@@ -117,7 +117,7 @@ export function buildGroupStories(d: GroupWrapped): WrappedCard[] {
       bigCountUp: t.avg,
       bigDecimals: 2,
       bigSuffix: "s",
-      sub: `${t.cleanRate}% av chuggene var rene. ${t.wetRate}% endte vått. 💧`,
+      sub: `${t.cleanRate}% av chuggene var tørre. ${t.wetRate}% endte vått. 💧`,
     });
   }
 

@@ -63,7 +63,7 @@ function drawYear(ctx: CanvasRenderingContext2D, d: GroupWrapped) {
   // clean / wet line
   ctx.fillStyle = "rgba(255,255,255,0.85)";
   ctx.font = "700 30px system-ui, sans-serif";
-  ctx.fillText(`${t.cleanRate}% rene · ${t.wetRate}% våte chugs`, W / 2, 770);
+  ctx.fillText(`${t.cleanRate}% tørre · ${t.wetRate}% våte chugs`, W / 2, 770);
 
   // Fastest
   if (t.fastestClean) {

@@ -209,7 +209,7 @@ export function LeaderboardPage() {
                       <button
                         className="leaderboard__date-btn"
                         onClick={() => nav(`/session/${r.sessionId}`)}
-                        title="Se dagsrapport for denne kvelden"
+                        title="Se dagsrapport for denne dagen"
                       >
                         {fmtDDMMYYYY(r.dateISO)}
                       </button>

@@ -179,16 +179,23 @@ async function loadData(semester: string, includeGuests = true): Promise<LoadedD
       },
     }),
     prisma.violation.findMany({
-      // Kryss are only counted for faste medlemmer — guests' violations are ignored.
-      where: { sessionId: { in: sessionIds }, participant: { isRegular: true } },
-      select: { participantId: true, sessionId: true, ruleCode: true, crosses: true },
+      // Load violations for everyone in scope (incl. guests) so each attempt is
+      // classified clean/wet correctly. Kryss are only TALLIED for faste below.
+      where: { sessionId: { in: sessionIds }, ...regularFilter },
+      select: {
+        participantId: true,
+        sessionId: true,
+        ruleCode: true,
+        crosses: true,
+        participant: { select: { isRegular: true } },
+      },
     }),
   ]);
 
-  // (participant, session) -> codes / crosses  (regulars only)
+  // (participant, session) -> codes  — for ALL loaded violations, so a guest's
+  // wet chug is correctly NOT counted as a clean record.
   const codeMap = new Map<string, { codes: string[]; crosses: number }>();
-  // Cross tally per participant across ALL violations (incl. fravær on days
-  // they never showed up — those have no Attempt row).
+  // Cross tally per participant — FASTE ONLY (we don't count kryss for guests).
   const crossByParticipant = new Map<
     string,
     { crossesTotal: number; violationCount: number; crossByCode: Record<string, number> }
@@ -202,6 +209,9 @@ async function loadData(semester: string, includeGuests = true): Promise<LoadedD
     entry.codes.push(code);
     entry.crosses += v.crosses;
     codeMap.set(key, entry);
+
+    // Only faste contribute to kryss tallies / awards.
+    if (!v.participant.isRegular) continue;
 
     const cp = crossByParticipant.get(v.participantId) ?? {
       crossesTotal: 0,
@@ -490,7 +500,8 @@ function computeGroup(data: LoadedData) {
   };
 
   // ---- Roast / shame awards ----
-  const villeste = pickMaxTies(active(2), (p) => (p.wetCount > 0 ? p.wetCount : null));
+  // Søl-roast is a kull thing — guests' søl isn't counted.
+  const villeste = pickMaxTies(active(2).filter((p) => p.isRegular), (p) => (p.wetCount > 0 ? p.wetCount : null));
   const syndaren = pickMaxTies(people, (p) => (p.crossesTotal > 0 ? p.crossesTotal : null));
   const tregest = pickMax(active(3), (p) => p.avg); // highest average = slowest overall
 
