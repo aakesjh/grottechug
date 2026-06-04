@@ -755,9 +755,9 @@ export function SessionPage() {
     const cleanCount = Math.max(sessionStats.attempts.length - wetCount, 0);
 
     return [
-      { name: "Wet", count: wetCount, pct: sessionStats.wetRate },
+      { name: "Våt", count: wetCount, pct: sessionStats.wetRate },
       {
-        name: "Clean",
+        name: "Tørr",
         count: cleanCount,
         pct: sessionStats.attempts.length > 0 ? (cleanCount / sessionStats.attempts.length) * 100 : 0,
       },
@@ -1269,7 +1269,7 @@ export function SessionPage() {
             </div>
             <div className="session__highlight-time">{fastestDirty.seconds.toFixed(2)}s</div>
             <div className="session__highlight-meta">
-              Teller ikke som ren tid · {fastestDirty.violations.filter((c) => c !== "MM").join(", ")}
+              Teller ikke på topplista · {fastestDirty.violations.filter((c) => c !== "MM").join(", ")}
             </div>
           </div>
         )}
@@ -1621,9 +1621,9 @@ export function SessionPage() {
         </div>
 
         <div className="card session__chart-card">
-          <h2 className="session__chart-title">Wet vs. clean</h2>
+          <h2 className="session__chart-title">Vått vs. tørt</h2>
           <div className="session__chart-desc">
-            Fordeling av dagens forsok med og uten wet-anmerkning.
+            Fordeling av dagens forsøk med og uten søl-anmerkning.
           </div>
           <div className="session__chart-area">
             <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={300}>
@@ -1651,7 +1651,7 @@ export function SessionPage() {
                     if (name === "count") {
                       return [
                         `${numericValue} stk (${Number(props?.payload?.pct ?? 0).toFixed(1)}%)`,
-                        props?.payload?.name === "Wet" ? "Wet" : "Clean",
+                        props?.payload?.name === "Våt" ? "Våt" : "Tørr",
                       ];
                     }
                     return [String(value), String(name)];
@@ -1660,7 +1660,7 @@ export function SessionPage() {
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.22)" strokeWidth={2} />
                 <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                   {wetBreakdownData.map((entry, i) => (
-                    <Cell key={i} fill={entry.name === "Wet" ? "#38bdf8" : "#22c55e"} />
+                    <Cell key={i} fill={entry.name === "Våt" ? "#38bdf8" : "#22c55e"} />
                   ))}
                 </Bar>
               </BarChart>

@@ -105,7 +105,7 @@ export function buildGroupStories(d: GroupWrapped): WrappedCard[] {
     bigCountUp: t.totalMinutes,
     bigDecimals: 1,
     bigSuffix: " min",
-    sub: "Ren, konsentrert chugge-tid. Ikke verst.",
+    sub: "Konsentrert chugge-tid. Ikke verst.",
   });
 
   // 5 — Year average
@@ -158,7 +158,7 @@ export function buildGroupStories(d: GroupWrapped): WrappedCard[] {
       content: <PersonHighlight name={t.fastestClean.name} imageUrl={t.fastestClean.imageUrl} ring="#fde047" />,
       heading: t.fastestClean.name,
       big: fmtSeconds(t.fastestClean.seconds),
-      meta: "Tidenes raskeste rene chug i kullet 🏆",
+      meta: "Tidenes raskeste tellende chug i kullet 🏆",
     });
   }
 

@@ -479,7 +479,7 @@ function computeGroup(data: LoadedData) {
 
   const awards: Record<string, AwardWinner> = {
     raskest: raskest
-      ? winner(raskest.p, fmtSec(raskest.score), `Årets raskeste rene chug`)
+      ? winner(raskest.p, fmtSec(raskest.score), `Årets raskeste tellende chug`)
       : null,
     mestForbedret: mestForbedret
       ? winner(

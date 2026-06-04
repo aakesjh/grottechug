@@ -50,6 +50,12 @@ function ruleCodeClass(code: string) {
   return `person__note-code--${code.trim().toLowerCase()}`;
 }
 
+// "Tellende" = teller mot rekord/toppliste: ingen anmerkning, eller bare MM.
+function noteIsTellende(note: string | null | undefined) {
+  const codes = (note ?? "").split(",").map((c) => c.trim().toUpperCase()).filter(Boolean);
+  return codes.length === 0 || codes.every((c) => c === "MM");
+}
+
 function countViolationsFromPoints(points: Point[]) {
   return points.reduce((total, point) => {
     if (!point.note) return total;
@@ -674,8 +680,8 @@ export function PersonPage() {
     // Best weekday
     // (Removed: alle chugs er fredager.)
 
-    // Clean rate
-    const cleanCount = data.points.filter((pt) => !pt.note || !pt.note.trim()).length;
+    // Tellende rate (teller mot rekord: ingen anmerkning eller bare MM)
+    const cleanCount = data.points.filter((pt) => noteIsTellende(pt.note)).length;
     cleanRate = (cleanCount / data.points.length) * 100;
 
     // Most common rule
@@ -757,13 +763,13 @@ export function PersonPage() {
       });
     }
     if (cleanRate != null) {
-      const dirtyCount = data.points.length - data.points.filter((pt) => !pt.note || !pt.note.trim()).length;
+      const dirtyCount = data.points.length - data.points.filter((pt) => noteIsTellende(pt.note)).length;
       insights.push({
         key: "clean",
         icon: cleanRate >= 80 ? "🎯" : cleanRate >= 50 ? "😅" : "💧",
-        label: "Rene forsøk",
+        label: "Tellende forsøk",
         value: `${cleanRate.toFixed(0)}%`,
-        sub: dirtyCount === 0 ? "ingen anmerkninger" : `${dirtyCount} med anmerkning`,
+        sub: dirtyCount === 0 ? "alt teller" : `${dirtyCount} teller ikke`,
         tone: cleanRate >= 80 ? "better" : cleanRate < 50 ? "worse" : "neutral",
       });
     }
@@ -898,7 +904,7 @@ export function PersonPage() {
         ? `${fmtDDMMYYYY(pbPoint.dateISO)}${
             profileRanking.bestCleanRank != null ? ` · #${profileRanking.bestCleanRank} totalt` : ""
           }`
-        : "Ingen ren tid registrert",
+        : "Ingen tellende tid registrert",
       onClick: pbPoint ? () => nav(`/session/${pbPoint.sessionId}`) : undefined,
       tone: "gold" as const,
     },

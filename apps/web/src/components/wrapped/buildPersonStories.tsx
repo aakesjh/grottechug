@@ -54,7 +54,7 @@ export function buildPersonStories(d: PersonWrapped): WrappedCard[] {
     bigCountUp: s.totalLitres,
     bigDecimals: s.totalLitres % 1 === 0 ? 0 : 1,
     bigSuffix: " liter øl",
-    sub: `${s.totalMinutes.toFixed(1)} minutter med ren chugging.`,
+    sub: `${s.totalMinutes.toFixed(1)} minutter med konsentrert chugging.`,
   });
 
   // 4 — Best clean time

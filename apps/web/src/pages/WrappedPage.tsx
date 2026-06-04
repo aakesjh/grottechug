@@ -208,7 +208,7 @@ export function WrappedPage() {
             className="wrapped-record wrapped-record--fast"
             onClick={() => nav(`/wrapped/person/${t.fastestClean!.participantId}`)}
           >
-            <div className="wrapped-record__label">⚡ Årets raskeste rene chug</div>
+            <div className="wrapped-record__label">⚡ Årets raskeste tellende chug</div>
             <RoundAvatar name={t.fastestClean.name} imageUrl={t.fastestClean.imageUrl} size={56} ring="#fde047" />
             <div className="wrapped-record__name">{t.fastestClean.name}</div>
             <div className="wrapped-record__time">{fmtSeconds(t.fastestClean.seconds)}</div>
@@ -233,7 +233,7 @@ export function WrappedPage() {
       {data.podium.length > 0 && (
         <div className="card wrapped-section">
           <LeaderboardPodium
-            title="🏆 Årets pall — reneste tider"
+            title="🏆 Årets pall — beste tellende tider"
             celebrate
             top3={data.podium.map((p) => ({
               participantId: p.participantId,
@@ -310,8 +310,8 @@ export function WrappedPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
               <XAxis dataKey="date" stroke="var(--text)" tick={{ fontSize: 11 }} minTickGap={16} />
               <YAxis stroke="var(--text)" tick={{ fontSize: 11 }} width={42} tickFormatter={(v) => `${v}s`} />
-              <Tooltip wrapperClassName="session__recharts-tooltip" formatter={(v: any, n: any) => [`${Number(v).toFixed(2)}s`, n === "avg" ? "Snitt" : "Beste rene"]} />
-              <Legend formatter={(v) => (v === "avg" ? "Snitt" : "Beste rene")} />
+              <Tooltip wrapperClassName="session__recharts-tooltip" formatter={(v: any, n: any) => [`${Number(v).toFixed(2)}s`, n === "avg" ? "Snitt" : "Beste tellende"]} />
+              <Legend formatter={(v) => (v === "avg" ? "Snitt" : "Beste tellende")} />
               <Area type="monotone" dataKey="avg" stroke="#7c5cff" strokeWidth={2} fill="url(#wAvg)" />
               <Area type="monotone" dataKey="bestClean" stroke="#22d3ee" strokeWidth={2} fill="url(#wBest)" connectNulls />
             </AreaChart>
