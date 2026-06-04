@@ -93,17 +93,10 @@ personRouter.get("/:id", async (req, res) => {
   if (sessionIds.length > 0) {
     const [rankingAttempts, rankingViolations] = await Promise.all([
       prisma.attempt.findMany({
-        where: {
-          sessionId: { in: sessionIds },
-          OR: [
-            { note: null },
-            { note: "" },
-            { note: "mm-chug" },
-            { note: "mm" }
-          ]
-        },
+        where: { sessionId: { in: sessionIds }, seconds: { gt: 0 } },
         select: {
           participantId: true,
+          sessionId: true,
           seconds: true,
           participant: { select: { isRegular: true } },
         },
@@ -112,15 +105,24 @@ personRouter.get("/:id", async (req, res) => {
         where: { sessionId: { in: sessionIds } },
         select: {
           participantId: true,
+          sessionId: true,
+          ruleCode: true,
           crosses: true,
           participant: { select: { isRegular: true } },
         },
       }),
     ]);
 
+    // "Tellende" = ingen anmerkning eller bare MM (basert på Violation-tabellen).
+    const dirtyKeys = new Set<string>();
+    for (const v of rankingViolations) {
+      if (v.ruleCode.toUpperCase() !== "MM") dirtyKeys.add(`${v.participantId}:${v.sessionId}`);
+    }
+
     const bestByParticipant = new Map<string, number>();
     for (const attempt of rankingAttempts) {
       if (!includeGuestsInRankings && !attempt.participant.isRegular) continue;
+      if (dirtyKeys.has(`${attempt.participantId}:${attempt.sessionId}`)) continue; // ikke tellende
       const previousBest = bestByParticipant.get(attempt.participantId);
       if (previousBest == null || attempt.seconds < previousBest) {
         bestByParticipant.set(attempt.participantId, attempt.seconds);

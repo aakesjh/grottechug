@@ -119,7 +119,7 @@ export function LeaderboardPage() {
   return (
     <div className="leaderboard">
       <h1>Toppliste</h1>
-      <p>Rangert etter beste tid uten anmerkning.</p>
+      <p>Rangert etter beste tellende tid (MM teller, annet søl teller ikke).</p>
 
       <div className="tabs u-mt-sm">
         {["2025H", "2026V", "all"].map((s) => (

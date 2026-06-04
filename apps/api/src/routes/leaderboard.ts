@@ -17,22 +17,27 @@ leaderboardRouter.get("/", async (req, res) => {
     return res.json({ semester, rows: [] });
   }
 
-  const attempts = await prisma.attempt.findMany({
-    where: {
-      sessionId: { in: sessionIds },
-      // NY LOGIKK: "clean" er nå enten ingenting, "mm-chug" eller "mm"
-      OR: [
-        { note: null },
-        { note: "" },
-        { note: "mm-chug" },
-        { note: "mm" }
-      ]
-    },
-    include: {
-      participant: { select: { id: true, name: true, isRegular: true, imageUrl: true } },
-      session: { select: { date: true } }
-    }
-  });
+  // "Tellende" tid = ingen anmerkning, eller bare MM. Kilde er Violation-tabellen
+  // (IKKE Attempt.note, som kan være tom selv om det finnes en W/VW/P-anmerkning).
+  const [attempts, violations] = await Promise.all([
+    prisma.attempt.findMany({
+      where: { sessionId: { in: sessionIds }, seconds: { gt: 0 } },
+      include: {
+        participant: { select: { id: true, name: true, isRegular: true, imageUrl: true } },
+        session: { select: { date: true } }
+      }
+    }),
+    prisma.violation.findMany({
+      where: { sessionId: { in: sessionIds } },
+      select: { participantId: true, sessionId: true, ruleCode: true }
+    })
+  ]);
+
+  // (deltaker:session) med en diskvalifiserende (ikke-MM) anmerkning.
+  const dirty = new Set<string>();
+  for (const v of violations) {
+    if (v.ruleCode.toUpperCase() !== "MM") dirty.add(`${v.participantId}:${v.sessionId}`);
+  }
 
   const bestBy: Record<
     string,
@@ -43,11 +48,12 @@ leaderboardRouter.get("/", async (req, res) => {
       imageUrl: string | null;
       bestClean: number;
       dateISO: string;
-      sessionId: string; // NY!
+      sessionId: string;
     }
   > = {};
 
   for (const a of attempts) {
+    if (dirty.has(`${a.participantId}:${a.sessionId}`)) continue; // ikke tellende
     const pid = a.participant.id;
     const entry = bestBy[pid];
 
@@ -59,7 +65,7 @@ leaderboardRouter.get("/", async (req, res) => {
         imageUrl: a.participant.imageUrl ?? null,
         bestClean: a.seconds,
         dateISO: a.session.date.toISOString(),
-        sessionId: a.sessionId // NY! Henter ID-en til sessionen herfra
+        sessionId: a.sessionId
       };
     }
   }

@@ -84,22 +84,28 @@ statsRouter.get("/peers", async (req, res) => {
     select: { id: true, name: true, isRegular: true }
   });
 
-  const attempts = await prisma.attempt.findMany({
-    where: { sessionId: { in: sessionIds } },
-    select: { participantId: true, seconds: true, note: true }
-  });
+  const [attempts, violations] = await Promise.all([
+    prisma.attempt.findMany({
+      where: { sessionId: { in: sessionIds } },
+      select: { participantId: true, sessionId: true, seconds: true }
+    }),
+    prisma.violation.findMany({
+      where: { sessionId: { in: sessionIds } },
+      select: { participantId: true, sessionId: true, ruleCode: true }
+    })
+  ]);
 
-  const isClean = (note: string | null) => {
-    if (!note) return true;
-    const t = note.trim().toLowerCase();
-    return t === "" || t === "mm-chug" || t === "mm";
-  };
+  // "Tellende" (clean) = ingen anmerkning eller bare MM — fra Violation-tabellen.
+  const dirty = new Set<string>();
+  for (const v of violations) {
+    if (v.ruleCode.toUpperCase() !== "MM") dirty.add(`${v.participantId}:${v.sessionId}`);
+  }
 
   const byPerson: Record<string, { all: number[]; clean: number[] }> = {};
   for (const a of attempts) {
     const bucket = (byPerson[a.participantId] ||= { all: [], clean: [] });
     bucket.all.push(a.seconds);
-    if (isClean(a.note)) bucket.clean.push(a.seconds);
+    if (!dirty.has(`${a.participantId}:${a.sessionId}`)) bucket.clean.push(a.seconds);
   }
 
   const peers = people
